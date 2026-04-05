@@ -1,0 +1,406 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// USER SETTINGS  (maps to SheetOptions sheet)
+// ---------------------------------------------------------------------------
+model UserSettings {
+  id String @id @default(cuid())
+
+  // General
+  currency        String  @default("AUD")
+  salary          Decimal @db.Decimal(20, 6) @default(0)
+  taxBracket      Decimal @db.Decimal(5, 4)  @default(0.35)
+  dayOfMonthPaid  Int     @default(15)
+
+  // Salary / income
+  salaryFrequency           String  @default("Monthly")
+  netIncome                 Decimal @db.Decimal(20, 6) @default(0)
+  jobStartDate              DateTime?
+  includeSideIncomeInBudget Boolean @default(true)
+
+  // Investment settings
+  bankInterestRate  Decimal @db.Decimal(7, 6) @default(0.0604)
+  brokerage         Decimal @db.Decimal(7, 6) @default(0)
+  marketReturnRate  Decimal @db.Decimal(7, 6) @default(0)
+
+  // Asset allocation targets (must sum to 1)
+  etfAllocation    Decimal @db.Decimal(5, 4) @default(1)
+  stockAllocation  Decimal @db.Decimal(5, 4) @default(0)
+  cryptoAllocation Decimal @db.Decimal(5, 4) @default(0)
+  cashAllocation   Decimal @db.Decimal(5, 4) @default(0)
+  mfAllocation     Decimal @db.Decimal(5, 4) @default(0)
+
+  // Cash goals
+  cashSavingsTarget Decimal @db.Decimal(20, 6) @default(40000)
+  eoyGoal           Decimal @db.Decimal(20, 6) @default(0)
+  housePriceTarget  Decimal @db.Decimal(20, 6) @default(0)
+  houseDepositPct   Decimal @db.Decimal(5, 4)  @default(0)
+
+  // Budget
+  emergencyFundMonths Int @default(6)
+
+  // CGT settings
+  cgtMethod              String  @default("FIFO")
+  shortTermTaxRate       Decimal @db.Decimal(5, 4) @default(0.32)
+  longTermTaxRate        Decimal @db.Decimal(5, 4) @default(0.16)
+  cgtShowInLiabilities   Boolean @default(true)
+  includeMortgageInSavingsRate Boolean @default(false)
+
+  // Crypto
+  coinmarketcapKey    String?
+  cryptoPricingSource String  @default("CoinGecko")
+
+  // FIRE settings
+  yearOfBirth     Int     @default(1984)
+  inflationRate   Decimal @db.Decimal(5, 4) @default(0.03)
+  withdrawalRate  Decimal @db.Decimal(5, 4) @default(0.05)
+  preservationAge Int     @default(55)
+  superContribPct Decimal @db.Decimal(5, 4) @default(0.115)
+
+  // Feature flags
+  useBudget       Boolean @default(true)
+  useCash         Boolean @default(true)
+  useETFs         Boolean @default(true)
+  useStocks       Boolean @default(true)
+  useCrypto       Boolean @default(false)
+  useManagedFunds Boolean @default(false)
+  useOtherAssets  Boolean @default(true)
+  useSideIncome   Boolean @default(true)
+  useProperty     Boolean @default(true)
+  useLiabilities  Boolean @default(false)
+  useCapitalGains Boolean @default(true)
+  useFIRE         Boolean @default(true)
+  useSuper        Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bankAccounts        BankAccount[]
+  etfHoldings         ETFHolding[]
+  stockHoldings       StockHolding[]
+  managedFundHoldings ManagedFundHolding[]
+  cryptoHoldings      CryptoHolding[]
+  otherAssets         OtherAsset[]
+  properties          Property[]
+  loans               Loan[]
+  dividends           Dividend[]
+  superAccounts       SuperAccount[]
+  budgetItems         BudgetItem[]
+  sideIncomeEntries   SideIncomeEntry[]
+  monthlySnapshots    MonthlySnapshot[]
+}
+
+// ---------------------------------------------------------------------------
+// CASH
+// ---------------------------------------------------------------------------
+model BankAccount {
+  id         String       @id @default(cuid())
+  settingsId String
+  settings   UserSettings @relation(fields: [settingsId], references: [id])
+  name       String
+  currency   String       @default("AUD")
+  balance    Decimal      @db.Decimal(20, 6) @default(0)
+  sortOrder  Int          @default(0)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// ETFs
+// ---------------------------------------------------------------------------
+model ETFHolding {
+  id               String       @id @default(cuid())
+  settingsId       String
+  settings         UserSettings @relation(fields: [settingsId], references: [id])
+  ticker           String
+  name             String?
+  currency         String       @default("AUD")
+  targetAllocation Decimal      @db.Decimal(5, 4) @default(0)
+  managementFee    Decimal      @db.Decimal(7, 6) @default(0)
+  location         String?
+  pctUS            Decimal      @db.Decimal(5, 4) @default(0)
+  pctAsia          Decimal      @db.Decimal(5, 4) @default(0)
+  pctAus           Decimal      @db.Decimal(5, 4) @default(0)
+  sector           String?
+  dividendFreqMonths Int?
+  drpEnabled       Boolean      @default(false)
+  sortOrder        Int          @default(0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  purchases        ETFPurchase[]
+}
+
+model ETFPurchase {
+  id        String     @id @default(cuid())
+  holdingId String
+  holding   ETFHolding @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  date      DateTime
+  units     Decimal    @db.Decimal(20, 8)
+  price     Decimal    @db.Decimal(20, 6)
+  brokerage Decimal    @db.Decimal(20, 6) @default(0)
+  direction String     @default("BUY")
+  createdAt DateTime   @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// STOCKS
+// ---------------------------------------------------------------------------
+model StockHolding {
+  id               String        @id @default(cuid())
+  settingsId       String
+  settings         UserSettings  @relation(fields: [settingsId], references: [id])
+  ticker           String
+  name             String?
+  currency         String        @default("AUD")
+  targetAllocation Decimal       @db.Decimal(5, 4) @default(0)
+  sector           String?
+  dividendFreqMonths Int?
+  drpEnabled       Boolean       @default(false)
+  sortOrder        Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  purchases        StockPurchase[]
+}
+
+model StockPurchase {
+  id        String       @id @default(cuid())
+  holdingId String
+  holding   StockHolding @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  date      DateTime
+  units     Decimal      @db.Decimal(20, 8)
+  price     Decimal      @db.Decimal(20, 6)
+  brokerage Decimal      @db.Decimal(20, 6) @default(0)
+  direction String       @default("BUY")
+  createdAt DateTime     @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// MANAGED FUNDS
+// ---------------------------------------------------------------------------
+model ManagedFundHolding {
+  id               String               @id @default(cuid())
+  settingsId       String
+  settings         UserSettings         @relation(fields: [settingsId], references: [id])
+  ticker           String
+  name             String?
+  currency         String               @default("AUD")
+  targetAllocation Decimal              @db.Decimal(5, 4) @default(0)
+  managementFee    Decimal              @db.Decimal(7, 6) @default(0)
+  location         String?
+  pctUS            Decimal              @db.Decimal(5, 4) @default(0)
+  pctAsia          Decimal              @db.Decimal(5, 4) @default(0)
+  pctAus           Decimal              @db.Decimal(5, 4) @default(0)
+  sector           String?
+  dividendFreqMonths Int?
+  drpEnabled       Boolean              @default(false)
+  sortOrder        Int                  @default(0)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  purchases        ManagedFundPurchase[]
+}
+
+model ManagedFundPurchase {
+  id        String             @id @default(cuid())
+  holdingId String
+  holding   ManagedFundHolding @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  date      DateTime
+  units     Decimal            @db.Decimal(20, 8)
+  price     Decimal            @db.Decimal(20, 6)
+  brokerage Decimal            @db.Decimal(20, 6) @default(0)
+  direction String             @default("BUY")
+  createdAt DateTime           @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// CRYPTO
+// ---------------------------------------------------------------------------
+model CryptoHolding {
+  id               String          @id @default(cuid())
+  settingsId       String
+  settings         UserSettings    @relation(fields: [settingsId], references: [id])
+  ticker           String
+  name             String?
+  targetAllocation Decimal         @db.Decimal(5, 4) @default(0)
+  sortOrder        Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  purchases        CryptoPurchase[]
+}
+
+model CryptoPurchase {
+  id        String        @id @default(cuid())
+  holdingId String
+  holding   CryptoHolding @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  date      DateTime
+  units     Decimal       @db.Decimal(20, 8)
+  price     Decimal       @db.Decimal(20, 6)
+  brokerage Decimal       @db.Decimal(20, 6) @default(0)
+  direction String        @default("BUY")
+  createdAt DateTime      @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// OTHER ASSETS
+// ---------------------------------------------------------------------------
+model OtherAsset {
+  id                String       @id @default(cuid())
+  settingsId        String
+  settings          UserSettings @relation(fields: [settingsId], references: [id])
+  description       String
+  purchaseDate      DateTime
+  units             Decimal      @db.Decimal(20, 8)
+  currency          String       @default("AUD")
+  unitPurchasePrice Decimal      @db.Decimal(20, 6)
+  liveUnitPrice     Decimal?     @db.Decimal(20, 6)
+  soldUnits         Decimal      @db.Decimal(20, 8) @default(0)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// PROPERTY
+// ---------------------------------------------------------------------------
+model Property {
+  id                     String       @id @default(cuid())
+  settingsId             String
+  settings               UserSettings @relation(fields: [settingsId], references: [id])
+  name                   String
+  purchaseDate           DateTime
+  isPrimaryResidence     Boolean      @default(false)
+  purchaseValue          Decimal      @db.Decimal(20, 6)
+  currentValue           Decimal      @db.Decimal(20, 6)
+  netRentProfit          Decimal      @db.Decimal(20, 6) @default(0)
+  mortgageStartDate      DateTime?
+  mortgageAnnualRate     Decimal?     @db.Decimal(7, 6)
+  mortgageMonthlyPayment Decimal?     @db.Decimal(20, 6)
+  mortgageStartBalance   Decimal?     @db.Decimal(20, 6)
+  sortOrder              Int          @default(0)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// LOANS / LIABILITIES
+// ---------------------------------------------------------------------------
+model Loan {
+  id                String       @id @default(cuid())
+  settingsId        String
+  settings          UserSettings @relation(fields: [settingsId], references: [id])
+  name              String
+  startDate         DateTime
+  interestFrequency Int          @default(12)
+  annualRate        Decimal      @db.Decimal(7, 6)
+  regularPayment    Decimal      @db.Decimal(20, 6)
+  startingBalance   Decimal      @db.Decimal(20, 6)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// DIVIDENDS
+// ---------------------------------------------------------------------------
+model Dividend {
+  id              String       @id @default(cuid())
+  settingsId      String
+  settings        UserSettings @relation(fields: [settingsId], references: [id])
+  paymentDate     DateTime
+  ticker          String
+  holdingType     String
+  exDividendDate  DateTime?
+  reinvested      Boolean      @default(false)
+  netAmount       Decimal      @db.Decimal(20, 6)
+  priceAtDividend Decimal?     @db.Decimal(20, 6)
+  unitsHeld       Decimal?     @db.Decimal(20, 8)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// SUPER / RETIREMENT
+// ---------------------------------------------------------------------------
+model SuperAccount {
+  id         String       @id @default(cuid())
+  settingsId String
+  settings   UserSettings @relation(fields: [settingsId], references: [id])
+  name       String
+  provider   String?
+  balance    Decimal      @db.Decimal(20, 6) @default(0)
+  sortOrder  Int          @default(0)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// BUDGET
+// ---------------------------------------------------------------------------
+model BudgetItem {
+  id            String       @id @default(cuid())
+  settingsId    String
+  settings      UserSettings @relation(fields: [settingsId], references: [id])
+  name          String
+  monthlyAmount Decimal      @db.Decimal(20, 6) @default(0)
+  category      String       @default("Expenses")
+  bankAccount   String?
+  sortOrder     Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// SIDE INCOME
+// ---------------------------------------------------------------------------
+model SideIncomeEntry {
+  id           String       @id @default(cuid())
+  settingsId   String
+  settings     UserSettings @relation(fields: [settingsId], references: [id])
+  date         DateTime
+  sideIncome   Decimal      @db.Decimal(20, 6) @default(0)
+  rentalIncome Decimal      @db.Decimal(20, 6) @default(0)
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// MONTHLY SNAPSHOT  (replaces History sheet — written by "Record Month")
+// ---------------------------------------------------------------------------
+model MonthlySnapshot {
+  id           String       @id @default(cuid())
+  settingsId   String
+  settings     UserSettings @relation(fields: [settingsId], references: [id])
+  snapshotDate DateTime
+
+  cashTotal        Decimal @db.Decimal(20, 6) @default(0)
+  etfTotal         Decimal @db.Decimal(20, 6) @default(0)
+  stockTotal       Decimal @db.Decimal(20, 6) @default(0)
+  managedFundTotal Decimal @db.Decimal(20, 6) @default(0)
+  cryptoTotal      Decimal @db.Decimal(20, 6) @default(0)
+  otherAssetsTotal Decimal @db.Decimal(20, 6) @default(0)
+  superTotal       Decimal @db.Decimal(20, 6) @default(0)
+  propertyValue    Decimal @db.Decimal(20, 6) @default(0)
+  propertyEquity   Decimal @db.Decimal(20, 6) @default(0)
+  mortgageBalance  Decimal @db.Decimal(20, 6) @default(0)
+  liabilitiesTotal Decimal @db.Decimal(20, 6) @default(0)
+
+  salary           Decimal? @db.Decimal(20, 6)
+  sideIncome       Decimal? @db.Decimal(20, 6)
+  investmentsAdded Decimal? @db.Decimal(20, 6)
+  monthlySavings   Decimal? @db.Decimal(20, 6)
+  savingsRate      Decimal? @db.Decimal(7, 6)
+  monthlySpend     Decimal? @db.Decimal(20, 6)
+
+  totalAssets Decimal @db.Decimal(20, 6) @default(0)
+  netWorth    Decimal @db.Decimal(20, 6) @default(0)
+
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@unique([settingsId, snapshotDate])
+}
