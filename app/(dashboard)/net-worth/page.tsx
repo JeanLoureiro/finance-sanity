@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell,
+  ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend,
 } from "recharts";
 import { format } from "date-fns";
 
@@ -26,7 +26,7 @@ type NWData = {
   stockHoldings: { id: string; ticker: string; unitsHeld: number; costBasis: number }[];
   cryptoHoldings: { id: string; ticker: string; unitsHeld: number; costBasis: number }[];
   allocationSettings: { etf: number; stock: number; crypto: number; cash: number; mf: number };
-  history: { date: string; netWorth: number; cashTotal: number; etfTotal: number; superTotal: number; propertyValue: number }[];
+  history: { date: string; netWorth: number; cashTotal: number; etfTotal: number; stockTotal: number; cryptoTotal: number; managedFundTotal: number; superTotal: number; propertyValue: number; liabilitiesTotal: number; savingsRate: number | null }[];
   properties: { id: string; name: string; currentValue: number; currentMortgageBalance: number; equity: number }[];
   superAccounts: { id: string; name: string; balance: number }[];
 };
@@ -204,28 +204,82 @@ export default function NetWorthPage() {
         )}
       </div>
 
-      {/* History chart */}
+      {/* History charts */}
       {data.history.length > 1 && (
-        <Card>
-          <CardHeader><CardTitle className="text-base">Net Worth History</CardTitle></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={data.history} margin={{ left: 10, right: 10 }}>
-                <defs>
-                  <linearGradient id="nwGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11 }} width={65} />
-                <Tooltip formatter={(v) => formatCurrency(Number(v ?? 0))} labelFormatter={(l) => formatDate(String(l))} />
-                <Area type="monotone" dataKey="netWorth" stroke="#2563eb" fill="url(#nwGrad)" name="Net Worth" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <>
+          {/* NW growth + stacked asset breakdown */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Net Worth History</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={data.history} margin={{ left: 10, right: 10 }}>
+                  <defs>
+                    {[
+                      ["etfGrad", "#2563eb"],
+                      ["stockGrad", "#16a34a"],
+                      ["cryptoGrad", "#d97706"],
+                      ["mfGrad", "#9333ea"],
+                      ["cashGrad", "#0891b2"],
+                      ["superGrad", "#64748b"],
+                      ["propGrad", "#ea580c"],
+                    ].map(([id, color]) => (
+                      <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={color} stopOpacity={0.5} />
+                        <stop offset="95%" stopColor={color} stopOpacity={0.1} />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 11 }} />
+                  <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11 }} width={65} />
+                  <Tooltip formatter={(v) => formatCurrency(Number(v ?? 0))} labelFormatter={(l) => formatDate(String(l))} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Area type="monotone" dataKey="etfTotal" stackId="a" stroke="#2563eb" fill="url(#etfGrad)" name="ETFs" strokeWidth={1.5} />
+                  <Area type="monotone" dataKey="stockTotal" stackId="a" stroke="#16a34a" fill="url(#stockGrad)" name="Stocks" strokeWidth={1.5} />
+                  <Area type="monotone" dataKey="cryptoTotal" stackId="a" stroke="#d97706" fill="url(#cryptoGrad)" name="Crypto" strokeWidth={1.5} />
+                  <Area type="monotone" dataKey="managedFundTotal" stackId="a" stroke="#9333ea" fill="url(#mfGrad)" name="Managed Funds" strokeWidth={1.5} />
+                  <Area type="monotone" dataKey="cashTotal" stackId="a" stroke="#0891b2" fill="url(#cashGrad)" name="Cash" strokeWidth={1.5} />
+                  <Area type="monotone" dataKey="superTotal" stackId="a" stroke="#64748b" fill="url(#superGrad)" name="Super" strokeWidth={1.5} />
+                  <Area type="monotone" dataKey="propertyValue" stackId="a" stroke="#ea580c" fill="url(#propGrad)" name="Property" strokeWidth={1.5} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Savings rate trend */}
+          {data.history.some((h) => h.savingsRate != null) && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Savings Rate Trend</CardTitle></CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={data.history} margin={{ left: 10, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 11 }} />
+                    <YAxis
+                      tickFormatter={(v) => `${(Number(v) * 100).toFixed(0)}%`}
+                      tick={{ fontSize: 11 }}
+                      width={45}
+                      domain={[0, "auto"]}
+                    />
+                    <Tooltip
+                      formatter={(v) => [`${(Number(v) * 100).toFixed(1)}%`, "Savings Rate"]}
+                      labelFormatter={(l) => formatDate(String(l))}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="savingsRate"
+                      stroke="#16a34a"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      name="Savings Rate"
+                      connectNulls
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       {/* Properties */}

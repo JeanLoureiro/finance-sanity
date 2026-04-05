@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { queryKeys } from "@/lib/queryKeys";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CurrencyAmount } from "@/components/ui/currency-amount";
@@ -11,8 +11,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trash2, PlusCircle } from "lucide-react";
 import { useState } from "react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { format } from "date-fns";
 
 type SuperAccount = { id: string; name: string; provider: string | null; balance: string | number };
+type HistorySnapshot = { date: string; superTotal: number };
+
+function formatDate(dateStr: string) {
+  try { return format(new Date(dateStr), "MMM yy"); } catch { return dateStr; }
+}
+
+const formatCurrency = (v: number) =>
+  new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", notation: "compact", maximumFractionDigits: 1 }).format(v);
 
 export default function SuperPage() {
   const qc = useQueryClient();
@@ -21,6 +31,12 @@ export default function SuperPage() {
   const { data: accounts = [], isLoading } = useQuery<SuperAccount[]>({
     queryKey: queryKeys.super(),
     queryFn: () => fetch("/api/super").then((r) => r.json()),
+  });
+
+  const { data: history = [] } = useQuery<HistorySnapshot[]>({
+    queryKey: queryKeys.history.list(),
+    queryFn: () => fetch("/api/history").then((r) => r.json()),
+    staleTime: 60 * 60 * 1000,
   });
 
   const del = useMutation({
@@ -109,6 +125,30 @@ export default function SuperPage() {
           ))}
           {accounts.length === 0 && <Card><CardContent className="py-10 text-center text-muted-foreground">No super accounts. Add one above.</CardContent></Card>}
         </div>
+      )}
+
+      {/* Super history chart */}
+      {history.length > 1 && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Super Balance History</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={history} margin={{ left: 10, right: 10 }}>
+                <defs>
+                  <linearGradient id="superHistGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#64748b" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#64748b" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 11 }} />
+                <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11 }} width={65} />
+                <Tooltip formatter={(v) => formatCurrency(Number(v ?? 0))} labelFormatter={(l) => formatDate(String(l))} />
+                <Area type="monotone" dataKey="superTotal" stroke="#64748b" fill="url(#superHistGrad)" name="Super" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

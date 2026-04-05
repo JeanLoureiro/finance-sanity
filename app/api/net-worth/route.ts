@@ -132,6 +132,7 @@ export async function GET() {
       cashTotal: Number(s.cashTotal),
       etfTotal: Number(s.etfTotal),
       stockTotal: Number(s.stockTotal),
+      managedFundTotal: Number(s.managedFundTotal),
       cryptoTotal: Number(s.cryptoTotal),
       superTotal: Number(s.superTotal),
       propertyValue: Number(s.propertyValue),

@@ -3,8 +3,7 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 // Settings
 // ---------------------------------------------------------------------------
-export const settingsSchema = z
-  .object({
+export const settingsBaseSchema = z.object({
     currency: z.string().length(3).default("AUD"),
     salary: z.coerce.number().min(0),
     taxBracket: z.coerce.number().min(0).max(1),
@@ -57,22 +56,23 @@ export const settingsSchema = z
     useCapitalGains: z.boolean().default(true),
     useFIRE: z.boolean().default(true),
     useSuper: z.boolean().default(true),
-  })
-  .refine(
-    (d) => {
-      const total =
-        d.etfAllocation +
-        d.stockAllocation +
-        d.cryptoAllocation +
-        d.cashAllocation +
-        d.mfAllocation;
-      return Math.abs(total - 1.0) < 0.01;
-    },
-    {
-      message: "Asset allocations must sum to 100%",
-      path: ["etfAllocation"],
-    }
-  );
+  });
+
+export const settingsSchema = settingsBaseSchema.refine(
+  (d) => {
+    const total =
+      d.etfAllocation +
+      d.stockAllocation +
+      d.cryptoAllocation +
+      d.cashAllocation +
+      d.mfAllocation;
+    return Math.abs(total - 1.0) < 0.01;
+  },
+  {
+    message: "Asset allocations must sum to 100%",
+    path: ["etfAllocation"],
+  }
+);
 
 export type SettingsInput = z.infer<typeof settingsSchema>;
 
