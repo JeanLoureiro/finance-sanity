@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { mortgageBalance, eomonth } from "@/lib/finance";
+import { computeFIFO, summariseCGTByFY, type Trade } from "@/lib/capitalGains";
+import { getFiscalYear } from "@/lib/australianFY";
 
 export async function POST() {
   try {
@@ -99,7 +101,39 @@ export async function POST() {
       (s, l) => s + Number(l.startingBalance),
       0
     );
-    const liabilitiesTotal = mortgageTotal + loansTotal;
+    // CGT liability for current FY
+    let cgtLiability = 0;
+    if (settings.cgtShowInLiabilities) {
+      const trades: Trade[] = [];
+      for (const h of settings.etfHoldings) {
+        for (const p of h.purchases) {
+          trades.push({ id: p.id, ticker: h.ticker, date: new Date(p.date), units: Number(p.units), price: Number(p.price), brokerage: Number(p.brokerage), direction: p.direction as "BUY" | "SELL" });
+        }
+      }
+      for (const h of settings.stockHoldings) {
+        for (const p of h.purchases) {
+          trades.push({ id: p.id, ticker: h.ticker, date: new Date(p.date), units: Number(p.units), price: Number(p.price), brokerage: Number(p.brokerage), direction: p.direction as "BUY" | "SELL" });
+        }
+      }
+      for (const h of settings.managedFundHoldings) {
+        for (const p of h.purchases) {
+          trades.push({ id: p.id, ticker: h.ticker, date: new Date(p.date), units: Number(p.units), price: Number(p.price), brokerage: Number(p.brokerage), direction: p.direction as "BUY" | "SELL" });
+        }
+      }
+      for (const h of settings.cryptoHoldings) {
+        for (const p of h.purchases) {
+          trades.push({ id: p.id, ticker: h.ticker, date: new Date(p.date), units: Number(p.units), price: Number(p.price), brokerage: Number(p.brokerage), direction: p.direction as "BUY" | "SELL" });
+        }
+      }
+      const shortRate = Number(settings.shortTermTaxRate);
+      const longRate = Number(settings.longTermTaxRate);
+      const allRows = computeFIFO(trades, shortRate, longRate);
+      const currentFY = getFiscalYear(snapshotDate);
+      const fySummary = summariseCGTByFY(allRows, shortRate, longRate).find((s) => s.fy === currentFY);
+      cgtLiability = fySummary?.estimatedTax ?? 0;
+    }
+
+    const liabilitiesTotal = mortgageTotal + loansTotal + cgtLiability;
 
     const totalAssets =
       cashTotal + etfCost + stockCost + mfCost + cryptoCost + otherTotal + superTotal + propertyValue;

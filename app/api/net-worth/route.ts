@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { mortgageBalance } from "@/lib/finance";
+import { computeFIFO, summariseCGTByFY, type Trade } from "@/lib/capitalGains";
+import { getFiscalYear } from "@/lib/australianFY";
 
 export async function GET() {
   try {
@@ -116,6 +118,38 @@ export async function GET() {
       0
     );
 
+    // CGT liability — estimated tax owed for current FY SELL events
+    let cgtLiability = 0;
+    if (settings.cgtShowInLiabilities) {
+      const trades: Trade[] = [];
+      for (const h of settings.etfHoldings) {
+        for (const p of h.purchases) {
+          trades.push({ id: p.id, ticker: h.ticker, date: new Date(p.date), units: Number(p.units), price: Number(p.price), brokerage: Number(p.brokerage), direction: p.direction as "BUY" | "SELL" });
+        }
+      }
+      for (const h of settings.stockHoldings) {
+        for (const p of h.purchases) {
+          trades.push({ id: p.id, ticker: h.ticker, date: new Date(p.date), units: Number(p.units), price: Number(p.price), brokerage: Number(p.brokerage), direction: p.direction as "BUY" | "SELL" });
+        }
+      }
+      for (const h of settings.managedFundHoldings) {
+        for (const p of h.purchases) {
+          trades.push({ id: p.id, ticker: h.ticker, date: new Date(p.date), units: Number(p.units), price: Number(p.price), brokerage: Number(p.brokerage), direction: p.direction as "BUY" | "SELL" });
+        }
+      }
+      for (const h of settings.cryptoHoldings) {
+        for (const p of h.purchases) {
+          trades.push({ id: p.id, ticker: h.ticker, date: new Date(p.date), units: Number(p.units), price: Number(p.price), brokerage: Number(p.brokerage), direction: p.direction as "BUY" | "SELL" });
+        }
+      }
+      const shortRate = Number(settings.shortTermTaxRate);
+      const longRate = Number(settings.longTermTaxRate);
+      const allRows = computeFIFO(trades, shortRate, longRate);
+      const currentFY = getFiscalYear(new Date());
+      const fySummary = summariseCGTByFY(allRows, shortRate, longRate).find((s) => s.fy === currentFY);
+      cgtLiability = fySummary?.estimatedTax ?? 0;
+    }
+
     // Asset allocation
     const allocationSettings = {
       etf: Number(settings.etfAllocation),
@@ -146,7 +180,8 @@ export async function GET() {
       propertyTotal,
       mortgageTotal,
       loansTotal,
-      liabilitiesTotal: mortgageTotal + loansTotal,
+      liabilitiesTotal: mortgageTotal + loansTotal + cgtLiability,
+      cgtLiability,
       etfHoldings: etfUnits,
       stockHoldings: stockUnits,
       cryptoHoldings: cryptoUnits,
