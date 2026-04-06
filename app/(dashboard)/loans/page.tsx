@@ -75,10 +75,10 @@ export default function LoansPage() {
                 <div className="flex-1"><label className="text-xs text-muted-foreground">Compounds per year</label><Input type="number" defaultValue={12} {...register("interestFrequency")} /></div>
               </div>
               <div className="flex gap-2">
-                <div className="flex-1"><label className="text-xs text-muted-foreground">Starting balance ($)</label><Input type="number" step="100" {...register("startingBalance")} /></div>
+                <div className="flex-1"><label className="text-xs text-muted-foreground">Starting balance ($)</label><Input type="number" {...register("startingBalance")} /></div>
                 <div className="flex-1"><label className="text-xs text-muted-foreground">Annual rate (e.g. 0.065)</label><Input type="number" step="0.001" {...register("annualRate")} /></div>
               </div>
-              <div><label className="text-xs text-muted-foreground">Regular payment per period ($)</label><Input type="number" step="10" {...register("regularPayment")} /></div>
+              <div><label className="text-xs text-muted-foreground">Regular payment per period ($)</label><Input type="number" {...register("regularPayment")} /></div>
               <Button type="submit" className="w-full" disabled={add.isPending}>Add Loan</Button>
             </form>
           </DialogContent>

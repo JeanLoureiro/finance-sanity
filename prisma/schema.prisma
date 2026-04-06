@@ -103,15 +103,17 @@ model UserSettings {
 // CASH
 // ---------------------------------------------------------------------------
 model BankAccount {
-  id         String       @id @default(cuid())
-  settingsId String
-  settings   UserSettings @relation(fields: [settingsId], references: [id])
-  name       String
-  currency   String       @default("AUD")
-  balance    Decimal      @db.Decimal(20, 6) @default(0)
-  sortOrder  Int          @default(0)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  id            String       @id @default(cuid())
+  settingsId    String
+  settings      UserSettings @relation(fields: [settingsId], references: [id])
+  name          String
+  currency      String       @default("AUD")
+  balance       Decimal      @db.Decimal(20, 6) @default(0)
+  bsb           String?
+  accountNumber String?
+  sortOrder     Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
 
 // ---------------------------------------------------------------------------
@@ -348,6 +350,7 @@ model BudgetItem {
   settings      UserSettings @relation(fields: [settingsId], references: [id])
   name          String
   monthlyAmount Decimal      @db.Decimal(20, 6) @default(0)
+  frequency     String       @default("Monthly")
   budgetType    String       @default("")
   category      String       @default("")
   bankAccount   String?

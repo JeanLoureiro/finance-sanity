@@ -13,7 +13,11 @@ export async function PATCH(
     if (!parsed.success) {
       return Response.json({ error: parsed.error.flatten() }, { status: 400 });
     }
-    const item = await prisma.budgetItem.update({ where: { id }, data: parsed.data });
+    // Only update fields that were explicitly sent — don't let Zod defaults overwrite existing values
+    const data = Object.fromEntries(
+      Object.entries(parsed.data).filter(([k]) => k in body)
+    );
+    const item = await prisma.budgetItem.update({ where: { id }, data });
     return Response.json({ ...item, monthlyAmount: Number(item.monthlyAmount) });
   } catch {
     return Response.json({ error: "Failed to update budget item" }, { status: 500 });

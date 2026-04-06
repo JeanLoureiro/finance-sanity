@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
+import { BUDGET_FREQUENCIES } from "@/lib/schemas";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,18 +18,43 @@ type BudgetItem = {
   id: string;
   name: string;
   monthlyAmount: number;
+  frequency: string;
   budgetType: string;
   category: string;
+  bankAccount: string | null;
 };
 type LabelRow = { id: string; name: string; sortOrder: number };
+type BankAccount = { id: string; name: string; bsb: string | null; accountNumber: string | null };
+
+const FREQ_LIST = [...BUDGET_FREQUENCIES];
+
+function toMonthly(amount: number, freq: string): number {
+  switch (freq) {
+    case "Weekly":      return amount * 52 / 12;
+    case "Fortnightly": return amount * 26 / 12;
+    case "Quarterly":   return amount / 3;
+    case "Annually":    return amount / 12;
+    default:            return amount; // Monthly
+  }
+}
+
+function fromMonthly(monthly: number, freq: string): number {
+  switch (freq) {
+    case "Weekly":      return monthly * 12 / 52;
+    case "Fortnightly": return monthly * 12 / 26;
+    case "Quarterly":   return monthly * 3;
+    case "Annually":    return monthly * 12;
+    default:            return monthly; // Monthly
+  }
+}
 
 function computeMonthlyIncome(netIncome: number, frequency: string): number {
   switch (frequency) {
-    case "Weekly": return netIncome * 52 / 12;
-    case "2-weeks": return netIncome * 26 / 12;
-    case "4-weeks": return netIncome * 13 / 12;
-    case "Twice Monthly": return netIncome * 2;
-    default: return netIncome;
+    case "Weekly":       return netIncome * 52 / 12;
+    case "2-weeks":      return netIncome * 26 / 12;
+    case "4-weeks":      return netIncome * 13 / 12;
+    case "Twice Monthly":return netIncome * 2;
+    default:             return netIncome;
   }
 }
 
@@ -75,6 +101,7 @@ function ItemRow({
   monthlyIncome,
   typeNames,
   categoryNames,
+  bankAccounts,
   showType,
   updateMutation,
   delMutation,
@@ -83,11 +110,14 @@ function ItemRow({
   monthlyIncome: number;
   typeNames: string[];
   categoryNames: string[];
+  bankAccounts: BankAccount[];
   showType: boolean;
   updateMutation: { mutate: (d: { id: string } & Partial<BudgetItemInput>) => void };
   delMutation: { mutate: (id: string) => void };
 }) {
   const amountRef = useRef<HTMLInputElement>(null);
+  const displayAmount = fromMonthly(item.monthlyAmount, item.frequency);
+  const linkedAccount = bankAccounts.find((a) => a.name === item.bankAccount);
 
   return (
     <tr className="border-b last:border-0 hover:bg-muted/20 group">
@@ -108,14 +138,37 @@ function ItemRow({
           onSave={(v) => updateMutation.mutate({ id: item.id, category: v })}
         />
       </td>
+      <td className="px-4 py-2">
+        <SelectCell
+          value={item.frequency || "Monthly"}
+          options={FREQ_LIST}
+          onSave={(v) => {
+            // When frequency changes, re-express the current display amount in the new frequency
+            const currentDisplay = fromMonthly(item.monthlyAmount, item.frequency);
+            updateMutation.mutate({
+              id: item.id,
+              frequency: v,
+              monthlyAmount: toMonthly(currentDisplay, v),
+            });
+          }}
+        />
+      </td>
       <td className="px-4 py-2 text-right">
+        {/* Amount shown in the item's own frequency */}
         <input
+          key={item.frequency}
           ref={amountRef}
           className="text-right w-28 bg-transparent border-b border-transparent group-hover:border-border outline-none text-sm"
           type="number"
-          defaultValue={item.monthlyAmount}
-          onBlur={(e) => updateMutation.mutate({ id: item.id, monthlyAmount: Number(e.target.value) })}
+          defaultValue={Number(displayAmount.toFixed(2))}
+          onBlur={(e) => {
+            const monthly = toMonthly(Number(e.target.value), item.frequency);
+            updateMutation.mutate({ id: item.id, monthlyAmount: monthly });
+          }}
         />
+      </td>
+      <td className="px-4 py-2 text-right text-muted-foreground text-sm">
+        <CurrencyAmount value={item.monthlyAmount} />
       </td>
       <td className="px-4 py-2 text-right text-muted-foreground text-sm">
         {monthlyIncome > 0 ? `${(item.monthlyAmount / monthlyIncome * 100).toFixed(1)}%` : "—"}
@@ -125,6 +178,20 @@ function ItemRow({
       </td>
       <td className="px-4 py-2 text-right text-muted-foreground text-sm">
         <CurrencyAmount value={item.monthlyAmount * 12} />
+      </td>
+      <td className="px-4 py-2 min-w-[140px]">
+        <SelectCell
+          value={item.bankAccount ?? ""}
+          options={bankAccounts.map((a) => a.name)}
+          onSave={(v) => updateMutation.mutate({ id: item.id, bankAccount: v || null })}
+        />
+        {linkedAccount && (linkedAccount.bsb || linkedAccount.accountNumber) && (
+          <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+            {linkedAccount.bsb && <span>BSB {linkedAccount.bsb}</span>}
+            {linkedAccount.bsb && linkedAccount.accountNumber && <span> · </span>}
+            {linkedAccount.accountNumber && <span>ACC {linkedAccount.accountNumber}</span>}
+          </p>
+        )}
       </td>
       <td className="px-2">
         <Button size="sm" variant="ghost" onClick={() => delMutation.mutate(item.id)}>
@@ -142,10 +209,13 @@ function TableHead({ showType }: { showType: boolean }) {
         <th className="text-left px-4 py-2">Name</th>
         {showType && <th className="text-left px-4 py-2">Type</th>}
         <th className="text-left px-4 py-2">Category</th>
+        <th className="text-left px-4 py-2">Frequency</th>
+        <th className="text-right px-4 py-2">Amount</th>
         <th className="text-right px-4 py-2">Monthly</th>
         <th className="text-right px-4 py-2">% of Income</th>
         <th className="text-right px-4 py-2">Weekly</th>
         <th className="text-right px-4 py-2">Annual</th>
+        <th className="text-left px-4 py-2">Bank Account</th>
         <th className="w-10" />
       </tr>
     </thead>
@@ -156,24 +226,23 @@ function TotalRow({
   total,
   monthlyIncome,
   showType,
-  colSpanExtra = 0,
 }: {
   total: number;
   monthlyIncome: number;
   showType: boolean;
-  colSpanExtra?: number;
 }) {
-  const baseCols = showType ? 3 : 2;
+  // Name + [Type] + Category + Frequency + Amount = 4 or 5 cols before Monthly
+  const spanCols = showType ? 5 : 4;
   return (
     <tr className="bg-muted/50 font-semibold text-sm">
-      <td className="px-4 py-2" colSpan={baseCols + colSpanExtra}>Total</td>
+      <td className="px-4 py-2" colSpan={spanCols}>Total</td>
       <td className="px-4 py-2 text-right"><CurrencyAmount value={total} /></td>
       <td className="px-4 py-2 text-right">
         {monthlyIncome > 0 ? `${(total / monthlyIncome * 100).toFixed(1)}%` : "—"}
       </td>
       <td className="px-4 py-2 text-right"><CurrencyAmount value={total / 4.33} /></td>
       <td className="px-4 py-2 text-right"><CurrencyAmount value={total * 12} /></td>
-      <td />
+      <td colSpan={2} />
     </tr>
   );
 }
@@ -250,6 +319,10 @@ export default function BudgetPage() {
     queryKey: queryKeys.budget.categories(),
     queryFn: () => fetch("/api/budget/categories").then((r) => r.json()),
   });
+  const { data: bankAccounts = [] } = useQuery<BankAccount[]>({
+    queryKey: queryKeys.cash.accounts(),
+    queryFn: () => fetch("/api/cash").then((r) => r.json()),
+  });
   const { data: settings } = useQuery({
     queryKey: queryKeys.settings(),
     queryFn: () => fetch("/api/settings").then((r) => r.json()),
@@ -271,15 +344,18 @@ export default function BudgetPage() {
   // Add item form state
   const [addName, setAddName] = useState("");
   const [addAmount, setAddAmount] = useState("");
+  const [addFrequency, setAddFrequency] = useState("Monthly");
   const [addType, setAddType] = useState("");
   const [addCategory, setAddCategory] = useState("");
+  const [addBankAccount, setAddBankAccount] = useState("");
 
   const addMutation = useMutation({
     mutationFn: (data: BudgetItemInput) =>
       fetch("/api/budget", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.budget.items() });
-      setAddName(""); setAddAmount(""); setAddType(""); setAddCategory("");
+      setAddName(""); setAddAmount(""); setAddFrequency("Monthly");
+      setAddType(""); setAddCategory(""); setAddBankAccount("");
     },
   });
 
@@ -336,7 +412,6 @@ export default function BudgetPage() {
   const groupedItems = typeNames
     .map((type) => ({ type, items: items.filter((i) => i.budgetType === type) }))
     .filter((g) => g.items.length > 0);
-  // Items with no type set
   const untypedItems = items.filter((i) => !i.budgetType);
 
   // For flat view
@@ -353,6 +428,7 @@ export default function BudgetPage() {
     monthlyIncome,
     typeNames,
     categoryNames,
+    bankAccounts,
     updateMutation,
     delMutation,
   };
@@ -421,7 +497,7 @@ export default function BudgetPage() {
         </Tabs>
       </div>
 
-      {/* Items */}
+      {/* Items table */}
       {isLoading ? (
         <Card><CardContent className="p-4 space-y-2">
           {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
@@ -429,7 +505,7 @@ export default function BudgetPage() {
       ) : viewMode === "grouped" ? (
         <Card>
           <CardHeader><CardTitle className="text-base">Expense Items</CardTitle></CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             <table className="w-full text-sm">
               <TableHead showType={false} />
               <tbody>
@@ -438,7 +514,7 @@ export default function BudgetPage() {
                   return (
                     <>
                       <tr key={`group-${type}`} className="bg-muted/40 border-b border-t">
-                        <td colSpan={6} className="px-4 py-1.5">
+                        <td colSpan={8} className="px-4 py-1.5">
                           <div className="flex items-center gap-3">
                             <span className="font-semibold text-xs uppercase tracking-wide">{type}</span>
                             <Badge variant="outline" className="text-xs h-5">{groupItems.length} item{groupItems.length !== 1 ? "s" : ""}</Badge>
@@ -448,7 +524,7 @@ export default function BudgetPage() {
                             </span>
                           </div>
                         </td>
-                        <td colSpan={2} />
+                        <td colSpan={3} />
                       </tr>
                       {groupItems.map((item) => (
                         <ItemRow key={item.id} item={item} showType={false} {...rowProps} />
@@ -459,7 +535,7 @@ export default function BudgetPage() {
                 {untypedItems.length > 0 && (
                   <>
                     <tr className="bg-muted/40 border-b border-t">
-                      <td colSpan={8} className="px-4 py-1.5">
+                      <td colSpan={11} className="px-4 py-1.5">
                         <span className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Uncategorised</span>
                       </td>
                     </tr>
@@ -472,7 +548,7 @@ export default function BudgetPage() {
                   <TotalRow total={totalExpenses} monthlyIncome={monthlyIncome} showType={false} />
                 )}
                 {items.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No budget items yet</td></tr>
+                  <tr><td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">No budget items yet</td></tr>
                 )}
               </tbody>
             </table>
@@ -498,7 +574,7 @@ export default function BudgetPage() {
               ))}
             </div>
           </CardHeader>
-          <CardContent className="p-0 mt-3">
+          <CardContent className="p-0 mt-3 overflow-x-auto">
             <table className="w-full text-sm">
               <TableHead showType={true} />
               <tbody>
@@ -513,7 +589,7 @@ export default function BudgetPage() {
                   />
                 )}
                 {filteredItems.length === 0 && (
-                  <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No items</td></tr>
+                  <tr><td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">No items</td></tr>
                 )}
               </tbody>
             </table>
@@ -532,14 +608,23 @@ export default function BudgetPage() {
               value={addName}
               onChange={(e) => setAddName(e.target.value)}
             />
-            <Input
-              type="number"
-              step="0.01"
-              className="w-28"
-              placeholder="$/month"
-              value={addAmount}
-              onChange={(e) => setAddAmount(e.target.value)}
-            />
+            <div className="flex gap-1 items-center">
+              <Input
+                type="number"
+                step="0.01"
+                className="w-28"
+                placeholder="Amount"
+                value={addAmount}
+                onChange={(e) => setAddAmount(e.target.value)}
+              />
+              <select
+                className="h-9 text-sm border rounded-md px-2 bg-background"
+                value={addFrequency}
+                onChange={(e) => setAddFrequency(e.target.value)}
+              >
+                {FREQ_LIST.map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
             <select
               className="h-9 text-sm border rounded-md px-2 bg-background"
               value={addType}
@@ -556,14 +641,26 @@ export default function BudgetPage() {
               <option value="">Category…</option>
               {categoryNames.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
+            <select
+              className="h-9 text-sm border rounded-md px-2 bg-background"
+              value={addBankAccount}
+              onChange={(e) => setAddBankAccount(e.target.value)}
+            >
+              <option value="">Bank account…</option>
+              {bankAccounts.map((a) => (
+                <option key={a.id} value={a.name}>{a.name}{a.bsb ? ` (${a.bsb})` : ""}</option>
+              ))}
+            </select>
             <Button
               disabled={!addName.trim() || addMutation.isPending}
               onClick={() => {
                 addMutation.mutate({
                   name: addName.trim(),
-                  monthlyAmount: parseFloat(addAmount) || 0,
+                  monthlyAmount: toMonthly(parseFloat(addAmount) || 0, addFrequency),
+                  frequency: addFrequency,
                   budgetType: addType,
                   category: addCategory,
+                  bankAccount: addBankAccount || null,
                 });
               }}
             >
