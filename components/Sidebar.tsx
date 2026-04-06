@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "./ThemeToggle";
 import {
   LayoutDashboard,
   Banknote,
@@ -54,15 +55,18 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           CompiledSanity<br />
           <span className="text-muted-foreground font-normal">Finance</span>
         </h1>
-        {onClose && (
-          <button
-            aria-label="Close navigation"
-            className="md:hidden p-1 rounded-md hover:bg-muted transition-colors"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          {onClose && (
+            <button
+              aria-label="Close navigation"
+              className="md:hidden p-1 rounded-md hover:bg-muted transition-colors"
+              onClick={onClose}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
       <nav className="flex-1 overflow-y-auto py-2">
         {navItems.map(({ href, label, icon: Icon }) => {

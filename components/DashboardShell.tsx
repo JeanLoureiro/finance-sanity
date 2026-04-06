@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Sidebar } from "./Sidebar";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,7 +41,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="font-semibold text-sm">CompiledSanity Finance</span>
+          <span className="font-semibold text-sm flex-1">CompiledSanity Finance</span>
+          <ThemeToggle />
         </div>
 
         <div className="p-4 md:p-6 max-w-6xl mx-auto w-full flex-1">{children}</div>
