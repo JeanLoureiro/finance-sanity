@@ -93,6 +93,8 @@ model UserSettings {
   dividends           Dividend[]
   superAccounts       SuperAccount[]
   budgetItems         BudgetItem[]
+  budgetTypes         BudgetType[]
+  budgetCategories    BudgetCategory[]
   sideIncomeEntries   SideIncomeEntry[]
   monthlySnapshots    MonthlySnapshot[]
 }
@@ -101,15 +103,17 @@ model UserSettings {
 // CASH
 // ---------------------------------------------------------------------------
 model BankAccount {
-  id         String       @id @default(cuid())
-  settingsId String
-  settings   UserSettings @relation(fields: [settingsId], references: [id])
-  name       String
-  currency   String       @default("AUD")
-  balance    Decimal      @db.Decimal(20, 6) @default(0)
-  sortOrder  Int          @default(0)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  id            String       @id @default(cuid())
+  settingsId    String
+  settings      UserSettings @relation(fields: [settingsId], references: [id])
+  name          String
+  currency      String       @default("AUD")
+  balance       Decimal      @db.Decimal(20, 6) @default(0)
+  bsb           String?
+  accountNumber String?
+  sortOrder     Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
 
 // ---------------------------------------------------------------------------
@@ -290,17 +294,28 @@ model Property {
 // LOANS / LIABILITIES
 // ---------------------------------------------------------------------------
 model Loan {
-  id                String       @id @default(cuid())
+  id                String             @id @default(cuid())
   settingsId        String
-  settings          UserSettings @relation(fields: [settingsId], references: [id])
+  settings          UserSettings       @relation(fields: [settingsId], references: [id])
   name              String
   startDate         DateTime
-  interestFrequency Int          @default(12)
-  annualRate        Decimal      @db.Decimal(7, 6)
-  regularPayment    Decimal      @db.Decimal(20, 6)
-  startingBalance   Decimal      @db.Decimal(20, 6)
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  interestFrequency Int                @default(12)
+  annualRate        Decimal            @db.Decimal(7, 6)
+  regularPayment    Decimal            @db.Decimal(20, 6)
+  startingBalance   Decimal            @db.Decimal(20, 6)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  extraPayments     LoanExtraPayment[]
+}
+
+model LoanExtraPayment {
+  id        String   @id @default(cuid())
+  loanId    String
+  loan      Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  date      DateTime
+  amount    Decimal  @db.Decimal(20, 6)
+  note      String?
+  createdAt DateTime @default(now())
 }
 
 // ---------------------------------------------------------------------------
@@ -346,11 +361,31 @@ model BudgetItem {
   settings      UserSettings @relation(fields: [settingsId], references: [id])
   name          String
   monthlyAmount Decimal      @db.Decimal(20, 6) @default(0)
-  category      String       @default("Expenses")
+  frequency     String       @default("Monthly")
+  budgetType    String       @default("")
+  category      String       @default("")
   bankAccount   String?
   sortOrder     Int          @default(0)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+}
+
+model BudgetType {
+  id         String       @id @default(cuid())
+  settingsId String
+  settings   UserSettings @relation(fields: [settingsId], references: [id])
+  name       String
+  sortOrder  Int          @default(0)
+  createdAt  DateTime     @default(now())
+}
+
+model BudgetCategory {
+  id         String       @id @default(cuid())
+  settingsId String
+  settings   UserSettings @relation(fields: [settingsId], references: [id])
+  name       String
+  sortOrder  Int          @default(0)
+  createdAt  DateTime     @default(now())
 }
 
 // ---------------------------------------------------------------------------

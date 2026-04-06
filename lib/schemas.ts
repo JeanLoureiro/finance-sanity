@@ -83,6 +83,8 @@ export const bankAccountSchema = z.object({
   name: z.string().min(1, "Account name is required"),
   currency: z.string().length(3).default("AUD"),
   balance: z.coerce.number().min(0),
+  bsb: z.string().optional().nullable(),
+  accountNumber: z.string().optional().nullable(),
   sortOrder: z.coerce.number().int().optional(),
 });
 
@@ -174,15 +176,32 @@ export type DividendInput = z.infer<typeof dividendSchema>;
 // ---------------------------------------------------------------------------
 // Budget Item
 // ---------------------------------------------------------------------------
+export const BUDGET_FREQUENCIES = ["Weekly", "Fortnightly", "Monthly", "Quarterly", "Annually"] as const;
+export type BudgetFrequency = typeof BUDGET_FREQUENCIES[number];
+
 export const budgetItemSchema = z.object({
   name: z.string().min(1, "Name is required"),
   monthlyAmount: z.coerce.number().min(0),
-  category: z.string().default("Expenses"),
+  frequency: z.string().default("Monthly"),
+  budgetType: z.string().default(""),
+  category: z.string().default(""),
   bankAccount: z.string().optional().nullable(),
   sortOrder: z.coerce.number().int().optional(),
 });
 
 export type BudgetItemInput = z.infer<typeof budgetItemSchema>;
+
+export const budgetTypeSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  sortOrder: z.coerce.number().int().optional(),
+});
+export type BudgetTypeInput = z.infer<typeof budgetTypeSchema>;
+
+export const budgetCategorySchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  sortOrder: z.coerce.number().int().optional(),
+});
+export type BudgetCategoryInput = z.infer<typeof budgetCategorySchema>;
 
 // ---------------------------------------------------------------------------
 // Side Income

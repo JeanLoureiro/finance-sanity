@@ -1,9 +1,6 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { bankAccountSchema, type BankAccountInput } from "@/lib/schemas";
 import { queryKeys } from "@/lib/queryKeys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,13 +8,28 @@ import { Button } from "@/components/ui/button";
 import { CurrencyAmount } from "@/components/ui/currency-amount";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trash2, PlusCircle } from "lucide-react";
+import { Trash2, PlusCircle, Pencil, Check, X } from "lucide-react";
 import { useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 
-type BankAccount = { id: string; name: string; currency: string; balance: number };
+type BankAccount = {
+  id: string;
+  name: string;
+  currency: string;
+  balance: number;
+  bsb: string | null;
+  accountNumber: string | null;
+};
 type HistorySnapshot = { date: string; cashTotal: number };
+
+type EditState = {
+  name: string;
+  currency: string;
+  balance: string;
+  bsb: string;
+  accountNumber: string;
+};
 
 function formatDate(dateStr: string) {
   try { return format(new Date(dateStr), "MMM yy"); } catch { return dateStr; }
@@ -40,8 +52,15 @@ function StatCard({ label, value, sub }: { label: string; value: React.ReactNode
 
 export default function CashPage() {
   const qc = useQueryClient();
-  const [editing, setEditing] = useState<string | null>(null);
-  const [editBalance, setEditBalance] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editState, setEditState] = useState<EditState>({ name: "", currency: "AUD", balance: "", bsb: "", accountNumber: "" });
+
+  // Add form state
+  const [addName, setAddName] = useState("");
+  const [addCurrency, setAddCurrency] = useState("AUD");
+  const [addBalance, setAddBalance] = useState("");
+  const [addBsb, setAddBsb] = useState("");
+  const [addAccountNumber, setAddAccountNumber] = useState("");
 
   const { data: accounts = [], isLoading } = useQuery<BankAccount[]>({
     queryKey: queryKeys.cash.accounts(),
@@ -59,20 +78,19 @@ export default function CashPage() {
     staleTime: 60 * 60 * 1000,
   });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: { name: "", currency: "AUD", balance: 0 },
-  });
-
   const addMutation = useMutation({
-    mutationFn: (data: BankAccountInput) =>
+    mutationFn: (data: object) =>
       fetch("/api/cash", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.cash.accounts() }); reset(); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.cash.accounts() });
+      setAddName(""); setAddCurrency("AUD"); setAddBalance(""); setAddBsb(""); setAddAccountNumber("");
+    },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, balance }: { id: string; balance: number }) =>
-      fetch(`/api/cash/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ balance }) }).then((r) => r.json()),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.cash.accounts() }); setEditing(null); },
+    mutationFn: ({ id, ...data }: { id: string; name?: string; currency?: string; balance?: number; bsb?: string | null; accountNumber?: string | null }) =>
+      fetch(`/api/cash/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.cash.accounts() }); setEditingId(null); },
   });
 
   const deleteMutation = useMutation({
@@ -80,12 +98,31 @@ export default function CashPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.cash.accounts() }),
   });
 
+  function startEdit(acc: BankAccount) {
+    setEditingId(acc.id);
+    setEditState({
+      name: acc.name,
+      currency: acc.currency,
+      balance: String(acc.balance),
+      bsb: acc.bsb ?? "",
+      accountNumber: acc.accountNumber ?? "",
+    });
+  }
+
+  function saveEdit(id: string) {
+    updateMutation.mutate({
+      id,
+      name: editState.name,
+      currency: editState.currency,
+      balance: parseFloat(editState.balance) || 0,
+      bsb: editState.bsb || null,
+      accountNumber: editState.accountNumber || null,
+    });
+  }
+
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
   const target = Number(settings?.cashSavingsTarget ?? 40000);
   const pctOfTarget = target > 0 ? Math.min(totalBalance / target, 1) : 0;
-  const monthsToTarget = settings?.bankInterestRate
-    ? Math.ceil((target - totalBalance) / (Number(settings.netIncome) * 0.2))
-    : null;
 
   return (
     <div className="space-y-6">
@@ -128,53 +165,98 @@ export default function CashPage() {
               <thead className="border-b bg-muted/50">
                 <tr>
                   <th className="text-left px-4 py-2 font-medium">Account</th>
+                  <th className="text-left px-4 py-2 font-medium">BSB</th>
+                  <th className="text-left px-4 py-2 font-medium">Account No.</th>
                   <th className="text-left px-4 py-2 font-medium">Currency</th>
                   <th className="text-right px-4 py-2 font-medium">Balance</th>
-                  <th className="w-20" />
+                  <th className="w-24" />
                 </tr>
               </thead>
               <tbody>
                 {accounts.map((acc) => (
-                  <tr key={acc.id} className="border-b last:border-0 hover:bg-muted/30">
-                    <td className="px-4 py-2">{acc.name}</td>
-                    <td className="px-4 py-2"><Badge variant="outline">{acc.currency}</Badge></td>
-                    <td className="px-4 py-2 text-right">
-                      {editing === acc.id ? (
-                        <div className="flex gap-2 justify-end">
-                          <Input
-                            type="number"
-                            className="w-32 h-7 text-right"
-                            value={editBalance}
-                            onChange={(e) => setEditBalance(e.target.value)}
-                            autoFocus
-                          />
-                          <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
-                          <Button size="sm" onClick={() => updateMutation.mutate({ id: acc.id, balance: Number(editBalance) })}>Save</Button>
+                  <>
+                    <tr key={acc.id} className="border-b hover:bg-muted/30">
+                      <td className="px-4 py-2 font-medium">{acc.name}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{acc.bsb || <span className="italic text-xs">—</span>}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{acc.accountNumber || <span className="italic text-xs">—</span>}</td>
+                      <td className="px-4 py-2"><Badge variant="outline">{acc.currency}</Badge></td>
+                      <td className="px-4 py-2 text-right font-medium"><CurrencyAmount value={acc.balance} /></td>
+                      <td className="px-4 py-2 text-right">
+                        <div className="flex gap-1 justify-end">
+                          <Button size="sm" variant="ghost" onClick={() => startEdit(acc)}>
+                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => deleteMutation.mutate(acc.id)}>
+                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
                         </div>
-                      ) : (
-                        <button
-                          className="font-medium hover:underline cursor-pointer"
-                          onClick={() => { setEditing(acc.id); setEditBalance(String(acc.balance)); }}
-                        >
-                          <CurrencyAmount value={acc.balance} />
-                        </button>
-                      )}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      <Button size="sm" variant="ghost" onClick={() => deleteMutation.mutate(acc.id)}>
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                    {editingId === acc.id && (
+                      <tr key={`${acc.id}-edit`} className="border-b bg-muted/20">
+                        <td colSpan={6} className="px-4 py-3">
+                          <div className="flex flex-wrap gap-2 items-end">
+                            <div className="flex flex-col gap-1">
+                              <label className="text-xs text-muted-foreground">Name</label>
+                              <Input
+                                className="h-8 w-40"
+                                value={editState.name}
+                                onChange={(e) => setEditState((s) => ({ ...s, name: e.target.value }))}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-xs text-muted-foreground">BSB</label>
+                              <Input
+                                className="h-8 w-28"
+                                placeholder="e.g. 063000"
+                                value={editState.bsb}
+                                onChange={(e) => setEditState((s) => ({ ...s, bsb: e.target.value }))}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-xs text-muted-foreground">Account Number</label>
+                              <Input
+                                className="h-8 w-36"
+                                placeholder="e.g. 12345678"
+                                value={editState.accountNumber}
+                                onChange={(e) => setEditState((s) => ({ ...s, accountNumber: e.target.value }))}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-xs text-muted-foreground">Currency</label>
+                              <Input
+                                className="h-8 w-20"
+                                value={editState.currency}
+                                onChange={(e) => setEditState((s) => ({ ...s, currency: e.target.value }))}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-xs text-muted-foreground">Balance ($)</label>
+                              <Input
+                                type="number"
+                                className="h-8 w-32 text-right"
+                                value={editState.balance}
+                                onChange={(e) => setEditState((s) => ({ ...s, balance: e.target.value }))}
+                              />
+                            </div>
+                            <Button size="sm" onClick={() => saveEdit(acc.id)} disabled={updateMutation.isPending}>
+                              <Check className="h-3.5 w-3.5 mr-1" /> Save
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>
+                              <X className="h-3.5 w-3.5 mr-1" /> Cancel
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
                 {accounts.length === 0 && (
-                  <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">No accounts yet</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">No accounts yet</td></tr>
                 )}
-                {/* Total row */}
                 {accounts.length > 0 && (
                   <tr className="bg-muted/50 font-semibold">
-                    <td className="px-4 py-2">Total</td>
-                    <td />
+                    <td className="px-4 py-2" colSpan={4}>Total</td>
                     <td className="px-4 py-2 text-right"><CurrencyAmount value={totalBalance} /></td>
                     <td />
                   </tr>
@@ -213,17 +295,65 @@ export default function CashPage() {
       <Card>
         <CardHeader><CardTitle className="text-base flex items-center gap-2"><PlusCircle className="h-4 w-4" /> Add Account</CardTitle></CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit((d) => addMutation.mutate(d))} className="flex gap-3 flex-wrap">
-            <div className="flex-1 min-w-40">
-              <Input placeholder="Account name" {...register("name")} />
-              {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
+          <div className="flex flex-wrap gap-2 items-end">
+            <div className="flex flex-col gap-1 flex-1 min-w-36">
+              <label className="text-xs text-muted-foreground">Account name</label>
+              <Input
+                placeholder="e.g. CBA Everyday"
+                value={addName}
+                onChange={(e) => setAddName(e.target.value)}
+              />
             </div>
-            <Input className="w-20" placeholder="AUD" defaultValue="AUD" {...register("currency")} />
-            <Input type="number" step="0.01" className="w-36" placeholder="Balance" {...register("balance")} />
-            <Button type="submit" disabled={addMutation.isPending}>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">BSB</label>
+              <Input
+                className="w-28"
+                placeholder="e.g. 063000"
+                value={addBsb}
+                onChange={(e) => setAddBsb(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">Account Number</label>
+              <Input
+                className="w-36"
+                placeholder="e.g. 12345678"
+                value={addAccountNumber}
+                onChange={(e) => setAddAccountNumber(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">Currency</label>
+              <Input
+                className="w-20"
+                placeholder="AUD"
+                value={addCurrency}
+                onChange={(e) => setAddCurrency(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">Balance ($)</label>
+              <Input
+                type="number"
+                className="w-36 text-right"
+                placeholder="0.00"
+                value={addBalance}
+                onChange={(e) => setAddBalance(e.target.value)}
+              />
+            </div>
+            <Button
+              disabled={!addName.trim() || addMutation.isPending}
+              onClick={() => addMutation.mutate({
+                name: addName.trim(),
+                currency: addCurrency || "AUD",
+                balance: parseFloat(addBalance) || 0,
+                bsb: addBsb || null,
+                accountNumber: addAccountNumber || null,
+              })}
+            >
               {addMutation.isPending ? "Adding…" : "Add"}
             </Button>
-          </form>
+          </div>
         </CardContent>
       </Card>
     </div>

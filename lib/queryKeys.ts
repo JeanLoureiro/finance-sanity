@@ -38,9 +38,14 @@ export const queryKeys = {
 
   loans: {
     all: () => ["loans"] as const,
+    payments: (id: string) => ["loans", id, "payments"] as const,
   },
 
-  budget: () => ["budget"] as const,
+  budget: {
+    items: () => ["budget", "items"] as const,
+    types: () => ["budget", "types"] as const,
+    categories: () => ["budget", "categories"] as const,
+  },
 
   sideIncome: {
     all: () => ["side-income"] as const,

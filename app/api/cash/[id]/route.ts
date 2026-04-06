@@ -13,9 +13,12 @@ export async function PATCH(
     if (!parsed.success) {
       return Response.json({ error: parsed.error.flatten() }, { status: 400 });
     }
+    const data = Object.fromEntries(
+      Object.entries(parsed.data).filter(([k]) => k in body)
+    );
     const account = await prisma.bankAccount.update({
       where: { id },
-      data: parsed.data,
+      data,
     });
     return Response.json(account);
   } catch {
