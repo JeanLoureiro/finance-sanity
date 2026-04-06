@@ -294,17 +294,28 @@ model Property {
 // LOANS / LIABILITIES
 // ---------------------------------------------------------------------------
 model Loan {
-  id                String       @id @default(cuid())
+  id                String             @id @default(cuid())
   settingsId        String
-  settings          UserSettings @relation(fields: [settingsId], references: [id])
+  settings          UserSettings       @relation(fields: [settingsId], references: [id])
   name              String
   startDate         DateTime
-  interestFrequency Int          @default(12)
-  annualRate        Decimal      @db.Decimal(7, 6)
-  regularPayment    Decimal      @db.Decimal(20, 6)
-  startingBalance   Decimal      @db.Decimal(20, 6)
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  interestFrequency Int                @default(12)
+  annualRate        Decimal            @db.Decimal(7, 6)
+  regularPayment    Decimal            @db.Decimal(20, 6)
+  startingBalance   Decimal            @db.Decimal(20, 6)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  extraPayments     LoanExtraPayment[]
+}
+
+model LoanExtraPayment {
+  id        String   @id @default(cuid())
+  loanId    String
+  loan      Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  date      DateTime
+  amount    Decimal  @db.Decimal(20, 6)
+  note      String?
+  createdAt DateTime @default(now())
 }
 
 // ---------------------------------------------------------------------------

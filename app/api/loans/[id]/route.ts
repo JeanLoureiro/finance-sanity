@@ -13,7 +13,9 @@ export async function PATCH(
     if (!parsed.success) {
       return Response.json({ error: parsed.error.flatten() }, { status: 400 });
     }
-    const { startDate, ...rest } = parsed.data;
+    const { startDate, ...rest } = Object.fromEntries(
+      Object.entries(parsed.data).filter(([k]) => k in body)
+    ) as typeof parsed.data;
     const loan = await prisma.loan.update({
       where: { id },
       data: {

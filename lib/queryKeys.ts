@@ -38,6 +38,7 @@ export const queryKeys = {
 
   loans: {
     all: () => ["loans"] as const,
+    payments: (id: string) => ["loans", id, "payments"] as const,
   },
 
   budget: {
