@@ -20,6 +20,8 @@ import {
   CreditCard,
   Settings,
   ChevronRight,
+  Upload,
+  X,
 } from "lucide-react";
 
 const navItems = [
@@ -38,19 +40,29 @@ const navItems = [
   { href: "/capital-gains", label: "Capital Gains", icon: History },
   { href: "/fire", label: "FIRE 🔥", icon: Flame },
   { href: "/other-assets", label: "Other Assets", icon: Package },
+  { href: "/import", label: "Import CSV", icon: Upload },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 flex-shrink-0 border-r bg-background flex flex-col">
-      <div className="p-4 border-b">
+    <aside className="w-56 flex-shrink-0 border-r bg-background flex flex-col h-full">
+      <div className="p-4 border-b flex items-center justify-between">
         <h1 className="font-bold text-sm tracking-tight">
           CompiledSanity<br />
           <span className="text-muted-foreground font-normal">Finance</span>
         </h1>
+        {onClose && (
+          <button
+            aria-label="Close navigation"
+            className="md:hidden p-1 rounded-md hover:bg-muted transition-colors"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
       <nav className="flex-1 overflow-y-auto py-2">
         {navItems.map(({ href, label, icon: Icon }) => {

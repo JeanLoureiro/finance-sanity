@@ -101,7 +101,7 @@ export function cumipmt(
   for (let per = 1; per <= endPeriod; per++) {
     const ipmt = type === 1 ? (per === 1 ? 0 : balance * rate) : balance * rate;
     if (per >= startPeriod) interest += ipmt;
-    balance = balance - (pmtValue - ipmt);
+    balance = balance + pmtValue + ipmt;
   }
 
   return interest;
