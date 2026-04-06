@@ -40,7 +40,11 @@ export const queryKeys = {
     all: () => ["loans"] as const,
   },
 
-  budget: () => ["budget"] as const,
+  budget: {
+    items: () => ["budget", "items"] as const,
+    types: () => ["budget", "types"] as const,
+    categories: () => ["budget", "categories"] as const,
+  },
 
   sideIncome: {
     all: () => ["side-income"] as const,

@@ -93,6 +93,8 @@ model UserSettings {
   dividends           Dividend[]
   superAccounts       SuperAccount[]
   budgetItems         BudgetItem[]
+  budgetTypes         BudgetType[]
+  budgetCategories    BudgetCategory[]
   sideIncomeEntries   SideIncomeEntry[]
   monthlySnapshots    MonthlySnapshot[]
 }
@@ -346,11 +348,30 @@ model BudgetItem {
   settings      UserSettings @relation(fields: [settingsId], references: [id])
   name          String
   monthlyAmount Decimal      @db.Decimal(20, 6) @default(0)
-  category      String       @default("Expenses")
+  budgetType    String       @default("")
+  category      String       @default("")
   bankAccount   String?
   sortOrder     Int          @default(0)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+}
+
+model BudgetType {
+  id         String       @id @default(cuid())
+  settingsId String
+  settings   UserSettings @relation(fields: [settingsId], references: [id])
+  name       String
+  sortOrder  Int          @default(0)
+  createdAt  DateTime     @default(now())
+}
+
+model BudgetCategory {
+  id         String       @id @default(cuid())
+  settingsId String
+  settings   UserSettings @relation(fields: [settingsId], references: [id])
+  name       String
+  sortOrder  Int          @default(0)
+  createdAt  DateTime     @default(now())
 }
 
 // ---------------------------------------------------------------------------
