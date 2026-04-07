@@ -83,10 +83,10 @@ export default function DividendsPage() {
                       <SelectContent>{HOLDING_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div className="flex-1"><label className="text-sm font-medium">Net amount ($)</label><Input type="number" step="0.01" {...register("netAmount")} /></div>
+                  <div className="flex-1"><label className="text-sm font-medium">Net amount ($)</label><Input type="number" {...register("netAmount")} /></div>
                 </div>
                 <div className="flex gap-2">
-                  <div className="flex-1"><label className="text-sm font-medium">Price at div. (optional)</label><Input type="number" step="0.01" {...register("priceAtDividend")} /></div>
+                  <div className="flex-1"><label className="text-sm font-medium">Price at div. (optional)</label><Input type="number" {...register("priceAtDividend")} /></div>
                   <div className="flex items-end gap-2 pb-1"><label className="text-sm font-medium">DRP</label><input type="checkbox" className="h-4 w-4" {...register("reinvested")} /></div>
                 </div>
                 <Button type="submit" className="w-full" disabled={add.isPending}>Add Dividend</Button>

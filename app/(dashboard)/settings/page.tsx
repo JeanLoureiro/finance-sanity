@@ -68,10 +68,10 @@ export default function SettingsPage() {
         <CardHeader><CardTitle className="text-base">Income</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-2 gap-4">
           <Field label="Annual Salary ($)" error={errors.salary?.message}>
-            <Input type="number" step="1" {...register("salary")} />
+            <Input type="number" {...register("salary")} />
           </Field>
           <Field label="Tax Bracket (e.g. 0.35 = 35%)" error={errors.taxBracket?.message}>
-            <Input type="number" step="0.01" {...register("taxBracket")} />
+            <Input type="number" {...register("taxBracket")} />
           </Field>
           <Field label="Salary Frequency" error={errors.salaryFrequency?.message}>
             <Select
@@ -87,7 +87,7 @@ export default function SettingsPage() {
             </Select>
           </Field>
           <Field label="Net Monthly Income ($)" error={errors.netIncome?.message}>
-            <Input type="number" step="0.01" {...register("netIncome")} />
+            <Input type="number" {...register("netIncome")} />
           </Field>
           <Field label="Day of Month Paid" error={errors.dayOfMonthPaid?.message}>
             <Input type="number" min={1} max={31} {...register("dayOfMonthPaid")} />
@@ -100,10 +100,10 @@ export default function SettingsPage() {
         <CardHeader><CardTitle className="text-base">Investments</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-2 gap-4">
           <Field label="Bank Interest Rate (e.g. 0.06)" error={errors.bankInterestRate?.message}>
-            <Input type="number" step="0.001" {...register("bankInterestRate")} />
+            <Input type="number" {...register("bankInterestRate")} />
           </Field>
           <Field label="Brokerage Fee (e.g. 0.001)" error={errors.brokerage?.message}>
-            <Input type="number" step="0.0001" {...register("brokerage")} />
+            <Input type="number" {...register("brokerage")} />
           </Field>
           <div className="col-span-2 pt-2">
             <p className="text-sm font-medium mb-3">Asset Allocation Targets (must sum to 100%)</p>
@@ -116,7 +116,7 @@ export default function SettingsPage() {
                 return (
                   <div key={key} className="space-y-1">
                     <Label className="text-xs">{label}</Label>
-                    <Input type="number" step="0.01" min="0" max="1" {...register(key)} />
+                    <Input type="number" min="0" max="1" {...register(key)} />
                   </div>
                 );
               })}
@@ -130,13 +130,13 @@ export default function SettingsPage() {
         <CardHeader><CardTitle className="text-base">Goals</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-2 gap-4">
           <Field label="Cash Savings Target ($)" error={errors.cashSavingsTarget?.message}>
-            <Input type="number" step="1000" {...register("cashSavingsTarget")} />
+            <Input type="number" {...register("cashSavingsTarget")} />
           </Field>
           <Field label="Emergency Fund Months" error={errors.emergencyFundMonths?.message}>
             <Input type="number" min={1} max={24} {...register("emergencyFundMonths")} />
           </Field>
           <Field label="EOY Cash Goal ($)">
-            <Input type="number" step="1000" {...register("eoyGoal")} />
+            <Input type="number" {...register("eoyGoal")} />
           </Field>
         </CardContent>
       </Card>
@@ -158,10 +158,10 @@ export default function SettingsPage() {
             </Select>
           </Field>
           <Field label="Short-Term Tax Rate (e.g. 0.32)">
-            <Input type="number" step="0.01" {...register("shortTermTaxRate")} />
+            <Input type="number" {...register("shortTermTaxRate")} />
           </Field>
           <Field label="Long-Term Tax Rate (e.g. 0.16)">
-            <Input type="number" step="0.01" {...register("longTermTaxRate")} />
+            <Input type="number" {...register("longTermTaxRate")} />
           </Field>
         </CardContent>
       </Card>
@@ -177,13 +177,13 @@ export default function SettingsPage() {
             <Input type="number" min={55} max={70} {...register("preservationAge")} />
           </Field>
           <Field label="Inflation Rate (e.g. 0.03)">
-            <Input type="number" step="0.005" {...register("inflationRate")} />
+            <Input type="number" {...register("inflationRate")} />
           </Field>
           <Field label="Withdrawal Rate (e.g. 0.05)">
-            <Input type="number" step="0.005" {...register("withdrawalRate")} />
+            <Input type="number" {...register("withdrawalRate")} />
           </Field>
           <Field label="Super Contribution % (e.g. 0.115)">
-            <Input type="number" step="0.005" {...register("superContribPct")} />
+            <Input type="number" {...register("superContribPct")} />
           </Field>
         </CardContent>
       </Card>

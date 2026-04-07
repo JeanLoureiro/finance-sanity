@@ -160,7 +160,6 @@ function ItemRow({
           ref={amountRef}
           className="text-right w-28 bg-transparent border-b border-transparent group-hover:border-border outline-none text-sm"
           type="number"
-          step="any"
           defaultValue={Number(displayAmount.toFixed(2))}
           onBlur={(e) => {
             const monthly = toMonthly(Number(e.target.value), item.frequency);
@@ -612,7 +611,6 @@ export default function BudgetPage() {
             <div className="flex gap-1 items-center">
               <Input
                 type="number"
-                step="0.01"
                 className="w-28"
                 placeholder="Amount"
                 value={addAmount}

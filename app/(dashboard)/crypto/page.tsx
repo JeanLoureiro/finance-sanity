@@ -81,9 +81,9 @@ function AddPurchaseForm({ holdingId }: { holdingId: string }) {
             <SelectItem value="SELL">SELL</SelectItem>
           </SelectContent>
         </Select>
-        <Input type="number" step="0.00000001" placeholder="Units" className="w-32" {...register("units")} />
-        <Input type="number" step="0.01" placeholder="Price AUD" className="w-28" {...register("price")} />
-        <Input type="number" step="0.01" placeholder="Brokerage $" className="w-28" {...register("brokerage")} />
+        <Input type="number" placeholder="Units" className="w-32" {...register("units")} />
+        <Input type="number" placeholder="Price AUD" className="w-28" {...register("price")} />
+        <Input type="number" placeholder="Brokerage $" className="w-28" {...register("brokerage")} />
         <Button type="submit" size="sm" disabled={add.isPending}>{add.isPending ? "Adding…" : "Add"}</Button>
       </div>
     </form>
@@ -151,7 +151,7 @@ export default function CryptoPage() {
             <form onSubmit={handleH((d) => addHolding.mutate(d))} className="space-y-3">
               <Input placeholder="Ticker (e.g. BTC, ETH, SOL)" {...regH("ticker")} />
               <Input placeholder="Name (optional)" {...regH("name")} />
-              <Input type="number" step="0.01" placeholder="Target allocation (0–1)" {...regH("targetAllocation")} />
+              <Input type="number" placeholder="Target allocation (0–1)" {...regH("targetAllocation")} />
               <p className="text-xs text-muted-foreground">Prices sourced from CoinGecko. Use standard ticker symbols.</p>
               <Button type="submit" className="w-full" disabled={addHolding.isPending}>Add Crypto</Button>
             </form>

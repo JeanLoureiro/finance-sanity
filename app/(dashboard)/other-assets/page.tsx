@@ -75,10 +75,10 @@ export default function OtherAssetsPage() {
                 <div className="flex-1"><label className="text-xs text-muted-foreground">Currency</label><Input placeholder="AUD" {...register("currency")} /></div>
               </div>
               <div className="flex gap-2">
-                <div className="flex-1"><label className="text-xs text-muted-foreground">Units / quantity</label><Input type="number" step="0.01" {...register("units")} /></div>
-                <div className="flex-1"><label className="text-xs text-muted-foreground">Purchase price per unit</label><Input type="number" step="0.01" {...register("unitPurchasePrice")} /></div>
+                <div className="flex-1"><label className="text-xs text-muted-foreground">Units / quantity</label><Input type="number" {...register("units")} /></div>
+                <div className="flex-1"><label className="text-xs text-muted-foreground">Purchase price per unit</label><Input type="number" {...register("unitPurchasePrice")} /></div>
               </div>
-              <div><label className="text-xs text-muted-foreground">Current price per unit (optional)</label><Input type="number" step="0.01" {...register("liveUnitPrice")} /></div>
+              <div><label className="text-xs text-muted-foreground">Current price per unit (optional)</label><Input type="number" {...register("liveUnitPrice")} /></div>
               <Button type="submit" className="w-full" disabled={add.isPending}>Add Asset</Button>
             </form>
           </DialogContent>
@@ -113,7 +113,6 @@ export default function OtherAssetsPage() {
                   <td className="py-3 px-4 text-right">
                     <Input
                       type="number"
-                      step="0.01"
                       defaultValue={a.livePrice}
                       className="w-28 text-right h-7 text-sm"
                       onBlur={(e) => {

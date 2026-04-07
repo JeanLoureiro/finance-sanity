@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { CurrencyAmount } from "@/components/ui/currency-amount";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, PlusCircle } from "lucide-react";
+import { Trash2, PlusCircle, Pencil } from "lucide-react";
 import { useState } from "react";
 
 type Property = {
@@ -20,6 +20,11 @@ type Property = {
   mortgageStartDate: string | null; mortgageAnnualRate: string | number | null;
   mortgageMonthlyPayment: string | number | null; mortgageStartBalance: string | number | null;
 };
+
+function toDateInput(iso: string | null | undefined) {
+  if (!iso) return "";
+  try { return new Date(iso).toISOString().slice(0, 10); } catch { return ""; }
+}
 
 function computePropertyStats(p: Property) {
   const currentValue = Number(p.currentValue);
@@ -42,9 +47,47 @@ function computePropertyStats(p: Property) {
   return { currentValue, capitalGain, mortgageRemainingBalance, mortgagePayoffDate, equity, paidOff };
 }
 
+function PropertyForm({
+  defaultValues,
+  onSubmit,
+  isPending,
+  submitLabel,
+}: {
+  defaultValues: Record<string, unknown>;
+  onSubmit: (data: Record<string, unknown>) => void;
+  isPending: boolean;
+  submitLabel: string;
+}) {
+  const { register, handleSubmit } = useForm({ defaultValues });
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+      <Input placeholder="Property name / address" {...register("name")} />
+      <div className="flex gap-2 items-end">
+        <div className="flex-1"><label className="text-xs text-muted-foreground">Purchase date</label><Input type="date" {...register("purchaseDate")} /></div>
+        <div className="flex items-center gap-2 pb-2"><input type="checkbox" className="h-4 w-4" {...register("isPrimaryResidence")} /><label className="text-sm">Primary residence</label></div>
+      </div>
+      <div className="flex gap-2">
+        <div className="flex-1"><label className="text-xs text-muted-foreground">Purchase price ($)</label><Input type="number" {...register("purchaseValue")} /></div>
+        <div className="flex-1"><label className="text-xs text-muted-foreground">Current value ($)</label><Input type="number" {...register("currentValue")} /></div>
+      </div>
+      <p className="text-xs font-medium text-muted-foreground pt-1">Mortgage (leave blank if none)</p>
+      <div className="flex gap-2">
+        <div className="flex-1"><label className="text-xs text-muted-foreground">Mortgage start date</label><Input type="date" {...register("mortgageStartDate")} /></div>
+        <div className="flex-1"><label className="text-xs text-muted-foreground">Annual rate (e.g. 0.065)</label><Input type="number" {...register("mortgageAnnualRate")} /></div>
+      </div>
+      <div className="flex gap-2">
+        <div className="flex-1"><label className="text-xs text-muted-foreground">Starting balance ($)</label><Input type="number" {...register("mortgageStartBalance")} /></div>
+        <div className="flex-1"><label className="text-xs text-muted-foreground">Monthly payment ($)</label><Input type="number" {...register("mortgageMonthlyPayment")} /></div>
+      </div>
+      <Button type="submit" className="w-full" disabled={isPending}>{submitLabel}</Button>
+    </form>
+  );
+}
+
 export default function PropertyPage() {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
   const { data: properties = [], isLoading } = useQuery<Property[]>({
     queryKey: queryKeys.properties.all(),
@@ -56,14 +99,16 @@ export default function PropertyPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.properties.all() }),
   });
 
-  const { register, handleSubmit, reset } = useForm({
-    defaultValues: { name: "", purchaseDate: "", isPrimaryResidence: false, purchaseValue: 0, currentValue: 0, netRentProfit: 0, mortgageStartDate: "", mortgageAnnualRate: 0, mortgageMonthlyPayment: 0, mortgageStartBalance: 0 },
-  });
-
   const add = useMutation({
     mutationFn: (data: Record<string, unknown>) =>
       fetch("/api/property", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.properties.all() }); reset(); setAddOpen(false); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.properties.all() }); setAddOpen(false); },
+  });
+
+  const update = useMutation({
+    mutationFn: ({ id, ...data }: Record<string, unknown>) =>
+      fetch(`/api/property/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.properties.all() }); setEditId(null); },
   });
 
   const totalPropertyValue = properties.reduce((s, p) => s + Number(p.currentValue), 0);
@@ -74,32 +119,21 @@ export default function PropertyPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Property</h1>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger>
-            <Button size="sm"><PlusCircle className="h-4 w-4 mr-1" /> Add Property</Button>
-          </DialogTrigger>
+          <DialogTrigger
+            render={
+              <Button size="sm">
+                <PlusCircle className="h-4 w-4 mr-1" /> Add Property
+              </Button>
+            }
+          />
           <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle>Add Property</DialogTitle></DialogHeader>
-            <form onSubmit={handleSubmit((d) => add.mutate(d))} className="space-y-3">
-              <Input placeholder="Property name / address" {...register("name")} />
-              <div className="flex gap-2 items-end">
-                <div className="flex-1"><label className="text-xs text-muted-foreground">Purchase date</label><Input type="date" {...register("purchaseDate")} /></div>
-                <div className="flex items-center gap-2 pb-2"><input type="checkbox" className="h-4 w-4" {...register("isPrimaryResidence")} /><label className="text-sm">Primary residence</label></div>
-              </div>
-              <div className="flex gap-2">
-                <div className="flex-1"><label className="text-xs text-muted-foreground">Purchase price ($)</label><Input type="number" step="1000" {...register("purchaseValue")} /></div>
-                <div className="flex-1"><label className="text-xs text-muted-foreground">Current value ($)</label><Input type="number" step="1000" {...register("currentValue")} /></div>
-              </div>
-              <p className="text-xs font-medium text-muted-foreground pt-1">Mortgage (leave blank if none)</p>
-              <div className="flex gap-2">
-                <div className="flex-1"><label className="text-xs text-muted-foreground">Mortgage start date</label><Input type="date" {...register("mortgageStartDate")} /></div>
-                <div className="flex-1"><label className="text-xs text-muted-foreground">Annual rate (e.g. 0.065)</label><Input type="number" step="0.001" {...register("mortgageAnnualRate")} /></div>
-              </div>
-              <div className="flex gap-2">
-                <div className="flex-1"><label className="text-xs text-muted-foreground">Starting balance ($)</label><Input type="number" step="1000" {...register("mortgageStartBalance")} /></div>
-                <div className="flex-1"><label className="text-xs text-muted-foreground">Monthly payment ($)</label><Input type="number" step="100" {...register("mortgageMonthlyPayment")} /></div>
-              </div>
-              <Button type="submit" className="w-full" disabled={add.isPending}>Add Property</Button>
-            </form>
+            <PropertyForm
+              defaultValues={{ name: "", purchaseDate: "", isPrimaryResidence: false, purchaseValue: 0, currentValue: 0, netRentProfit: 0, mortgageStartDate: "", mortgageAnnualRate: 0, mortgageMonthlyPayment: 0, mortgageStartBalance: 0 }}
+              onSubmit={(d) => add.mutate(d)}
+              isPending={add.isPending}
+              submitLabel="Add Property"
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -126,7 +160,38 @@ export default function PropertyPage() {
                         <span className="text-sm text-muted-foreground">Purchased {new Date(p.purchaseDate).toLocaleDateString("en-AU")}</span>
                       </div>
                     </div>
-                    <Button size="sm" variant="ghost" onClick={() => del.mutate(p.id)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
+                    <div className="flex gap-1">
+                      <Dialog open={editId === p.id} onOpenChange={(open) => setEditId(open ? p.id : null)}>
+                        <DialogTrigger
+                          render={
+                            <Button size="sm" variant="ghost">
+                              <Pencil className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          }
+                        />
+                        <DialogContent className="max-w-lg">
+                          <DialogHeader><DialogTitle>Edit — {p.name}</DialogTitle></DialogHeader>
+                          <PropertyForm
+                            defaultValues={{
+                              name: p.name,
+                              purchaseDate: toDateInput(p.purchaseDate),
+                              isPrimaryResidence: p.isPrimaryResidence,
+                              purchaseValue: Number(p.purchaseValue),
+                              currentValue: Number(p.currentValue),
+                              netRentProfit: Number(p.netRentProfit),
+                              mortgageStartDate: toDateInput(p.mortgageStartDate),
+                              mortgageAnnualRate: p.mortgageAnnualRate !== null ? Number(p.mortgageAnnualRate) : 0,
+                              mortgageMonthlyPayment: p.mortgageMonthlyPayment !== null ? Number(p.mortgageMonthlyPayment) : 0,
+                              mortgageStartBalance: p.mortgageStartBalance !== null ? Number(p.mortgageStartBalance) : 0,
+                            }}
+                            onSubmit={(d) => update.mutate({ id: p.id, ...d })}
+                            isPending={update.isPending}
+                            submitLabel="Save Changes"
+                          />
+                        </DialogContent>
+                      </Dialog>
+                      <Button size="sm" variant="ghost" onClick={() => del.mutate(p.id)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>

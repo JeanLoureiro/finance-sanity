@@ -88,9 +88,9 @@ function AddPurchaseForm({ holdingId }: { holdingId: string }) {
             <SelectItem value="SELL">SELL</SelectItem>
           </SelectContent>
         </Select>
-        <Input type="number" step="0.0001" placeholder="Units" className="w-28" {...register("units")} />
-        <Input type="number" step="0.01" placeholder="Price $" className="w-28" {...register("price")} />
-        <Input type="number" step="0.01" placeholder="Brokerage $" className="w-28" {...register("brokerage")} />
+        <Input type="number" placeholder="Units" className="w-28" {...register("units")} />
+        <Input type="number" placeholder="Price $" className="w-28" {...register("price")} />
+        <Input type="number" placeholder="Brokerage $" className="w-28" {...register("brokerage")} />
         <Button type="submit" size="sm" disabled={add.isPending}>{add.isPending ? "Adding…" : "Add"}</Button>
       </div>
     </form>
@@ -157,8 +157,8 @@ export default function ETFsPage() {
               <Input placeholder="Ticker (e.g. ASX:A200)" {...regHolding("ticker")} />
               <Input placeholder="Name (optional)" {...regHolding("name")} />
               <div className="flex gap-2">
-                <Input type="number" step="0.01" placeholder="Target alloc. (0-1)" {...regHolding("targetAllocation")} />
-                <Input type="number" step="0.0001" placeholder="Mgmt fee (0-1)" {...regHolding("managementFee")} />
+                <Input type="number" placeholder="Target alloc. (0-1)" {...regHolding("targetAllocation")} />
+                <Input type="number" placeholder="Mgmt fee (0-1)" {...regHolding("managementFee")} />
               </div>
               <Button type="submit" className="w-full" disabled={addHolding.isPending}>Add ETF</Button>
             </form>

@@ -68,8 +68,8 @@ export default function SideIncomePage() {
               <form onSubmit={handleSubmit((d) => add.mutate(d))} className="space-y-3">
                 <div><label className="text-sm font-medium">Date</label><Input type="date" {...register("date")} /></div>
                 <div className="flex gap-2">
-                  <div className="flex-1"><label className="text-sm font-medium">Side income ($)</label><Input type="number" step="0.01" {...register("sideIncome")} /></div>
-                  <div className="flex-1"><label className="text-sm font-medium">Rental income ($)</label><Input type="number" step="0.01" {...register("rentalIncome")} /></div>
+                  <div className="flex-1"><label className="text-sm font-medium">Side income ($)</label><Input type="number" {...register("sideIncome")} /></div>
+                  <div className="flex-1"><label className="text-sm font-medium">Rental income ($)</label><Input type="number" {...register("rentalIncome")} /></div>
                 </div>
                 <div><label className="text-sm font-medium">Notes (optional)</label><Input placeholder="e.g. Freelance project" {...register("notes")} /></div>
                 <Button type="submit" className="w-full" disabled={add.isPending}>Add Entry</Button>

@@ -79,7 +79,7 @@ export default function SuperPage() {
             <form onSubmit={handleAdd((d) => add.mutate(d))} className="space-y-3">
               <Input placeholder="Account name (e.g. Australian Super)" {...regAdd("name")} />
               <Input placeholder="Provider (optional)" {...regAdd("provider")} />
-              <div><label className="text-sm font-medium">Current balance ($)</label><Input type="number" step="100" {...regAdd("balance")} /></div>
+              <div><label className="text-sm font-medium">Current balance ($)</label><Input type="number" {...regAdd("balance")} /></div>
               <Button type="submit" className="w-full" disabled={add.isPending}>Add Account</Button>
             </form>
           </DialogContent>
@@ -109,7 +109,6 @@ export default function SuperPage() {
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
-                      step="100"
                       defaultValue={Number(a.balance)}
                       className="w-36 text-right"
                       onBlur={(e) => {

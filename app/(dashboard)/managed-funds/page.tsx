@@ -81,9 +81,9 @@ function AddPurchaseForm({ holdingId }: { holdingId: string }) {
             <SelectItem value="SELL">SELL</SelectItem>
           </SelectContent>
         </Select>
-        <Input type="number" step="0.0001" placeholder="Units" className="w-28" {...register("units")} />
-        <Input type="number" step="0.01" placeholder="Price $" className="w-28" {...register("price")} />
-        <Input type="number" step="0.01" placeholder="Brokerage $" className="w-28" {...register("brokerage")} />
+        <Input type="number" placeholder="Units" className="w-28" {...register("units")} />
+        <Input type="number" placeholder="Price $" className="w-28" {...register("price")} />
+        <Input type="number" placeholder="Brokerage $" className="w-28" {...register("brokerage")} />
         <Button type="submit" size="sm" disabled={add.isPending}>{add.isPending ? "Adding…" : "Add"}</Button>
       </div>
     </form>
@@ -150,8 +150,8 @@ export default function ManagedFundsPage() {
               <Input placeholder="Ticker or code" {...regH("ticker")} />
               <Input placeholder="Name (optional)" {...regH("name")} />
               <div className="flex gap-2">
-                <Input type="number" step="0.01" placeholder="Target alloc. (0–1)" {...regH("targetAllocation")} />
-                <Input type="number" step="0.0001" placeholder="Mgmt fee (0–1)" {...regH("managementFee")} />
+                <Input type="number" placeholder="Target alloc. (0–1)" {...regH("targetAllocation")} />
+                <Input type="number" placeholder="Mgmt fee (0–1)" {...regH("managementFee")} />
               </div>
               <Button type="submit" className="w-full" disabled={addHolding.isPending}>Add Fund</Button>
             </form>
