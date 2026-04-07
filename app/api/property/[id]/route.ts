@@ -24,8 +24,9 @@ export async function PATCH(
       },
     });
     return Response.json(property);
-  } catch {
-    return Response.json({ error: "Failed to update property" }, { status: 500 });
+  } catch (e) {
+    console.error("[PATCH /api/property/[id]]", e);
+    return Response.json({ error: "Failed to update property", detail: String(e) }, { status: 500 });
   }
 }
 
