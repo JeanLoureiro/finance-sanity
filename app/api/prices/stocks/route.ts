@@ -15,12 +15,14 @@ export async function GET(req: NextRequest) {
 
   try {
     const results: Record<string, { price: number | null; name: string | null; pe: number | null }> = {};
+    const yahooFinanceClient = new yahooFinance(); 
+
 
     await Promise.all(
       yahooTickers.map(async (yahooTicker, i) => {
         const originalTicker = inputTickers[i];
         try {
-          const quote = await yahooFinance.quote(yahooTicker, {}, { validateResult: false }) as Record<string, unknown>;
+          const quote = await yahooFinanceClient.quote(yahooTicker, {}, { validateResult: false }) as Record<string, unknown>;
           results[originalTicker] = {
             price: (quote.regularMarketPrice as number | undefined) ?? null,
             name: (quote.longName as string | undefined) ?? (quote.shortName as string | undefined) ?? null,

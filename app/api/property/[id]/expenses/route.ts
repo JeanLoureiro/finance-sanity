@@ -34,6 +34,7 @@ export async function POST(
         propertyId: id,
         date: new Date(parsed.data.date),
         category: parsed.data.category,
+        frequency: parsed.data.frequency,
         amount: parsed.data.amount,
         notes: parsed.data.notes ?? null,
       },

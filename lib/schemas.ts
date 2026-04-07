@@ -157,7 +157,8 @@ export const propertyIncomeEntrySchema = z.object({
 
 export const propertyExpenseEntrySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  category: z.enum(["management_fee", "council_rates", "water", "insurance", "repairs", "other"]),
+  category: z.enum(["mortgage_repayment", "management_fee", "council_rates", "water", "insurance", "repairs", "other"]),
+  frequency: z.enum(["weekly", "fortnightly", "monthly", "quarterly", "annually"]).default("monthly"),
   amount: z.coerce.number().positive(),
   notes: z.string().optional().nullable(),
 });

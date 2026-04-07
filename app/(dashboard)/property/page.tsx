@@ -41,16 +41,28 @@ function toMonthly(amount: number, frequency: string): number {
 }
 
 type PropertyExpenseEntry = {
-  id: string; propertyId: string; date: string; category: string; amount: number; notes: string | null;
+  id: string; propertyId: string; date: string; category: string; frequency: string; amount: number; notes: string | null;
 };
 
 const EXPENSE_LABELS: Record<string, string> = {
+  mortgage_repayment: "Mortgage Repayment",
   management_fee: "Management Fee",
   council_rates: "Council Rates",
   water: "Water",
   insurance: "Insurance",
   repairs: "Repairs",
   other: "Other",
+};
+
+// Default frequency per expense category
+const EXPENSE_DEFAULT_FREQUENCY: Record<string, string> = {
+  mortgage_repayment: "monthly",
+  management_fee: "monthly",
+  council_rates: "quarterly",
+  water: "quarterly",
+  insurance: "annually",
+  repairs: "monthly",
+  other: "monthly",
 };
 
 function toDateInput(iso: string | null | undefined) {
@@ -163,9 +175,18 @@ function RentalPanel({ property }: { property: Property }) {
   const [incomeFrequency, setIncomeFrequency] = useState("weekly");
   const [incomeNotes, setIncomeNotes] = useState("");
   const [expenseDate, setExpenseDate] = useState(today());
-  const [expenseCategory, setExpenseCategory] = useState("management_fee");
+  const [expenseCategory, setExpenseCategory] = useState("mortgage_repayment");
+  const [expenseFrequency, setExpenseFrequency] = useState(EXPENSE_DEFAULT_FREQUENCY["mortgage_repayment"]);
   const [expenseAmount, setExpenseAmount] = useState("");
   const [expenseNotes, setExpenseNotes] = useState("");
+
+  // Inline edit state for expense entries
+  const [editExpenseId, setEditExpenseId] = useState<string | null>(null);
+  const [editExpense, setEditExpense] = useState<Partial<PropertyExpenseEntry>>({});
+
+  // Inline edit state for income entries
+  const [editIncomeId, setEditIncomeId] = useState<string | null>(null);
+  const [editIncome, setEditIncome] = useState<Partial<PropertyIncomeEntry>>({});
 
   const { data: incomeEntries = [] } = useQuery<PropertyIncomeEntry[]>({
     queryKey: queryKeys.properties.income(property.id),
@@ -193,7 +214,7 @@ function RentalPanel({ property }: { property: Property }) {
   const addExpense = useMutation({
     mutationFn: (data: object) =>
       fetch(`/api/property/${property.id}/expenses`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.properties.expenses(property.id) }); setExpenseAmount(""); setExpenseNotes(""); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.properties.expenses(property.id) }); setExpenseAmount(""); setExpenseNotes(""); setExpenseFrequency(EXPENSE_DEFAULT_FREQUENCY[expenseCategory] ?? "monthly"); },
   });
 
   const delExpense = useMutation({
@@ -201,10 +222,21 @@ function RentalPanel({ property }: { property: Property }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.properties.expenses(property.id) }),
   });
 
+  const updateExpense = useMutation({
+    mutationFn: ({ id, ...data }: Partial<PropertyExpenseEntry> & { id: string }) =>
+      fetch(`/api/property/${property.id}/expenses/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.properties.expenses(property.id) }); setEditExpenseId(null); setEditExpense({}); },
+  });
+
+  const updateIncome = useMutation({
+    mutationFn: ({ id, ...data }: Partial<PropertyIncomeEntry> & { id: string }) =>
+      fetch(`/api/property/${property.id}/income/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.properties.income(property.id) }); setEditIncomeId(null); setEditIncome({}); },
+  });
+
   const totalMonthlyIncome = incomeEntries?.reduce((s, e) => s + toMonthly(Number(e.grossRent), e.frequency), 0) || 0;
-  const totalExpenses = expenseEntries?.reduce((s, e) => s + Number(e.amount), 0) || 0;
-  const monthlyExpenses = totalExpenses / 12;
-  const netMonthly = totalMonthlyIncome - monthlyExpenses;
+  const totalMonthlyExpenses = expenseEntries?.reduce((s, e) => s + toMonthly(Number(e.amount), e.frequency), 0) || 0;
+  const netMonthly = totalMonthlyIncome - totalMonthlyExpenses;
 
   return (
     <div className="mt-4 border-t pt-3">
@@ -239,20 +271,42 @@ function RentalPanel({ property }: { property: Property }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {incomeEntries.map((e) => (
-                    <tr key={e.id} className="border-b last:border-0">
-                      <td className="py-1.5">{toDateInput(e.date)}</td>
-                      <td className="py-1.5 pl-2 text-muted-foreground capitalize">{e.frequency}</td>
-                      <td className="py-1.5 text-right font-medium"><CurrencyAmount value={Number(e.grossRent)} /></td>
-                      <td className="py-1.5 text-right text-muted-foreground"><CurrencyAmount value={toMonthly(Number(e.grossRent), e.frequency)} /></td>
-                      <td className="py-1.5 pl-3 text-muted-foreground">{e.notes || "—"}</td>
-                      <td className="py-1.5 text-right">
-                        <Button size="sm" variant="ghost" onClick={() => delIncome.mutate(e.id)}>
-                          <Trash2 className="h-3 w-3 text-muted-foreground" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {incomeEntries.map((e) => {
+                    const isEditing = editIncomeId === e.id;
+                    if (isEditing) {
+                      const ei = editIncome;
+                      return (
+                        <tr key={e.id} className="border-b last:border-0 bg-muted/30">
+                          <td className="py-1"><Input type="date" className="h-7 text-xs w-32" value={ei.date ? toDateInput(ei.date) : toDateInput(e.date)} onChange={(x) => setEditIncome((v) => ({ ...v, date: x.target.value }))} /></td>
+                          <td className="py-1 pl-2"><select className="h-7 rounded-md border border-input bg-background px-1.5 text-xs" value={ei.frequency ?? e.frequency} onChange={(x) => setEditIncome((v) => ({ ...v, frequency: x.target.value }))}>{INCOME_FREQUENCIES.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}</select></td>
+                          <td className="py-1"><Input type="number" className="h-7 text-xs w-24 text-right" value={ei.grossRent ?? e.grossRent} onChange={(x) => setEditIncome((v) => ({ ...v, grossRent: parseFloat(x.target.value) }))} /></td>
+                          <td className="py-1 text-right text-xs text-muted-foreground"><CurrencyAmount value={toMonthly(Number(ei.grossRent ?? e.grossRent), String(ei.frequency ?? e.frequency))} /></td>
+                          <td className="py-1 pl-2"><Input className="h-7 text-xs" value={ei.notes ?? e.notes ?? ""} onChange={(x) => setEditIncome((v) => ({ ...v, notes: x.target.value }))} /></td>
+                          <td className="py-1 text-right">
+                            <div className="flex gap-0.5 justify-end">
+                              <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" disabled={updateIncome.isPending} onClick={() => updateIncome.mutate({ id: e.id, ...ei })}>Save</Button>
+                              <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => { setEditIncomeId(null); setEditIncome({}); }}>✕</Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                    return (
+                      <tr key={e.id} className="border-b last:border-0 group">
+                        <td className="py-1.5">{toDateInput(e.date)}</td>
+                        <td className="py-1.5 pl-2 text-muted-foreground capitalize">{e.frequency}</td>
+                        <td className="py-1.5 text-right font-medium"><CurrencyAmount value={Number(e.grossRent)} /></td>
+                        <td className="py-1.5 text-right text-muted-foreground"><CurrencyAmount value={toMonthly(Number(e.grossRent), e.frequency)} /></td>
+                        <td className="py-1.5 pl-3 text-muted-foreground">{e.notes || "—"}</td>
+                        <td className="py-1.5 text-right">
+                          <div className="flex gap-0.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="sm" variant="ghost" onClick={() => { setEditIncomeId(e.id); setEditIncome({}); }}><Pencil className="h-3 w-3 text-muted-foreground" /></Button>
+                            <Button size="sm" variant="ghost" onClick={() => delIncome.mutate(e.id)}><Trash2 className="h-3 w-3 text-muted-foreground" /></Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -292,25 +346,52 @@ function RentalPanel({ property }: { property: Property }) {
                   <tr>
                     <th className="text-left py-1">Date</th>
                     <th className="text-left py-1 pl-2">Category</th>
+                    <th className="text-left py-1 pl-2">Freq</th>
                     <th className="text-right py-1">Amount</th>
+                    <th className="text-right py-1">≈ /mo</th>
                     <th className="text-left py-1 pl-3">Notes</th>
                     <th className="w-8" />
                   </tr>
                 </thead>
                 <tbody>
-                  {expenseEntries.map((e) => (
-                    <tr key={e.id} className="border-b last:border-0">
-                      <td className="py-1.5">{toDateInput(e.date)}</td>
-                      <td className="py-1.5 pl-2">{EXPENSE_LABELS[e.category] ?? e.category}</td>
-                      <td className="py-1.5 text-right font-medium"><CurrencyAmount value={Number(e.amount)} /></td>
-                      <td className="py-1.5 pl-3 text-muted-foreground">{e.notes || "—"}</td>
-                      <td className="py-1.5 text-right">
-                        <Button size="sm" variant="ghost" onClick={() => delExpense.mutate(e.id)}>
-                          <Trash2 className="h-3 w-3 text-muted-foreground" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {expenseEntries.map((e) => {
+                    const isEditing = editExpenseId === e.id;
+                    if (isEditing) {
+                      const ee = editExpense;
+                      return (
+                        <tr key={e.id} className="border-b last:border-0 bg-muted/30">
+                          <td className="py-1"><Input type="date" className="h-7 text-xs w-32" value={ee.date ? toDateInput(ee.date) : toDateInput(e.date)} onChange={(x) => setEditExpense((v) => ({ ...v, date: x.target.value }))} /></td>
+                          <td className="py-1 pl-2"><select className="h-7 rounded-md border border-input bg-background px-1.5 text-xs" value={ee.category ?? e.category} onChange={(x) => setEditExpense((v) => ({ ...v, category: x.target.value, frequency: EXPENSE_DEFAULT_FREQUENCY[x.target.value] ?? v.frequency }))}>{Object.entries(EXPENSE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></td>
+                          <td className="py-1 pl-2"><select className="h-7 rounded-md border border-input bg-background px-1.5 text-xs" value={ee.frequency ?? e.frequency} onChange={(x) => setEditExpense((v) => ({ ...v, frequency: x.target.value }))}>{INCOME_FREQUENCIES.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}</select></td>
+                          <td className="py-1"><Input type="number" className="h-7 text-xs w-24 text-right" value={ee.amount ?? e.amount} onChange={(x) => setEditExpense((v) => ({ ...v, amount: parseFloat(x.target.value) }))} /></td>
+                          <td className="py-1 text-right text-xs text-muted-foreground"><CurrencyAmount value={toMonthly(Number(ee.amount ?? e.amount), String(ee.frequency ?? e.frequency))} /></td>
+                          <td className="py-1 pl-2"><Input className="h-7 text-xs" value={ee.notes ?? e.notes ?? ""} onChange={(x) => setEditExpense((v) => ({ ...v, notes: x.target.value }))} /></td>
+                          <td className="py-1 text-right">
+                            <div className="flex gap-0.5 justify-end">
+                              <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" disabled={updateExpense.isPending} onClick={() => updateExpense.mutate({ id: e.id, ...ee })}>Save</Button>
+                              <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => { setEditExpenseId(null); setEditExpense({}); }}>✕</Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                    return (
+                      <tr key={e.id} className="border-b last:border-0 group">
+                        <td className="py-1.5">{toDateInput(e.date)}</td>
+                        <td className="py-1.5 pl-2">{EXPENSE_LABELS[e.category] ?? e.category}</td>
+                        <td className="py-1.5 pl-2 text-muted-foreground capitalize">{e.frequency}</td>
+                        <td className="py-1.5 text-right font-medium"><CurrencyAmount value={Number(e.amount)} /></td>
+                        <td className="py-1.5 text-right text-muted-foreground"><CurrencyAmount value={toMonthly(Number(e.amount), e.frequency)} /></td>
+                        <td className="py-1.5 pl-3 text-muted-foreground">{e.notes || "—"}</td>
+                        <td className="py-1.5 text-right">
+                          <div className="flex gap-0.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="sm" variant="ghost" onClick={() => { setEditExpenseId(e.id); setEditExpense({}); }}><Pencil className="h-3 w-3 text-muted-foreground" /></Button>
+                            <Button size="sm" variant="ghost" onClick={() => delExpense.mutate(e.id)}><Trash2 className="h-3 w-3 text-muted-foreground" /></Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -325,11 +406,17 @@ function RentalPanel({ property }: { property: Property }) {
                 <select
                   className="h-8 rounded-md border border-input bg-background px-2 text-sm"
                   value={expenseCategory}
-                  onChange={(e) => setExpenseCategory(e.target.value)}
+                  onChange={(e) => { setExpenseCategory(e.target.value); setExpenseFrequency(EXPENSE_DEFAULT_FREQUENCY[e.target.value] ?? "monthly"); }}
                 >
                   {Object.entries(EXPENSE_LABELS).map(([v, l]) => (
                     <option key={v} value={v}>{l}</option>
                   ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-muted-foreground">Frequency</label>
+                <select className="h-8 rounded-md border border-input bg-background px-2 text-sm" value={expenseFrequency} onChange={(e) => setExpenseFrequency(e.target.value)}>
+                  {INCOME_FREQUENCIES.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1">
@@ -341,7 +428,7 @@ function RentalPanel({ property }: { property: Property }) {
                 <Input className="h-8" placeholder="e.g. Q1 rates" value={expenseNotes} onChange={(e) => setExpenseNotes(e.target.value)} />
               </div>
               <Button size="sm" disabled={!expenseAmount || !expenseDate || addExpense.isPending}
-                onClick={() => addExpense.mutate({ date: expenseDate, category: expenseCategory, amount: parseFloat(expenseAmount), notes: expenseNotes || null })}>
+                onClick={() => addExpense.mutate({ date: expenseDate, category: expenseCategory, frequency: expenseFrequency, amount: parseFloat(expenseAmount), notes: expenseNotes || null })}>
                 {addExpense.isPending ? "Adding…" : "Add Expense"}
               </Button>
             </div>
@@ -352,7 +439,8 @@ function RentalPanel({ property }: { property: Property }) {
             <div className="flex gap-6 pt-1 border-t text-sm flex-wrap">
               <div><p className="text-xs text-muted-foreground">Gross rent /mo</p><p className="font-medium"><CurrencyAmount value={totalMonthlyIncome} /></p></div>
               <div><p className="text-xs text-muted-foreground">Gross rent /yr</p><p className="font-medium"><CurrencyAmount value={totalMonthlyIncome * 12} /></p></div>
-              <div><p className="text-xs text-muted-foreground">Expenses /yr</p><p className="font-medium"><CurrencyAmount value={totalExpenses} /></p></div>
+              <div><p className="text-xs text-muted-foreground">Expenses /mo</p><p className="font-medium"><CurrencyAmount value={totalMonthlyExpenses} /></p></div>
+              <div><p className="text-xs text-muted-foreground">Expenses /yr</p><p className="font-medium"><CurrencyAmount value={totalMonthlyExpenses * 12} /></p></div>
               <div><p className="text-xs text-muted-foreground">Net /mo</p><p className={`font-bold ${netMonthly >= 0 ? "text-green-600" : "text-red-600"}`}><CurrencyAmount value={netMonthly} showSign /></p></div>
             </div>
           )}

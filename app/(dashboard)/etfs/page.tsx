@@ -13,7 +13,7 @@ import { CurrencyAmount, PercentChange } from "@/components/ui/currency-amount";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, PlusCircle, History } from "lucide-react";
+import { Trash2, PlusCircle, History, Pencil } from "lucide-react";
 import { useState } from "react";
 
 type Purchase = { id: string; date: string; units: number; price: number; brokerage: number; direction: string };
@@ -100,6 +100,17 @@ function AddPurchaseForm({ holdingId }: { holdingId: string }) {
 export default function ETFsPage() {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const { register: regEdit, handleSubmit: handleEdit, reset: resetEdit } = useForm<ETFHoldingInput>({
+    resolver: zodResolver(etfHoldingSchema),
+  });
+
+  const updateHolding = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<ETFHoldingInput> }) =>
+      fetch(`/api/etfs/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.holdings.all("etfs") }); setEditId(null); },
+  });
 
   const { data: holdings = [], isLoading } = useQuery<ETFHolding[]>({
     queryKey: queryKeys.holdings.all("etfs"),
@@ -224,6 +235,32 @@ export default function ETFsPage() {
                         <DialogHeader><DialogTitle>{h.ticker} — Transactions</DialogTitle></DialogHeader>
                         <PurchaseHistory holdingId={h.id} />
                         <AddPurchaseForm holdingId={h.id} />
+                      </DialogContent>
+                    </Dialog>
+                    <Dialog open={editId === h.id} onOpenChange={(open) => {
+                      if (open) {
+                        resetEdit({ ticker: h.ticker, name: h.name ?? "", targetAllocation: h.targetAllocation, managementFee: h.managementFee });
+                        setEditId(h.id);
+                      } else {
+                        setEditId(null);
+                      }
+                    }}>
+                      <DialogTrigger>
+                        <Button size="sm" variant="outline"><Pencil className="h-4 w-4" /></Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader><DialogTitle>Edit {h.ticker}</DialogTitle></DialogHeader>
+                        <form onSubmit={handleEdit((d) => updateHolding.mutate({ id: h.id, data: d }))} className="space-y-3">
+                          <Input placeholder="Ticker" {...regEdit("ticker")} />
+                          <Input placeholder="Name (optional)" {...regEdit("name")} />
+                          <div className="flex gap-2">
+                            <Input type="number" step="0.001" placeholder="Target alloc. (0-1)" {...regEdit("targetAllocation")} />
+                            <Input type="number" step="0.0001" placeholder="Mgmt fee (0-1)" {...regEdit("managementFee")} />
+                          </div>
+                          <Button type="submit" className="w-full" disabled={updateHolding.isPending}>
+                            {updateHolding.isPending ? "Saving…" : "Save Changes"}
+                          </Button>
+                        </form>
                       </DialogContent>
                     </Dialog>
                     <Button size="sm" variant="ghost" onClick={() => delHolding.mutate(h.id)}>

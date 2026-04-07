@@ -314,6 +314,7 @@ model PropertyExpenseEntry {
   date       DateTime
   category   String
   amount     Decimal  @db.Decimal(20, 6)
+  frequency  String   @default("monthly")
   notes      String?
   createdAt  DateTime @default(now())
 }
