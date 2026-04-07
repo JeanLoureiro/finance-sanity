@@ -140,9 +140,27 @@ export const propertySchema = z.object({
   mortgageAnnualRate: z.coerce.number().min(0).max(1).optional().nullable(),
   mortgageMonthlyPayment: z.coerce.number().min(0).optional().nullable(),
   mortgageStartBalance: z.coerce.number().min(0).optional().nullable(),
+  equityLoanStartDate: z.string().optional().nullable(),
+  equityLoanAnnualRate: z.coerce.number().min(0).max(1).optional().nullable(),
+  equityLoanStartBalance: z.coerce.number().min(0).optional().nullable(),
+  equityLoanMonthlyPayment: z.coerce.number().min(0).optional().nullable(),
 });
 
 export type PropertyInput = z.infer<typeof propertySchema>;
+
+export const propertyIncomeEntrySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  grossRent: z.coerce.number().positive(),
+  frequency: z.enum(["weekly", "fortnightly", "monthly", "quarterly", "annually"]).default("monthly"),
+  notes: z.string().optional().nullable(),
+});
+
+export const propertyExpenseEntrySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  category: z.enum(["management_fee", "council_rates", "water", "insurance", "repairs", "other"]),
+  amount: z.coerce.number().positive(),
+  notes: z.string().optional().nullable(),
+});
 
 // ---------------------------------------------------------------------------
 // Loan

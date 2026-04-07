@@ -285,9 +285,37 @@ model Property {
   mortgageAnnualRate     Decimal?     @db.Decimal(7, 6)
   mortgageMonthlyPayment Decimal?     @db.Decimal(20, 6)
   mortgageStartBalance   Decimal?     @db.Decimal(20, 6)
+  equityLoanStartDate    DateTime?
+  equityLoanAnnualRate   Decimal?     @db.Decimal(7, 6)
+  equityLoanStartBalance Decimal?     @db.Decimal(20, 6)
+  equityLoanMonthlyPayment Decimal?   @db.Decimal(20, 6)
   sortOrder              Int          @default(0)
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
+  incomeEntries          PropertyIncomeEntry[]
+  expenseEntries         PropertyExpenseEntry[]
+}
+
+model PropertyIncomeEntry {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  date       DateTime
+  grossRent  Decimal  @db.Decimal(20, 6)
+  frequency  String   @default("monthly")
+  notes      String?
+  createdAt  DateTime @default(now())
+}
+
+model PropertyExpenseEntry {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  date       DateTime
+  category   String
+  amount     Decimal  @db.Decimal(20, 6)
+  notes      String?
+  createdAt  DateTime @default(now())
 }
 
 // ---------------------------------------------------------------------------

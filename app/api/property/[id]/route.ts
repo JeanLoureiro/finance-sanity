@@ -13,13 +13,14 @@ export async function PATCH(
     if (!parsed.success) {
       return Response.json({ error: parsed.error.flatten() }, { status: 400 });
     }
-    const { purchaseDate, mortgageStartDate, ...rest } = parsed.data;
+    const { purchaseDate, mortgageStartDate, equityLoanStartDate, ...rest } = parsed.data;
     const property = await prisma.property.update({
       where: { id },
       data: {
         ...rest,
         ...(purchaseDate ? { purchaseDate: new Date(purchaseDate) } : {}),
         ...(mortgageStartDate !== undefined ? { mortgageStartDate: mortgageStartDate ? new Date(mortgageStartDate) : null } : {}),
+        ...(equityLoanStartDate !== undefined ? { equityLoanStartDate: equityLoanStartDate ? new Date(equityLoanStartDate) : null } : {}),
       },
     });
     return Response.json(property);

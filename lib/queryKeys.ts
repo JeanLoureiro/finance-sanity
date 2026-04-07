@@ -34,6 +34,8 @@ export const queryKeys = {
   properties: {
     all: () => ["properties"] as const,
     detail: (id: string) => ["properties", id] as const,
+    income: (id: string) => ["properties", id, "income"] as const,
+    expenses: (id: string) => ["properties", id, "expenses"] as const,
   },
 
   loans: {
