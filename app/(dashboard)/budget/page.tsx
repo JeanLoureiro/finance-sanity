@@ -746,18 +746,15 @@ export default function BudgetPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.budget.categories() }),
   });
 
-  // View mode
-  const [viewMode, setViewMode] = useState<"grouped" | "flat">("grouped");
-  const [hasHydrated, setHasHydrated] = useState(false);
+  // View mode (null = not yet mounted; avoids hydration mismatch + controlled/uncontrolled flip)
+  const [viewMode, setViewMode] = useState<"grouped" | "flat" | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
     const stored = localStorage.getItem("budget-view-mode");
-    if (stored === "grouped" || stored === "flat") {
-      setViewMode(stored);
-    }
-    setHasHydrated(true);
+    setViewMode(stored === "grouped" || stored === "flat" ? stored : "grouped");
   }, []);
+
+  const resolvedViewMode = viewMode ?? "grouped";
 
   const handleViewMode = (mode: "grouped" | "flat") => {
     setViewMode(mode);
@@ -880,16 +877,19 @@ export default function BudgetPage() {
 
       {/* View toggle + filter toggle */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <Tabs
-          defaultValue="grouped"
-          value={hasHydrated ? viewMode : undefined}
-          onValueChange={(v) => handleViewMode(v as "grouped" | "flat")}
-        >
-          <TabsList>
-            <TabsTrigger value="grouped">Grouped</TabsTrigger>
-            <TabsTrigger value="flat">Flat Table</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {viewMode !== null ? (
+          <Tabs value={viewMode} onValueChange={(v) => handleViewMode(v as "grouped" | "flat")}>
+            <TabsList>
+              <TabsTrigger value="grouped">Grouped</TabsTrigger>
+              <TabsTrigger value="flat">Flat Table</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ) : (
+          <div className="inline-flex h-8 items-center rounded-lg bg-muted p-[3px]">
+            <span className="relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center rounded-md px-1.5 py-0.5 text-sm font-medium text-foreground/60">Grouped</span>
+            <span className="relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center rounded-md px-1.5 py-0.5 text-sm font-medium text-foreground/60">Flat Table</span>
+          </div>
+        )}
 
         <button
           onClick={() => setShowFilters((v) => !v)}
@@ -944,7 +944,7 @@ export default function BudgetPage() {
         <Card><CardContent className="p-4 space-y-2">
           {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
         </CardContent></Card>
-      ) : viewMode === "grouped" ? (
+      ) : resolvedViewMode === "grouped" ? (
         <Card>
           <CardHeader><CardTitle className="text-base">Expense Items</CardTitle></CardHeader>
           <CardContent className="p-0 overflow-x-auto">
