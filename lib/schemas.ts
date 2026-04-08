@@ -140,10 +140,12 @@ export const propertySchema = z.object({
   mortgageAnnualRate: z.coerce.number().min(0).max(1).optional().nullable(),
   mortgageMonthlyPayment: z.coerce.number().min(0).optional().nullable(),
   mortgageStartBalance: z.coerce.number().min(0).optional().nullable(),
+  mortgageCurrentBalance: z.coerce.number().min(0).optional().nullable(),
   mortgagePaymentFrequency: z.enum(["weekly", "fortnightly", "monthly"]).default("monthly"),
   equityLoanStartDate: z.string().optional().nullable(),
   equityLoanAnnualRate: z.coerce.number().min(0).max(1).optional().nullable(),
   equityLoanStartBalance: z.coerce.number().min(0).optional().nullable(),
+  equityLoanCurrentBalance: z.coerce.number().min(0).optional().nullable(),
   equityLoanMonthlyPayment: z.coerce.number().min(0).optional().nullable(),
   equityLoanPaymentFrequency: z.enum(["weekly", "fortnightly", "monthly"]).default("monthly"),
 });
