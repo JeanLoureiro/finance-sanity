@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CurrencyAmount } from "@/components/ui/currency-amount";
 import { Trash2, PlusCircle, ChevronDown, ChevronUp, SlidersHorizontal, X, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-import { useState, useRef } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type { BudgetItemInput } from "@/lib/schemas";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
@@ -747,12 +747,18 @@ export default function BudgetPage() {
   });
 
   // View mode
-  const [viewMode, setViewMode] = useState<"grouped" | "flat">(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("budget-view-mode") as "grouped" | "flat") ?? "grouped";
+  const [viewMode, setViewMode] = useState<"grouped" | "flat">("grouped");
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = localStorage.getItem("budget-view-mode");
+    if (stored === "grouped" || stored === "flat") {
+      setViewMode(stored);
     }
-    return "grouped";
-  });
+    setHasHydrated(true);
+  }, []);
+
   const handleViewMode = (mode: "grouped" | "flat") => {
     setViewMode(mode);
     localStorage.setItem("budget-view-mode", mode);
@@ -874,7 +880,11 @@ export default function BudgetPage() {
 
       {/* View toggle + filter toggle */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <Tabs value={viewMode} onValueChange={(v) => handleViewMode(v as "grouped" | "flat")}>
+        <Tabs
+          defaultValue="grouped"
+          value={hasHydrated ? viewMode : undefined}
+          onValueChange={(v) => handleViewMode(v as "grouped" | "flat")}
+        >
           <TabsList>
             <TabsTrigger value="grouped">Grouped</TabsTrigger>
             <TabsTrigger value="flat">Flat Table</TabsTrigger>
@@ -944,8 +954,8 @@ export default function BudgetPage() {
                 {groupedItems.map(({ type, items: groupItems }) => {
                   const groupTotal = groupItems.reduce((s, i) => s + i.monthlyAmount, 0);
                   return (
-                    <>
-                      <tr key={`group-${type}`} className="bg-muted/40 border-b border-t">
+                    <Fragment key={`group-${type}`}>
+                      <tr className="bg-muted/40 border-b border-t">
                         <td colSpan={8} className="px-4 py-1.5">
                           <div className="flex items-center gap-3">
                             <span className="font-semibold text-xs uppercase tracking-wide">{type}</span>
@@ -961,11 +971,11 @@ export default function BudgetPage() {
                       {groupItems.map((item) => (
                         <ItemRow key={item.id} item={item} showType={false} {...rowProps} />
                       ))}
-                    </>
+                    </Fragment>
                   );
                 })}
                 {untypedItems.length > 0 && (
-                  <>
+                  <Fragment key="group-untyped">
                     <tr className="bg-muted/40 border-b border-t">
                       <td colSpan={11} className="px-4 py-1.5">
                         <span className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Uncategorised</span>
@@ -974,7 +984,7 @@ export default function BudgetPage() {
                     {untypedItems.map((item) => (
                       <ItemRow key={item.id} item={item} showType={false} {...rowProps} />
                     ))}
-                  </>
+                  </Fragment>
                 )}
                 {displayItems.length > 0 && (
                   <TotalRow
