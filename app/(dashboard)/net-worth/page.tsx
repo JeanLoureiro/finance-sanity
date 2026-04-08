@@ -27,7 +27,7 @@ type NWData = {
   cryptoHoldings: { id: string; ticker: string; unitsHeld: number; costBasis: number }[];
   allocationSettings: { etf: number; stock: number; crypto: number; cash: number; mf: number };
   history: { date: string; netWorth: number; cashTotal: number; etfTotal: number; stockTotal: number; cryptoTotal: number; managedFundTotal: number; superTotal: number; propertyValue: number; liabilitiesTotal: number; savingsRate: number | null }[];
-  properties: { id: string; name: string; currentValue: number; currentMortgageBalance: number; mortgageRemainingBalance: number; equity: number }[];
+  properties: { id: string; name: string; currentValue: number; currentMortgageBalance: number; mortgageRemainingBalance: number; equityLoanBalance: number; equity: number }[];
   superAccounts: { id: string; name: string; balance: number }[];
 };
 

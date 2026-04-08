@@ -127,6 +127,36 @@ export async function GET() {
         }
       }
 
+      const equityLoanStartBalance = Number(p.equityLoanStartBalance ?? 0);
+      let equityLoanBalance = 0;
+
+      if (equityLoanStartBalance > 0) {
+        const elOverride = p.equityLoanCurrentBalance;
+        if (elOverride !== null && elOverride !== undefined && Number(elOverride) > 0) {
+          equityLoanBalance = Number(elOverride);
+        } else {
+          const elRate = Number(p.equityLoanAnnualRate ?? 0);
+          const elPayment = Number(p.equityLoanMonthlyPayment ?? 0);
+          const elStartDate = p.equityLoanStartDate ? new Date(p.equityLoanStartDate) : null;
+          const elPaymentsPerYear = freqToPPY(p.equityLoanPaymentFrequency ?? "monthly");
+
+          if (elStartDate && elRate > 0 && elPayment > 0) {
+            equityLoanBalance = mortgageBalance(
+              equityLoanStartBalance,
+              elRate,
+              elPayment,
+              elStartDate,
+              asOfDate,
+              elPaymentsPerYear
+            );
+          } else {
+            equityLoanBalance = equityLoanStartBalance;
+          }
+        }
+      }
+
+      const totalPropertyDebt = mortgageRemainingBalance + equityLoanBalance;
+
       return {
         id: p.id,
         name: p.name,
@@ -134,8 +164,9 @@ export async function GET() {
         currentValue: Number(p.currentValue),
         netRentProfit: Number(p.netRentProfit),
         gain: Number(p.currentValue) - Number(p.purchaseValue) + Number(p.netRentProfit),
-        currentMortgageBalance: mortgageRemainingBalance,
+        currentMortgageBalance: totalPropertyDebt,
         mortgageRemainingBalance,
+        equityLoanBalance,
         equity: Number(p.currentValue) - mortgageRemainingBalance,
       };
     });
