@@ -3,6 +3,18 @@ import { mortgageBalance } from "@/lib/finance";
 import { computeFIFO, summariseCGTByFY, type Trade } from "@/lib/capitalGains";
 import { getFiscalYear } from "@/lib/australianFY";
 
+function freqToPPY(freq?: string | null): number {
+  switch (freq) {
+    case "weekly":
+      return 52;
+    case "fortnightly":
+      return 26;
+    case "monthly":
+    default:
+      return 12;
+  }
+}
+
 export async function GET() {
   try {
     const settings = await prisma.userSettings.findFirst({
@@ -87,16 +99,34 @@ export async function GET() {
     );
 
     // Property & mortgage
+    const asOfDate = new Date();
     const propertyData = settings.properties.map((p) => {
-      const currentMortgage =
-        p.mortgageStartDate && p.mortgageStartBalance && p.mortgageAnnualRate && p.mortgageMonthlyPayment
-          ? mortgageBalance(
-              Number(p.mortgageStartBalance),
-              Number(p.mortgageAnnualRate),
-              Number(p.mortgageMonthlyPayment),
-              new Date(p.mortgageStartDate)
-            )
-          : 0;
+      const startBalance = Number(p.mortgageStartBalance ?? 0);
+      let mortgageRemainingBalance = 0;
+
+      if (startBalance > 0) {
+        const override = p.mortgageCurrentBalance;
+        if (override !== null && override !== undefined && Number(override) > 0) {
+          mortgageRemainingBalance = Number(override);
+        } else {
+          const annualRate = Number(p.mortgageAnnualRate ?? 0);
+          const periodicPayment = Number(p.mortgageMonthlyPayment ?? 0);
+          const startDate = p.mortgageStartDate ? new Date(p.mortgageStartDate) : null;
+          const paymentsPerYear = freqToPPY(p.mortgagePaymentFrequency ?? "monthly");
+
+          if (startDate && annualRate > 0 && periodicPayment > 0) {
+            mortgageRemainingBalance = mortgageBalance(
+              startBalance,
+              annualRate,
+              periodicPayment,
+              startDate,
+              asOfDate,
+              paymentsPerYear
+            );
+          }
+        }
+      }
+
       return {
         id: p.id,
         name: p.name,
@@ -104,8 +134,9 @@ export async function GET() {
         currentValue: Number(p.currentValue),
         netRentProfit: Number(p.netRentProfit),
         gain: Number(p.currentValue) - Number(p.purchaseValue) + Number(p.netRentProfit),
-        currentMortgageBalance: currentMortgage,
-        equity: Number(p.currentValue) - currentMortgage,
+        currentMortgageBalance: mortgageRemainingBalance,
+        mortgageRemainingBalance,
+        equity: Number(p.currentValue) - mortgageRemainingBalance,
       };
     });
 
