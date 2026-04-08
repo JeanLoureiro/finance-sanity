@@ -285,10 +285,12 @@ model Property {
   mortgageAnnualRate     Decimal?     @db.Decimal(7, 6)
   mortgageMonthlyPayment Decimal?     @db.Decimal(20, 6)
   mortgageStartBalance   Decimal?     @db.Decimal(20, 6)
+  mortgagePaymentFrequency   String    @default("monthly")
   equityLoanStartDate    DateTime?
   equityLoanAnnualRate   Decimal?     @db.Decimal(7, 6)
   equityLoanStartBalance Decimal?     @db.Decimal(20, 6)
   equityLoanMonthlyPayment Decimal?   @db.Decimal(20, 6)
+  equityLoanPaymentFrequency String   @default("monthly")
   sortOrder              Int          @default(0)
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt

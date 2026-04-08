@@ -108,28 +108,31 @@ export function cumipmt(
 }
 
 /**
- * Compute current mortgage balance given start balance, rate, payment, and start date.
+ * Compute current mortgage/loan balance given start balance, rate, payment, and start date.
  * Returns the remaining balance as a positive number.
+ *
+ * @param paymentsPerYear  12 = monthly (default), 26 = fortnightly, 52 = weekly
+ *                         The periodicPayment amount must match this frequency.
  */
 export function mortgageBalance(
   startBalance: number,
   annualRate: number,
-  monthlyPayment: number,
+  periodicPayment: number,
   startDate: Date,
-  asOfDate: Date = new Date()
+  asOfDate: Date = new Date(),
+  paymentsPerYear: number = 12
 ): number {
-  const monthRate = annualRate / 12;
-  const monthsElapsed =
-    (asOfDate.getFullYear() - startDate.getFullYear()) * 12 +
-    (asOfDate.getMonth() - startDate.getMonth());
+  const periodRate = annualRate / paymentsPerYear;
+  const daysPerPeriod = 365.25 / paymentsPerYear;
+  const daysElapsed = (asOfDate.getTime() - startDate.getTime()) / 86_400_000;
+  const periodsElapsed = Math.floor(daysElapsed / daysPerPeriod);
 
-  if (monthsElapsed <= 0) return startBalance;
+  if (periodsElapsed <= 0) return startBalance;
 
   let balance = startBalance;
-  for (let i = 0; i < monthsElapsed; i++) {
-    const interest = balance * monthRate;
-    const principal = monthlyPayment - interest;
-    balance = Math.max(0, balance - principal);
+  for (let i = 0; i < periodsElapsed; i++) {
+    const interest = balance * periodRate;
+    balance = Math.max(0, balance - (periodicPayment - interest));
   }
   return balance;
 }

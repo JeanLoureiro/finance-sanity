@@ -42,10 +42,12 @@ export async function POST(req: NextRequest) {
         mortgageAnnualRate: parsed.data.mortgageAnnualRate ?? null,
         mortgageMonthlyPayment: parsed.data.mortgageMonthlyPayment ?? null,
         mortgageStartBalance: parsed.data.mortgageStartBalance ?? null,
+        mortgagePaymentFrequency: parsed.data.mortgagePaymentFrequency ?? "monthly",
         equityLoanStartDate: parsed.data.equityLoanStartDate ? new Date(parsed.data.equityLoanStartDate) : null,
         equityLoanAnnualRate: parsed.data.equityLoanAnnualRate ?? null,
         equityLoanStartBalance: parsed.data.equityLoanStartBalance ?? null,
         equityLoanMonthlyPayment: parsed.data.equityLoanMonthlyPayment ?? null,
+        equityLoanPaymentFrequency: parsed.data.equityLoanPaymentFrequency ?? "monthly",
       },
     });
     return Response.json(property, { status: 201 });

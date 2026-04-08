@@ -20,8 +20,10 @@ type Property = {
   purchaseValue: string | number; currentValue: string | number; netRentProfit: string | number;
   mortgageStartDate: string | null; mortgageAnnualRate: string | number | null;
   mortgageMonthlyPayment: string | number | null; mortgageStartBalance: string | number | null;
+  mortgagePaymentFrequency: string;
   equityLoanStartDate: string | null; equityLoanAnnualRate: string | number | null;
   equityLoanStartBalance: string | number | null; equityLoanMonthlyPayment: string | number | null;
+  equityLoanPaymentFrequency: string;
 };
 
 type PropertyIncomeEntry = {
@@ -66,6 +68,16 @@ const EXPENSE_DEFAULT_FREQUENCY: Record<string, string> = {
   other: "monthly",
 };
 
+const PAYMENT_FREQUENCIES = [
+  { value: "weekly",      label: "Weekly",      ppy: 52 },
+  { value: "fortnightly", label: "Fortnightly",  ppy: 26 },
+  { value: "monthly",     label: "Monthly",      ppy: 12 },
+] as const;
+
+function freqToPPY(freq: string): number {
+  return PAYMENT_FREQUENCIES.find((f) => f.value === freq)?.ppy ?? 12;
+}
+
 function toDateInput(iso: string | null | undefined) {
   if (!iso) return "";
   try { return new Date(iso).toISOString().slice(0, 10); } catch { return ""; }
@@ -83,9 +95,11 @@ function computePropertyStats(p: Property) {
   let mortgagePayoffDate: Date | null = null;
   if (p.mortgageStartDate && p.mortgageAnnualRate && p.mortgageMonthlyPayment && p.mortgageStartBalance) {
     const annualRate = Number(p.mortgageAnnualRate);
-    const monthlyPayment = Number(p.mortgageMonthlyPayment);
-    mortgageRemainingBalance = mortgageBalance(Number(p.mortgageStartBalance), annualRate, monthlyPayment, new Date(p.mortgageStartDate));
-    const monthsLeft = Math.ceil(nper(annualRate / 12, -monthlyPayment, mortgageRemainingBalance, 0));
+    const periodicPayment = Number(p.mortgageMonthlyPayment);
+    const mPPY = freqToPPY(p.mortgagePaymentFrequency ?? "monthly");
+    mortgageRemainingBalance = mortgageBalance(Number(p.mortgageStartBalance), annualRate, periodicPayment, new Date(p.mortgageStartDate), new Date(), mPPY);
+    const periodsLeft = Math.ceil(nper(annualRate / mPPY, -periodicPayment, mortgageRemainingBalance, 0));
+    const monthsLeft = Math.round(periodsLeft / mPPY * 12);
     if (monthsLeft > 0 && monthsLeft < 600) {
       const payoff = new Date();
       payoff.setMonth(payoff.getMonth() + monthsLeft);
@@ -100,11 +114,13 @@ function computePropertyStats(p: Property) {
     const elRate = Number(p.equityLoanAnnualRate ?? 0);
     const elPayment = Number(p.equityLoanMonthlyPayment ?? 0);
     const elStartBalance = Number(p.equityLoanStartBalance);
+    const elPPY = freqToPPY(p.equityLoanPaymentFrequency ?? "monthly");
     if (elPayment > 0 && p.equityLoanStartDate) {
       // P&I: amortize
       equityLoanIsIO = false;
-      equityLoanBalance = mortgageBalance(elStartBalance, elRate, elPayment, new Date(p.equityLoanStartDate));
-      const monthsLeft = Math.ceil(nper(elRate / 12, -elPayment, equityLoanBalance, 0));
+      equityLoanBalance = mortgageBalance(elStartBalance, elRate, elPayment, new Date(p.equityLoanStartDate), new Date(), elPPY);
+      const periodsLeft = Math.ceil(nper(elRate / elPPY, -elPayment, equityLoanBalance, 0));
+      const monthsLeft = Math.round(periodsLeft / elPPY * 12);
       if (monthsLeft > 0 && monthsLeft < 600) {
         const payoff = new Date();
         payoff.setMonth(payoff.getMonth() + monthsLeft);
@@ -120,6 +136,14 @@ function computePropertyStats(p: Property) {
   const totalDebt = mortgageRemainingBalance + equityLoanBalance;
   const paidOff = currentValue > 0 ? (equity / currentValue) * 100 : 0;
   return { currentValue, capitalGain, mortgageRemainingBalance, mortgagePayoffDate, equityLoanBalance, equityLoanPayoffDate, equityLoanIsIO, equity, totalDebt, paidOff };
+}
+
+function PaymentFrequencySelect({ name, register }: { name: string; register: ReturnType<typeof useForm>["register"] }) {
+  return (
+    <select className="h-9 rounded-md border border-input bg-background px-2 text-sm" {...register(name)}>
+      {PAYMENT_FREQUENCIES.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+    </select>
+  );
 }
 
 function PropertyForm({
@@ -152,7 +176,13 @@ function PropertyForm({
       </div>
       <div className="flex gap-2">
         <div className="flex-1"><label className="text-xs text-muted-foreground">Starting balance ($)</label><Input type="number" {...register("mortgageStartBalance")} /></div>
-        <div className="flex-1"><label className="text-xs text-muted-foreground">Monthly payment ($)</label><Input type="number" {...register("mortgageMonthlyPayment")} /></div>
+        <div className="flex-1">
+          <label className="text-xs text-muted-foreground">Payment amount ($)</label>
+          <div className="flex gap-1.5">
+            <Input type="number" className="flex-1" {...register("mortgageMonthlyPayment")} />
+            <PaymentFrequencySelect name="mortgagePaymentFrequency" register={register} />
+          </div>
+        </div>
       </div>
       <p className="text-xs font-medium text-muted-foreground pt-1">Equity loan / LOC (leave blank if none)</p>
       <div className="flex gap-2">
@@ -161,7 +191,13 @@ function PropertyForm({
       </div>
       <div className="flex gap-2">
         <div className="flex-1"><label className="text-xs text-muted-foreground">Drawn balance ($)</label><Input type="number" {...register("equityLoanStartBalance")} /></div>
-        <div className="flex-1"><label className="text-xs text-muted-foreground">Monthly payment ($, blank = IO)</label><Input type="number" {...register("equityLoanMonthlyPayment")} /></div>
+        <div className="flex-1">
+          <label className="text-xs text-muted-foreground">Payment ($, blank = IO)</label>
+          <div className="flex gap-1.5">
+            <Input type="number" className="flex-1" {...register("equityLoanMonthlyPayment")} />
+            <PaymentFrequencySelect name="equityLoanPaymentFrequency" register={register} />
+          </div>
+        </div>
       </div>
       <Button type="submit" className="w-full" disabled={isPending}>{submitLabel}</Button>
     </form>
@@ -515,7 +551,7 @@ export default function PropertyPage() {
           <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle>Add Property</DialogTitle></DialogHeader>
             <PropertyForm
-              defaultValues={{ name: "", purchaseDate: "", isPrimaryResidence: false, purchaseValue: 0, currentValue: 0, netRentProfit: 0, mortgageStartDate: "", mortgageAnnualRate: 0, mortgageMonthlyPayment: 0, mortgageStartBalance: 0, equityLoanStartDate: "", equityLoanAnnualRate: 0, equityLoanStartBalance: 0, equityLoanMonthlyPayment: 0 }}
+              defaultValues={{ name: "", purchaseDate: "", isPrimaryResidence: false, purchaseValue: 0, currentValue: 0, netRentProfit: 0, mortgageStartDate: "", mortgageAnnualRate: 0, mortgageMonthlyPayment: 0, mortgageStartBalance: 0, mortgagePaymentFrequency: "monthly", equityLoanStartDate: "", equityLoanAnnualRate: 0, equityLoanStartBalance: 0, equityLoanMonthlyPayment: 0, equityLoanPaymentFrequency: "monthly" }}
               onSubmit={(d) => add.mutate(d)}
               isPending={add.isPending}
               submitLabel="Add Property"
@@ -570,10 +606,12 @@ export default function PropertyPage() {
                               mortgageAnnualRate: p.mortgageAnnualRate !== null ? Number(p.mortgageAnnualRate) : 0,
                               mortgageMonthlyPayment: p.mortgageMonthlyPayment !== null ? Number(p.mortgageMonthlyPayment) : 0,
                               mortgageStartBalance: p.mortgageStartBalance !== null ? Number(p.mortgageStartBalance) : 0,
+                              mortgagePaymentFrequency: p.mortgagePaymentFrequency ?? "monthly",
                               equityLoanStartDate: toDateInput(p.equityLoanStartDate),
                               equityLoanAnnualRate: p.equityLoanAnnualRate !== null ? Number(p.equityLoanAnnualRate) : 0,
                               equityLoanStartBalance: p.equityLoanStartBalance !== null ? Number(p.equityLoanStartBalance) : 0,
                               equityLoanMonthlyPayment: p.equityLoanMonthlyPayment !== null ? Number(p.equityLoanMonthlyPayment) : 0,
+                              equityLoanPaymentFrequency: p.equityLoanPaymentFrequency ?? "monthly",
                             }}
                             onSubmit={(d) => update.mutate({ id: p.id, ...d })}
                             isPending={update.isPending}
@@ -598,12 +636,12 @@ export default function PropertyPage() {
                   {stats.mortgageRemainingBalance > 0 && (
                     <div className="space-y-1 mb-3">
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Main mortgage: <CurrencyAmount value={stats.mortgageRemainingBalance} /></span>
+                        <span>Main mortgage: <CurrencyAmount value={stats.mortgageRemainingBalance} /> · <CurrencyAmount value={Number(p.mortgageMonthlyPayment)} />/{p.mortgagePaymentFrequency ?? "month"}</span>
                         {stats.mortgagePayoffDate && <span>Payoff: {stats.mortgagePayoffDate.toLocaleDateString("en-AU", { month: "short", year: "numeric" })}</span>}
                       </div>
                       {stats.equityLoanBalance > 0 && (
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Equity loan ({stats.equityLoanIsIO ? "IO" : "P&I"}): <CurrencyAmount value={stats.equityLoanBalance} /></span>
+                          <span>Equity loan ({stats.equityLoanIsIO ? "IO" : "P&I"}): <CurrencyAmount value={stats.equityLoanBalance} />{!stats.equityLoanIsIO && <> · <CurrencyAmount value={Number(p.equityLoanMonthlyPayment)} />/{p.equityLoanPaymentFrequency ?? "month"}</>}</span>
                           {!stats.equityLoanIsIO && stats.equityLoanPayoffDate && <span>Payoff: {stats.equityLoanPayoffDate.toLocaleDateString("en-AU", { month: "short", year: "numeric" })}</span>}
                           {stats.equityLoanIsIO && p.equityLoanAnnualRate && <span>{(Number(p.equityLoanAnnualRate) * 100).toFixed(2)}% p.a. — interest only</span>}
                         </div>
@@ -619,7 +657,8 @@ export default function PropertyPage() {
                     <div className="mb-3 text-xs text-muted-foreground">
                       <span>Equity loan ({stats.equityLoanIsIO ? "IO" : "P&I"}): <CurrencyAmount value={stats.equityLoanBalance} /></span>
                       {stats.equityLoanIsIO && p.equityLoanAnnualRate && <span className="ml-2">{(Number(p.equityLoanAnnualRate) * 100).toFixed(2)}% p.a. — interest only</span>}
-                      {!stats.equityLoanIsIO && stats.equityLoanPayoffDate && <span className="ml-2">Payoff: {stats.equityLoanPayoffDate.toLocaleDateString("en-AU", { month: "short", year: "numeric" })}</span>}
+                      {!stats.equityLoanIsIO && <span className="ml-2"><CurrencyAmount value={Number(p.equityLoanMonthlyPayment)} />/{p.equityLoanPaymentFrequency ?? "month"}</span>}
+                      {!stats.equityLoanIsIO && stats.equityLoanPayoffDate && <span className="ml-2">· Payoff: {stats.equityLoanPayoffDate.toLocaleDateString("en-AU", { month: "short", year: "numeric" })}</span>}
                     </div>
                   )}
 
