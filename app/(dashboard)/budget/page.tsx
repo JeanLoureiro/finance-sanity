@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CurrencyAmount } from "@/components/ui/currency-amount";
-import { Trash2, PlusCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2, PlusCircle, ChevronDown, ChevronUp, SlidersHorizontal, X, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useState, useRef } from "react";
 import type { BudgetItemInput } from "@/lib/schemas";
 
@@ -26,6 +26,9 @@ type BudgetItem = {
 type LabelRow = { id: string; name: string; sortOrder: number };
 type BankAccount = { id: string; name: string; bsb: string | null; accountNumber: string | null };
 
+// ---------------------------------------------------------------------------
+// Frequency helpers
+// ---------------------------------------------------------------------------
 const FREQ_LIST = [...BUDGET_FREQUENCIES];
 
 function toMonthly(amount: number, freq: string): number {
@@ -34,7 +37,7 @@ function toMonthly(amount: number, freq: string): number {
     case "Fortnightly": return amount * 26 / 12;
     case "Quarterly":   return amount / 3;
     case "Annually":    return amount / 12;
-    default:            return amount; // Monthly
+    default:            return amount;
   }
 }
 
@@ -44,21 +47,340 @@ function fromMonthly(monthly: number, freq: string): number {
     case "Fortnightly": return monthly * 12 / 26;
     case "Quarterly":   return monthly * 3;
     case "Annually":    return monthly * 12;
-    default:            return monthly; // Monthly
+    default:            return monthly;
   }
 }
 
 function computeMonthlyIncome(netIncome: number, frequency: string): number {
   switch (frequency) {
-    case "Weekly":       return netIncome * 52 / 12;
-    case "2-weeks":      return netIncome * 26 / 12;
-    case "4-weeks":      return netIncome * 13 / 12;
-    case "Twice Monthly":return netIncome * 2;
-    default:             return netIncome;
+    case "Weekly":        return netIncome * 52 / 12;
+    case "2-weeks":       return netIncome * 26 / 12;
+    case "4-weeks":       return netIncome * 13 / 12;
+    case "Twice Monthly": return netIncome * 2;
+    default:              return netIncome;
   }
 }
 
-// Inline editable cell — renders a plain select that saves on change
+// ---------------------------------------------------------------------------
+// Filter state
+// ---------------------------------------------------------------------------
+type SortBy = "name" | "monthly" | "annual" | "pct";
+type SortDir = "asc" | "desc";
+
+type FilterState = {
+  search: string;
+  types: string[];
+  categories: string[];
+  frequencies: string[];
+  bankAccounts: string[];
+  amountMin: string;
+  amountMax: string;
+  sortBy: SortBy;
+  sortDir: SortDir;
+};
+
+const DEFAULT_FILTERS: FilterState = {
+  search: "",
+  types: [],
+  categories: [],
+  frequencies: [],
+  bankAccounts: [],
+  amountMin: "",
+  amountMax: "",
+  sortBy: "name",
+  sortDir: "asc",
+};
+
+function countActiveFilters(f: FilterState): number {
+  return (
+    (f.search.trim() ? 1 : 0) +
+    f.types.length +
+    f.categories.length +
+    f.frequencies.length +
+    f.bankAccounts.length +
+    (f.amountMin ? 1 : 0) +
+    (f.amountMax ? 1 : 0)
+  );
+}
+
+function applyFilters(items: BudgetItem[], f: FilterState, monthlyIncome: number): BudgetItem[] {
+  let result = [...items];
+
+  if (f.search.trim()) {
+    const q = f.search.trim().toLowerCase();
+    result = result.filter((i) => i.name.toLowerCase().includes(q));
+  }
+  if (f.types.length) {
+    result = result.filter((i) => f.types.includes(i.budgetType));
+  }
+  if (f.categories.length) {
+    result = result.filter((i) => f.categories.includes(i.category));
+  }
+  if (f.frequencies.length) {
+    result = result.filter((i) => f.frequencies.includes(i.frequency || "Monthly"));
+  }
+  if (f.bankAccounts.length) {
+    result = result.filter((i) => {
+      if (!i.bankAccount) return f.bankAccounts.includes("(No Account)");
+      return f.bankAccounts.includes(i.bankAccount);
+    });
+  }
+  if (f.amountMin) {
+    const min = parseFloat(f.amountMin);
+    if (!isNaN(min)) result = result.filter((i) => i.monthlyAmount >= min);
+  }
+  if (f.amountMax) {
+    const max = parseFloat(f.amountMax);
+    if (!isNaN(max)) result = result.filter((i) => i.monthlyAmount <= max);
+  }
+
+  result.sort((a, b) => {
+    let diff = 0;
+    switch (f.sortBy) {
+      case "name":    diff = a.name.localeCompare(b.name); break;
+      case "monthly": diff = a.monthlyAmount - b.monthlyAmount; break;
+      case "annual":  diff = (a.monthlyAmount - b.monthlyAmount) * 12; break;
+      case "pct":     diff = monthlyIncome > 0 ? a.monthlyAmount - b.monthlyAmount : 0; break;
+    }
+    return f.sortDir === "asc" ? diff : -diff;
+  });
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Filter panel sub-components
+// ---------------------------------------------------------------------------
+function FilterChips({
+  label,
+  options,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  options: string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+}) {
+  if (!options.length) return null;
+  return (
+    <div className="space-y-1.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((o) => (
+          <button
+            key={o}
+            onClick={() => onToggle(o)}
+            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+              selected.includes(o)
+                ? "bg-primary text-primary-foreground border-primary"
+                : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
+            }`}
+          >
+            {o}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FilterPanel({
+  filters,
+  onChange,
+  onClear,
+  typeNames,
+  categoryNames,
+  bankAccountNames,
+  hasNoAccountItems,
+}: {
+  filters: FilterState;
+  onChange: (patch: Partial<FilterState>) => void;
+  onClear: () => void;
+  typeNames: string[];
+  categoryNames: string[];
+  bankAccountNames: string[];
+  hasNoAccountItems: boolean;
+}) {
+  const toggleArr = (arr: string[], val: string): string[] =>
+    arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
+
+  const bankOptions = [
+    ...bankAccountNames,
+    ...(hasNoAccountItems ? ["(No Account)"] : []),
+  ];
+
+  const activeCount = countActiveFilters(filters);
+
+  return (
+    <Card className="border-primary/20 bg-muted/10">
+      <CardContent className="pt-4 space-y-5">
+        {/* Row 1: search + sort + clear */}
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="relative flex-1 min-w-52">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              className="pl-8 h-8 text-sm"
+              placeholder="Search by name…"
+              value={filters.search}
+              onChange={(e) => onChange({ search: e.target.value })}
+            />
+            {filters.search && (
+              <button
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => onChange({ search: "" })}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Sort by</p>
+            <select
+              className="h-8 text-xs border rounded-md px-2 bg-background"
+              value={filters.sortBy}
+              onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}
+            >
+              <option value="name">Name</option>
+              <option value="monthly">Monthly $</option>
+              <option value="annual">Annual $</option>
+              <option value="pct">% of Income</option>
+            </select>
+            <button
+              title={filters.sortDir === "asc" ? "Ascending" : "Descending"}
+              onClick={() => onChange({ sortDir: filters.sortDir === "asc" ? "desc" : "asc" })}
+              className="h-8 w-8 flex items-center justify-center border rounded-md hover:bg-muted transition-colors"
+            >
+              {filters.sortDir === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+
+          {activeCount > 0 && (
+            <Button size="sm" variant="ghost" className="h-8 text-xs gap-1.5 text-muted-foreground" onClick={onClear}>
+              <X className="h-3.5 w-3.5" /> Clear filters
+            </Button>
+          )}
+        </div>
+
+        {/* Row 2: multi-select chips */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <FilterChips
+            label="Type"
+            options={typeNames}
+            selected={filters.types}
+            onToggle={(v) => onChange({ types: toggleArr(filters.types, v) })}
+          />
+          <FilterChips
+            label="Category"
+            options={categoryNames}
+            selected={filters.categories}
+            onToggle={(v) => onChange({ categories: toggleArr(filters.categories, v) })}
+          />
+          <FilterChips
+            label="Frequency"
+            options={FREQ_LIST}
+            selected={filters.frequencies}
+            onToggle={(v) => onChange({ frequencies: toggleArr(filters.frequencies, v) })}
+          />
+          <FilterChips
+            label="Bank Account"
+            options={bankOptions}
+            selected={filters.bankAccounts}
+            onToggle={(v) => onChange({ bankAccounts: toggleArr(filters.bankAccounts, v) })}
+          />
+        </div>
+
+        {/* Row 3: amount range */}
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Monthly amount</p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Min $</span>
+            <Input
+              type="number"
+              className="h-8 w-28 text-sm"
+              placeholder="0"
+              value={filters.amountMin}
+              onChange={(e) => onChange({ amountMin: e.target.value })}
+            />
+          </div>
+          <span className="text-muted-foreground text-sm">—</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Max $</span>
+            <Input
+              type="number"
+              className="h-8 w-28 text-sm"
+              placeholder="any"
+              value={filters.amountMax}
+              onChange={(e) => onChange({ amountMax: e.target.value })}
+            />
+          </div>
+          {(filters.amountMin || filters.amountMax) && (
+            <button
+              className="text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => onChange({ amountMin: "", amountMax: "" })}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Active filter summary chips */}
+        {activeCount > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-1 border-t">
+            <span className="text-[11px] text-muted-foreground self-center">Active:</span>
+            {filters.search && (
+              <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/30 rounded-full px-2 py-0.5">
+                Search: "{filters.search}"
+                <button onClick={() => onChange({ search: "" })}><X className="h-3 w-3" /></button>
+              </span>
+            )}
+            {filters.types.map((t) => (
+              <span key={t} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/30 rounded-full px-2 py-0.5">
+                Type: {t}
+                <button onClick={() => onChange({ types: filters.types.filter((x) => x !== t) })}><X className="h-3 w-3" /></button>
+              </span>
+            ))}
+            {filters.categories.map((c) => (
+              <span key={c} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/30 rounded-full px-2 py-0.5">
+                Cat: {c}
+                <button onClick={() => onChange({ categories: filters.categories.filter((x) => x !== c) })}><X className="h-3 w-3" /></button>
+              </span>
+            ))}
+            {filters.frequencies.map((f) => (
+              <span key={f} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/30 rounded-full px-2 py-0.5">
+                Freq: {f}
+                <button onClick={() => onChange({ frequencies: filters.frequencies.filter((x) => x !== f) })}><X className="h-3 w-3" /></button>
+              </span>
+            ))}
+            {filters.bankAccounts.map((b) => (
+              <span key={b} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/30 rounded-full px-2 py-0.5">
+                Bank: {b}
+                <button onClick={() => onChange({ bankAccounts: filters.bankAccounts.filter((x) => x !== b) })}><X className="h-3 w-3" /></button>
+              </span>
+            ))}
+            {filters.amountMin && (
+              <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/30 rounded-full px-2 py-0.5">
+                Min: ${filters.amountMin}/mo
+                <button onClick={() => onChange({ amountMin: "" })}><X className="h-3 w-3" /></button>
+              </span>
+            )}
+            {filters.amountMax && (
+              <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/30 rounded-full px-2 py-0.5">
+                Max: ${filters.amountMax}/mo
+                <button onClick={() => onChange({ amountMax: "" })}><X className="h-3 w-3" /></button>
+              </span>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Inline editable cell
+// ---------------------------------------------------------------------------
 function SelectCell({
   value,
   options,
@@ -95,7 +417,54 @@ function SelectCell({
   );
 }
 
-// A single budget item row (shared by grouped and flat views)
+// ---------------------------------------------------------------------------
+// Editable plain-text cell (for name)
+// ---------------------------------------------------------------------------
+function EditableTextCell({
+  value,
+  onSave,
+}: {
+  value: string;
+  onSave: (v: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        className="text-sm border rounded px-1 py-0.5 bg-background w-full min-w-[120px] outline-none focus:ring-1 focus:ring-primary"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          if (draft.trim() && draft.trim() !== value) onSave(draft.trim());
+          setEditing(false);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            if (draft.trim() && draft.trim() !== value) onSave(draft.trim());
+            setEditing(false);
+          }
+          if (e.key === "Escape") { setDraft(value); setEditing(false); }
+        }}
+      />
+    );
+  }
+  return (
+    <span
+      className="cursor-pointer hover:underline underline-offset-2 hover:text-primary"
+      title="Click to edit name"
+      onClick={() => { setDraft(value); setEditing(true); }}
+    >
+      {value || <span className="italic text-muted-foreground">—</span>}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Item row
+// ---------------------------------------------------------------------------
 function ItemRow({
   item,
   monthlyIncome,
@@ -121,7 +490,12 @@ function ItemRow({
 
   return (
     <tr className="border-b last:border-0 hover:bg-muted/20 group">
-      <td className="px-4 py-2">{item.name}</td>
+      <td className="px-4 py-2">
+        <EditableTextCell
+          value={item.name}
+          onSave={(v) => updateMutation.mutate({ id: item.id, name: v })}
+        />
+      </td>
       {showType && (
         <td className="px-4 py-2">
           <SelectCell
@@ -143,7 +517,6 @@ function ItemRow({
           value={item.frequency || "Monthly"}
           options={FREQ_LIST}
           onSave={(v) => {
-            // When frequency changes, re-express the current display amount in the new frequency
             const currentDisplay = fromMonthly(item.monthlyAmount, item.frequency);
             updateMutation.mutate({
               id: item.id,
@@ -154,7 +527,6 @@ function ItemRow({
         />
       </td>
       <td className="px-4 py-2 text-right">
-        {/* Amount shown in the item's own frequency */}
         <input
           key={item.frequency}
           ref={amountRef}
@@ -204,19 +576,19 @@ function ItemRow({
 
 function TableHead({ showType }: { showType: boolean }) {
   return (
-    <thead className="bg-muted/50 border-b text-sm">
+    <thead className="sticky top-0 z-10 text-sm border-b shadow-[0_1px_0_0_hsl(var(--border))]">
       <tr>
-        <th className="text-left px-4 py-2">Name</th>
-        {showType && <th className="text-left px-4 py-2">Type</th>}
-        <th className="text-left px-4 py-2">Category</th>
-        <th className="text-left px-4 py-2">Frequency</th>
-        <th className="text-right px-4 py-2">Amount</th>
-        <th className="text-right px-4 py-2">Monthly</th>
-        <th className="text-right px-4 py-2">% of Income</th>
-        <th className="text-right px-4 py-2">Weekly</th>
-        <th className="text-right px-4 py-2">Annual</th>
-        <th className="text-left px-4 py-2">Bank Account</th>
-        <th className="w-10" />
+        <th className="text-left px-4 py-2 bg-muted/90 backdrop-blur-sm">Name</th>
+        {showType && <th className="text-left px-4 py-2 bg-muted/90 backdrop-blur-sm">Type</th>}
+        <th className="text-left px-4 py-2 bg-muted/90 backdrop-blur-sm">Category</th>
+        <th className="text-left px-4 py-2 bg-muted/90 backdrop-blur-sm">Frequency</th>
+        <th className="text-right px-4 py-2 bg-muted/90 backdrop-blur-sm">Amount</th>
+        <th className="text-right px-4 py-2 bg-muted/90 backdrop-blur-sm">Monthly</th>
+        <th className="text-right px-4 py-2 bg-muted/90 backdrop-blur-sm">% of Income</th>
+        <th className="text-right px-4 py-2 bg-muted/90 backdrop-blur-sm">Weekly</th>
+        <th className="text-right px-4 py-2 bg-muted/90 backdrop-blur-sm">Annual</th>
+        <th className="text-left px-4 py-2 bg-muted/90 backdrop-blur-sm">Bank Account</th>
+        <th className="w-10 bg-muted/90 backdrop-blur-sm" />
       </tr>
     </thead>
   );
@@ -226,16 +598,17 @@ function TotalRow({
   total,
   monthlyIncome,
   showType,
+  label = "Total",
 }: {
   total: number;
   monthlyIncome: number;
   showType: boolean;
+  label?: string;
 }) {
-  // Name + [Type] + Category + Frequency + Amount = 4 or 5 cols before Monthly
   const spanCols = showType ? 5 : 4;
   return (
     <tr className="bg-muted/50 font-semibold text-sm">
-      <td className="px-4 py-2" colSpan={spanCols}>Total</td>
+      <td className="px-4 py-2" colSpan={spanCols}>{label}</td>
       <td className="px-4 py-2 text-right"><CurrencyAmount value={total} /></td>
       <td className="px-4 py-2 text-right">
         {monthlyIncome > 0 ? `${(total / monthlyIncome * 100).toFixed(1)}%` : "—"}
@@ -247,7 +620,9 @@ function TotalRow({
   );
 }
 
-// Manage panel for types or categories
+// ---------------------------------------------------------------------------
+// Manage panel
+// ---------------------------------------------------------------------------
 function ManagePanel({
   label,
   items,
@@ -267,12 +642,7 @@ function ManagePanel({
         {items.map((item) => (
           <li key={item.id} className="flex items-center justify-between text-sm py-0.5">
             <span>{item.name}</span>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-6 px-1.5"
-              onClick={() => deleteMutation.mutate(item.id)}
-            >
+            <Button size="sm" variant="ghost" className="h-6 px-1.5" onClick={() => deleteMutation.mutate(item.id)}>
               <Trash2 className="h-3 w-3 text-muted-foreground" />
             </Button>
           </li>
@@ -286,17 +656,10 @@ function ManagePanel({
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && newName.trim()) {
-              addMutation.mutate(newName.trim());
-              setNewName("");
-            }
+            if (e.key === "Enter" && newName.trim()) { addMutation.mutate(newName.trim()); setNewName(""); }
           }}
         />
-        <Button
-          size="sm"
-          disabled={!newName.trim() || addMutation.isPending}
-          onClick={() => { addMutation.mutate(newName.trim()); setNewName(""); }}
-        >
+        <Button size="sm" disabled={!newName.trim() || addMutation.isPending} onClick={() => { addMutation.mutate(newName.trim()); setNewName(""); }}>
           Add
         </Button>
       </div>
@@ -304,6 +667,9 @@ function ManagePanel({
   );
 }
 
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 export default function BudgetPage() {
   const qc = useQueryClient();
 
@@ -341,7 +707,7 @@ export default function BudgetPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.budget.items() }),
   });
 
-  // Add item form state
+  // Add item form
   const [addName, setAddName] = useState("");
   const [addAmount, setAddAmount] = useState("");
   const [addFrequency, setAddFrequency] = useState("Monthly");
@@ -359,7 +725,7 @@ export default function BudgetPage() {
     },
   });
 
-  // Budget type management
+  // Type/Category management
   const addTypeMutation = useMutation({
     mutationFn: (name: string) =>
       fetch("/api/budget/types", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) }).then((r) => r.json()),
@@ -369,8 +735,6 @@ export default function BudgetPage() {
     mutationFn: (id: string) => fetch(`/api/budget/types/${id}`, { method: "DELETE" }).then((r) => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.budget.types() }),
   });
-
-  // Category management
   const addCategoryMutation = useMutation({
     mutationFn: (name: string) =>
       fetch("/api/budget/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) }).then((r) => r.json()),
@@ -381,25 +745,34 @@ export default function BudgetPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.budget.categories() }),
   });
 
-  // View mode (persisted)
+  // View mode
   const [viewMode, setViewMode] = useState<"grouped" | "flat">(() => {
     if (typeof window !== "undefined") {
       return (localStorage.getItem("budget-view-mode") as "grouped" | "flat") ?? "grouped";
     }
     return "grouped";
   });
-  const [activeTypeFilter, setActiveTypeFilter] = useState("All");
+  const handleViewMode = (mode: "grouped" | "flat") => {
+    setViewMode(mode);
+    localStorage.setItem("budget-view-mode", mode);
+  };
+
+  // Filter state
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [showFilters, setShowFilters] = useState(false);
+  const patchFilters = (patch: Partial<FilterState>) => setFilters((f) => ({ ...f, ...patch }));
+  const clearFilters = () => setFilters(DEFAULT_FILTERS);
+  const activeFilterCount = countActiveFilters(filters);
+
   const [showManage, setShowManage] = useState(false);
 
-  const monthlyIncome = settings
-    ? computeMonthlyIncome(Number(settings.netIncome), settings.salaryFrequency)
-    : 0;
+  // Derived values
+  const monthlyIncome = settings ? computeMonthlyIncome(Number(settings.netIncome), settings.salaryFrequency) : 0;
   const totalExpenses = items.reduce((s, i) => s + i.monthlyAmount, 0);
   const monthlySavings = monthlyIncome - totalExpenses;
   const savingsRate = monthlyIncome > 0 ? monthlySavings / monthlyIncome : 0;
   const emergencyTarget = (settings?.emergencyFundMonths ?? 6) * totalExpenses;
 
-  // Per-type breakdown for summary
   const typeBreakdown = typeNames
     .map((type) => {
       const typeItems = items.filter((i) => i.budgetType === type);
@@ -408,30 +781,22 @@ export default function BudgetPage() {
     })
     .filter((t) => t.total > 0);
 
-  // For grouped view
+  // Apply filters to get visible items
+  const displayItems = applyFilters(items, filters, monthlyIncome);
+  const displayTotal = displayItems.reduce((s, i) => s + i.monthlyAmount, 0);
+  const isFiltered = activeFilterCount > 0 || filters.sortBy !== "name" || filters.sortDir !== "asc";
+
+  // Grouped view data (from filtered set)
   const groupedItems = typeNames
-    .map((type) => ({ type, items: items.filter((i) => i.budgetType === type) }))
+    .map((type) => ({ type, items: displayItems.filter((i) => i.budgetType === type) }))
     .filter((g) => g.items.length > 0);
-  const untypedItems = items.filter((i) => !i.budgetType);
+  const untypedItems = displayItems.filter((i) => !i.budgetType);
 
-  // For flat view
-  const filteredItems = activeTypeFilter === "All"
-    ? items
-    : items.filter((i) => i.budgetType === activeTypeFilter);
+  // Options for filter panel
+  const hasNoAccountItems = items.some((i) => !i.bankAccount);
+  const bankAccountNames = bankAccounts.map((a) => a.name);
 
-  const handleViewMode = (mode: "grouped" | "flat") => {
-    setViewMode(mode);
-    localStorage.setItem("budget-view-mode", mode);
-  };
-
-  const rowProps = {
-    monthlyIncome,
-    typeNames,
-    categoryNames,
-    bankAccounts,
-    updateMutation,
-    delMutation,
-  };
+  const rowProps = { monthlyIncome, typeNames, categoryNames, bankAccounts, updateMutation, delMutation };
 
   return (
     <div className="space-y-6">
@@ -449,9 +814,7 @@ export default function BudgetPage() {
             <CardContent className="pt-4">
               <p className="text-sm text-muted-foreground">{label}</p>
               <p className={`text-2xl font-bold ${highlight ? (monthlySavings > 0 ? "text-green-600" : "text-red-500") : ""}`}>
-                {pct !== undefined
-                  ? `${(pct * 100).toFixed(1)}%`
-                  : <CurrencyAmount value={value} />}
+                {pct !== undefined ? `${(pct * 100).toFixed(1)}%` : <CurrencyAmount value={value} />}
               </p>
             </CardContent>
           </Card>
@@ -475,7 +838,14 @@ export default function BudgetPage() {
           <p className="text-sm font-medium text-muted-foreground mb-2">Spending Breakdown</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {typeBreakdown.map(({ type, total, pct }) => (
-              <Card key={type}>
+              <Card
+                key={type}
+                className={`cursor-pointer transition-colors ${filters.types.includes(type) ? "border-primary bg-primary/5" : "hover:border-primary/40"}`}
+                onClick={() => {
+                  patchFilters({ types: filters.types.includes(type) ? filters.types.filter((x) => x !== type) : [...filters.types, type] });
+                  if (!showFilters) setShowFilters(true);
+                }}
+              >
                 <CardContent className="pt-3 pb-3">
                   <p className="text-xs text-muted-foreground truncate">{type}</p>
                   <p className="text-base font-bold"><CurrencyAmount value={total} /></p>
@@ -487,15 +857,62 @@ export default function BudgetPage() {
         </div>
       )}
 
-      {/* View toggle */}
-      <div className="flex items-center justify-between">
+      {/* View toggle + filter toggle */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <Tabs value={viewMode} onValueChange={(v) => handleViewMode(v as "grouped" | "flat")}>
           <TabsList>
             <TabsTrigger value="grouped">Grouped</TabsTrigger>
             <TabsTrigger value="flat">Flat Table</TabsTrigger>
           </TabsList>
         </Tabs>
+
+        <button
+          onClick={() => setShowFilters((v) => !v)}
+          className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border transition-colors ${
+            showFilters || activeFilterCount > 0
+              ? "bg-primary text-primary-foreground border-primary"
+              : "border-border text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          Filters
+          {activeFilterCount > 0 && (
+            <Badge className="h-5 min-w-5 px-1.5 bg-primary-foreground text-primary text-xs rounded-full">
+              {activeFilterCount}
+            </Badge>
+          )}
+        </button>
       </div>
+
+      {/* Filter panel */}
+      {showFilters && (
+        <FilterPanel
+          filters={filters}
+          onChange={patchFilters}
+          onClear={clearFilters}
+          typeNames={typeNames}
+          categoryNames={categoryNames}
+          bankAccountNames={bankAccountNames}
+          hasNoAccountItems={hasNoAccountItems}
+        />
+      )}
+
+      {/* Results count */}
+      {isFiltered && !isLoading && (
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span>
+            Showing <span className="font-medium text-foreground">{displayItems.length}</span> of {items.length} items
+            {activeFilterCount > 0 && (
+              <> · <span className="font-medium text-foreground"><CurrencyAmount value={displayTotal} /></span>/mo filtered</>
+            )}
+          </span>
+          {activeFilterCount > 0 && (
+            <button className="text-xs hover:text-foreground underline" onClick={clearFilters}>
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Items table */}
       {isLoading ? (
@@ -544,11 +961,20 @@ export default function BudgetPage() {
                     ))}
                   </>
                 )}
-                {items.length > 0 && (
-                  <TotalRow total={totalExpenses} monthlyIncome={monthlyIncome} showType={false} />
+                {displayItems.length > 0 && (
+                  <TotalRow
+                    total={displayTotal}
+                    monthlyIncome={monthlyIncome}
+                    showType={false}
+                    label={isFiltered ? `Total (${displayItems.length} items)` : "Total"}
+                  />
                 )}
-                {items.length === 0 && (
-                  <tr><td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">No budget items yet</td></tr>
+                {displayItems.length === 0 && (
+                  <tr>
+                    <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">
+                      {items.length === 0 ? "No budget items yet" : "No items match the current filters"}
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -556,40 +982,27 @@ export default function BudgetPage() {
         </Card>
       ) : (
         <Card>
-          <CardHeader className="pb-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <CardTitle className="text-base mr-2">Expense Items</CardTitle>
-              {["All", ...typeNames].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setActiveTypeFilter(t)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                    activeTypeFilter === t
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </CardHeader>
-          <CardContent className="p-0 mt-3 overflow-x-auto">
+          <CardContent className="p-0 overflow-x-auto">
             <table className="w-full text-sm">
               <TableHead showType={true} />
               <tbody>
-                {filteredItems.map((item) => (
+                {displayItems.map((item) => (
                   <ItemRow key={item.id} item={item} showType={true} {...rowProps} />
                 ))}
-                {filteredItems.length > 0 && (
+                {displayItems.length > 0 && (
                   <TotalRow
-                    total={filteredItems.reduce((s, i) => s + i.monthlyAmount, 0)}
+                    total={displayTotal}
                     monthlyIncome={monthlyIncome}
                     showType={true}
+                    label={isFiltered ? `Total (${displayItems.length} items)` : "Total"}
                   />
                 )}
-                {filteredItems.length === 0 && (
-                  <tr><td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">No items</td></tr>
+                {displayItems.length === 0 && (
+                  <tr>
+                    <td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">
+                      {items.length === 0 ? "No budget items yet" : "No items match the current filters"}
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
