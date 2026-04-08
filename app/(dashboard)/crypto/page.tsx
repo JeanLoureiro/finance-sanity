@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, PlusCircle, History } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type Purchase = { id: string; date: string; units: number; price: number; brokerage: number; direction: string };
 type CryptoHolding = { id: string; ticker: string; name: string | null; targetAllocation: number; purchases: Purchase[] };
@@ -20,6 +21,7 @@ type CryptoPriceMap = Record<string, { priceAUD: number | null; priceUSD: number
 
 function PurchaseHistory({ holdingId }: { holdingId: string }) {
   const qc = useQueryClient();
+  const [deletePurchaseId, setDeletePurchaseId] = useState<string | null>(null);
   const { data: purchases = [] } = useQuery<Purchase[]>({
     queryKey: queryKeys.holdings.purchases("crypto", holdingId),
     queryFn: () => fetch(`/api/crypto/${holdingId}/purchases`).then((r) => r.json()),
@@ -45,12 +47,19 @@ function PurchaseHistory({ holdingId }: { holdingId: string }) {
               <td className="py-1 pr-3">{Number(p.units).toFixed(8)}</td>
               <td className="py-1 pr-3"><CurrencyAmount value={p.price} /></td>
               <td className="py-1 pr-3"><CurrencyAmount value={p.brokerage} /></td>
-              <td><Button size="sm" variant="ghost" onClick={() => del.mutate(p.id)}><Trash2 className="h-3 w-3" /></Button></td>
+              <td><Button size="sm" variant="ghost" onClick={() => setDeletePurchaseId(p.id)}><Trash2 className="h-3 w-3" /></Button></td>
             </tr>
           ))}
           {purchases.length === 0 && <tr><td colSpan={6} className="py-3 text-muted-foreground">No transactions yet</td></tr>}
         </tbody>
       </table>
+      <ConfirmDeleteDialog
+        open={deletePurchaseId !== null}
+        onOpenChange={(open) => { if (!open) setDeletePurchaseId(null); }}
+        onConfirm={() => { if (deletePurchaseId) { del.mutate(deletePurchaseId); setDeletePurchaseId(null); } }}
+        title="Delete transaction?"
+        isPending={del.isPending}
+      />
     </div>
   );
 }
@@ -93,6 +102,7 @@ function AddPurchaseForm({ holdingId }: { holdingId: string }) {
 export default function CryptoPage() {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
+  const [deleteHoldingId, setDeleteHoldingId] = useState<string | null>(null);
 
   const { data: holdings = [], isLoading } = useQuery<CryptoHolding[]>({
     queryKey: queryKeys.holdings.all("crypto"),
@@ -212,7 +222,7 @@ export default function CryptoPage() {
                         <AddPurchaseForm holdingId={h.id} />
                       </DialogContent>
                     </Dialog>
-                    <Button size="sm" variant="ghost" onClick={() => delHolding.mutate(h.id)}>
+                    <Button size="sm" variant="ghost" onClick={() => setDeleteHoldingId(h.id)}>
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </div>
@@ -225,6 +235,14 @@ export default function CryptoPage() {
           )}
         </div>
       )}
+      <ConfirmDeleteDialog
+        open={deleteHoldingId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteHoldingId(null); }}
+        onConfirm={() => { if (deleteHoldingId) { delHolding.mutate(deleteHoldingId); setDeleteHoldingId(null); } }}
+        title="Delete crypto holding?"
+        description="This will permanently delete this holding and all its transaction history. This cannot be undone."
+        isPending={delHolding.isPending}
+      />
     </div>
   );
 }

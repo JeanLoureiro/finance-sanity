@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, PlusCircle } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type SideIncomeEntry = { id: string; date: string; sideIncome: string | number; rentalIncome: string | number; notes: string | null };
 
@@ -20,6 +21,7 @@ export default function SideIncomePage() {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [selectedFY, setSelectedFY] = useState(currentFY());
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: entries = [], isLoading } = useQuery<SideIncomeEntry[]>({
     queryKey: queryKeys.sideIncome.all(),
@@ -107,7 +109,7 @@ export default function SideIncomePage() {
                   <td className="py-3 px-4 text-right"><CurrencyAmount value={Number(e.rentalIncome)} /></td>
                   <td className="py-3 px-4 text-right font-medium"><CurrencyAmount value={Number(e.sideIncome) + Number(e.rentalIncome)} /></td>
                   <td className="py-3 px-4 text-muted-foreground">{e.notes}</td>
-                  <td className="py-3 px-4"><Button size="sm" variant="ghost" onClick={() => del.mutate(e.id)}><Trash2 className="h-3 w-3" /></Button></td>
+                  <td className="py-3 px-4"><Button size="sm" variant="ghost" onClick={() => setDeleteId(e.id)}><Trash2 className="h-3 w-3" /></Button></td>
                 </tr>
               ))}
               {fyEntries.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No entries for {getFYLabel(selectedFY)}</td></tr>}
@@ -115,6 +117,13 @@ export default function SideIncomePage() {
           </table>
         </div>
       )}
+      <ConfirmDeleteDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        onConfirm={() => { if (deleteId) { del.mutate(deleteId); setDeleteId(null); } }}
+        title="Delete side income entry?"
+        isPending={del.isPending}
+      />
     </div>
   );
 }

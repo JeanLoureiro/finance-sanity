@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trash2, PlusCircle, Pencil, Check, X } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 
@@ -53,6 +54,7 @@ function StatCard({ label, value, sub }: { label: string; value: React.ReactNode
 export default function CashPage() {
   const qc = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editState, setEditState] = useState<EditState>({ name: "", currency: "AUD", balance: "", bsb: "", accountNumber: "" });
 
   // Add form state
@@ -186,7 +188,7 @@ export default function CashPage() {
                           <Button size="sm" variant="ghost" onClick={() => startEdit(acc)}>
                             <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => deleteMutation.mutate(acc.id)}>
+                          <Button size="sm" variant="ghost" onClick={() => setDeleteId(acc.id)}>
                             <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                           </Button>
                         </div>
@@ -356,6 +358,13 @@ export default function CashPage() {
           </div>
         </CardContent>
       </Card>
+      <ConfirmDeleteDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        onConfirm={() => { if (deleteId) { deleteMutation.mutate(deleteId); setDeleteId(null); } }}
+        title="Delete bank account?"
+        isPending={deleteMutation.isPending}
+      />
     </div>
   );
 }

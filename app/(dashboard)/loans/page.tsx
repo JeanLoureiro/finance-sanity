@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trash2, PlusCircle, Pencil, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type Loan = {
   id: string; name: string; startDate: string; interestFrequency: number;
@@ -140,6 +141,7 @@ function ExtraPaymentsPanel({ loan }: { loan: Loan }) {
   const [date, setDate] = useState(today());
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+  const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
 
   const { data: payments = [] } = useQuery<ExtraPayment[]>({
     queryKey: queryKeys.loans.payments(loan.id),
@@ -210,7 +212,7 @@ function ExtraPaymentsPanel({ loan }: { loan: Loan }) {
                     <td className="py-1.5 text-right font-medium"><CurrencyAmount value={p.amount} /></td>
                     <td className="py-1.5 pl-3 text-muted-foreground">{p.note || "—"}</td>
                     <td className="py-1.5 text-right">
-                      <Button size="sm" variant="ghost" onClick={() => delPayment.mutate(p.id)}>
+                      <Button size="sm" variant="ghost" onClick={() => setDeletePaymentId(p.id)}>
                         <Trash2 className="h-3 w-3 text-muted-foreground" />
                       </Button>
                     </td>
@@ -258,6 +260,13 @@ function ExtraPaymentsPanel({ loan }: { loan: Loan }) {
           </div>
         </div>
       )}
+      <ConfirmDeleteDialog
+        open={deletePaymentId !== null}
+        onOpenChange={(open) => { if (!open) setDeletePaymentId(null); }}
+        onConfirm={() => { if (deletePaymentId) { delPayment.mutate(deletePaymentId); setDeletePaymentId(null); } }}
+        title="Delete extra payment?"
+        isPending={delPayment.isPending}
+      />
     </div>
   );
 }
@@ -266,6 +275,7 @@ export default function LoansPage() {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [deleteLoanId, setDeleteLoanId] = useState<string | null>(null);
 
   const { data: loans = [], isLoading } = useQuery<Loan[]>({
     queryKey: queryKeys.loans.all(),
@@ -373,7 +383,7 @@ export default function LoansPage() {
                           />
                         </DialogContent>
                       </Dialog>
-                      <Button size="sm" variant="ghost" onClick={() => del.mutate(loan.id)}>
+                      <Button size="sm" variant="ghost" onClick={() => setDeleteLoanId(loan.id)}>
                         <Trash2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     </div>
@@ -402,6 +412,14 @@ export default function LoansPage() {
           )}
         </div>
       )}
+      <ConfirmDeleteDialog
+        open={deleteLoanId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteLoanId(null); }}
+        onConfirm={() => { if (deleteLoanId) { del.mutate(deleteLoanId); setDeleteLoanId(null); } }}
+        title="Delete loan?"
+        description="This will permanently delete the loan and all its extra payment history. This cannot be undone."
+        isPending={del.isPending}
+      />
     </div>
   );
 }

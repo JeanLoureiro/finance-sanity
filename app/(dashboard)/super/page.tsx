@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trash2, PlusCircle } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 
@@ -27,6 +28,7 @@ const formatCurrency = (v: number) =>
 export default function SuperPage() {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: accounts = [], isLoading } = useQuery<SuperAccount[]>({
     queryKey: queryKeys.super(),
@@ -116,7 +118,7 @@ export default function SuperPage() {
                         if (!isNaN(val) && val !== Number(a.balance)) update.mutate({ id: a.id, balance: val });
                       }}
                     />
-                    <Button size="sm" variant="ghost" onClick={() => del.mutate(a.id)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => setDeleteId(a.id)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
                   </div>
                 </div>
               </CardContent>
@@ -125,6 +127,14 @@ export default function SuperPage() {
           {accounts.length === 0 && <Card><CardContent className="py-10 text-center text-muted-foreground">No super accounts. Add one above.</CardContent></Card>}
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        onConfirm={() => { if (deleteId) { del.mutate(deleteId); setDeleteId(null); } }}
+        title="Delete super account?"
+        isPending={del.isPending}
+      />
 
       {/* Super history chart */}
       {history.length > 1 && (

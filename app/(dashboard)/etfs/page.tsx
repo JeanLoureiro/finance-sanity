@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, PlusCircle, History, Pencil } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type Purchase = { id: string; date: string; units: number; price: number; brokerage: number; direction: string };
 type ETFHolding = {
@@ -26,6 +27,7 @@ type PriceMap = Record<string, { price: number | null; name: string | null }>;
 
 function PurchaseHistory({ holdingId }: { holdingId: string }) {
   const qc = useQueryClient();
+  const [deletePurchaseId, setDeletePurchaseId] = useState<string | null>(null);
   const { data: purchases = [] } = useQuery<Purchase[]>({
     queryKey: queryKeys.holdings.purchases("etfs", holdingId),
     queryFn: () => fetch(`/api/etfs/${holdingId}/purchases`).then((r) => r.json()),
@@ -50,12 +52,19 @@ function PurchaseHistory({ holdingId }: { holdingId: string }) {
               <td className="py-1 pr-3">{Number(p.units).toFixed(4)}</td>
               <td className="py-1 pr-3"><CurrencyAmount value={p.price} /></td>
               <td className="py-1 pr-3"><CurrencyAmount value={p.brokerage} /></td>
-              <td><Button size="sm" variant="ghost" onClick={() => del.mutate(p.id)}><Trash2 className="h-3 w-3" /></Button></td>
+              <td><Button size="sm" variant="ghost" onClick={() => setDeletePurchaseId(p.id)}><Trash2 className="h-3 w-3" /></Button></td>
             </tr>
           ))}
           {purchases.length === 0 && <tr><td colSpan={6} className="py-3 text-muted-foreground">No purchases yet</td></tr>}
         </tbody>
       </table>
+      <ConfirmDeleteDialog
+        open={deletePurchaseId !== null}
+        onOpenChange={(open) => { if (!open) setDeletePurchaseId(null); }}
+        onConfirm={() => { if (deletePurchaseId) { del.mutate(deletePurchaseId); setDeletePurchaseId(null); } }}
+        title="Delete transaction?"
+        isPending={del.isPending}
+      />
     </div>
   );
 }
@@ -101,6 +110,7 @@ export default function ETFsPage() {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [deleteHoldingId, setDeleteHoldingId] = useState<string | null>(null);
 
   const { register: regEdit, handleSubmit: handleEdit, reset: resetEdit } = useForm<ETFHoldingInput>({
     resolver: zodResolver(etfHoldingSchema),
@@ -263,7 +273,7 @@ export default function ETFsPage() {
                         </form>
                       </DialogContent>
                     </Dialog>
-                    <Button size="sm" variant="ghost" onClick={() => delHolding.mutate(h.id)}>
+                    <Button size="sm" variant="ghost" onClick={() => setDeleteHoldingId(h.id)}>
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </div>
@@ -276,6 +286,14 @@ export default function ETFsPage() {
           )}
         </div>
       )}
+      <ConfirmDeleteDialog
+        open={deleteHoldingId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteHoldingId(null); }}
+        onConfirm={() => { if (deleteHoldingId) { delHolding.mutate(deleteHoldingId); setDeleteHoldingId(null); } }}
+        title="Delete ETF holding?"
+        description="This will permanently delete this holding and all its transaction history. This cannot be undone."
+        isPending={delHolding.isPending}
+      />
     </div>
   );
 }

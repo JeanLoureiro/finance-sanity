@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, PlusCircle } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type Dividend = {
   id: string; paymentDate: string; ticker: string; holdingType: string;
@@ -26,6 +27,7 @@ export default function DividendsPage() {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [selectedFY, setSelectedFY] = useState(currentFY());
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: dividends = [], isLoading } = useQuery<Dividend[]>({
     queryKey: queryKeys.dividends.all(),
@@ -125,7 +127,7 @@ export default function DividendsPage() {
                     <td className="py-2 pr-3"><Badge variant="outline" className="text-xs">{d.holdingType}</Badge></td>
                     <td className="py-2 pr-3 text-right font-medium"><CurrencyAmount value={Number(d.netAmount)} /></td>
                     <td className="py-2 pr-3">{d.reinvested ? <Badge className="text-xs">DRP</Badge> : null}</td>
-                    <td className="py-2"><Button size="sm" variant="ghost" onClick={() => del.mutate(d.id)}><Trash2 className="h-3 w-3" /></Button></td>
+                    <td className="py-2"><Button size="sm" variant="ghost" onClick={() => setDeleteId(d.id)}><Trash2 className="h-3 w-3" /></Button></td>
                   </tr>
                 ))}
                 {fyDividends.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No dividends for {getFYLabel(selectedFY)}</td></tr>}
@@ -143,6 +145,13 @@ export default function DividendsPage() {
           </CardContent>
         </Card>
       )}
+      <ConfirmDeleteDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        onConfirm={() => { if (deleteId) { del.mutate(deleteId); setDeleteId(null); } }}
+        title="Delete dividend entry?"
+        isPending={del.isPending}
+      />
     </div>
   );
 }

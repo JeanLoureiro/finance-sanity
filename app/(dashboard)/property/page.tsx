@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trash2, PlusCircle, Pencil, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type Property = {
   id: string; name: string; purchaseDate: string; isPrimaryResidence: boolean;
@@ -188,6 +189,10 @@ function RentalPanel({ property }: { property: Property }) {
   const [editIncomeId, setEditIncomeId] = useState<string | null>(null);
   const [editIncome, setEditIncome] = useState<Partial<PropertyIncomeEntry>>({});
 
+  // Confirm delete state
+  const [deleteIncomeId, setDeleteIncomeId] = useState<string | null>(null);
+  const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null);
+
   const { data: incomeEntries = [] } = useQuery<PropertyIncomeEntry[]>({
     queryKey: queryKeys.properties.income(property.id),
     queryFn: async () => { const r = await fetch(`/api/property/${property.id}/income`); if (!r.ok) throw new Error("Failed to load income"); return r.json(); },
@@ -301,7 +306,7 @@ function RentalPanel({ property }: { property: Property }) {
                         <td className="py-1.5 text-right">
                           <div className="flex gap-0.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button size="sm" variant="ghost" onClick={() => { setEditIncomeId(e.id); setEditIncome({}); }}><Pencil className="h-3 w-3 text-muted-foreground" /></Button>
-                            <Button size="sm" variant="ghost" onClick={() => delIncome.mutate(e.id)}><Trash2 className="h-3 w-3 text-muted-foreground" /></Button>
+                            <Button size="sm" variant="ghost" onClick={() => setDeleteIncomeId(e.id)}><Trash2 className="h-3 w-3 text-muted-foreground" /></Button>
                           </div>
                         </td>
                       </tr>
@@ -386,7 +391,7 @@ function RentalPanel({ property }: { property: Property }) {
                         <td className="py-1.5 text-right">
                           <div className="flex gap-0.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button size="sm" variant="ghost" onClick={() => { setEditExpenseId(e.id); setEditExpense({}); }}><Pencil className="h-3 w-3 text-muted-foreground" /></Button>
-                            <Button size="sm" variant="ghost" onClick={() => delExpense.mutate(e.id)}><Trash2 className="h-3 w-3 text-muted-foreground" /></Button>
+                            <Button size="sm" variant="ghost" onClick={() => setDeleteExpenseId(e.id)}><Trash2 className="h-3 w-3 text-muted-foreground" /></Button>
                           </div>
                         </td>
                       </tr>
@@ -446,6 +451,20 @@ function RentalPanel({ property }: { property: Property }) {
           )}
         </div>
       )}
+      <ConfirmDeleteDialog
+        open={deleteIncomeId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteIncomeId(null); }}
+        onConfirm={() => { if (deleteIncomeId) { delIncome.mutate(deleteIncomeId); setDeleteIncomeId(null); } }}
+        title="Delete income entry?"
+        isPending={delIncome.isPending}
+      />
+      <ConfirmDeleteDialog
+        open={deleteExpenseId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteExpenseId(null); }}
+        onConfirm={() => { if (deleteExpenseId) { delExpense.mutate(deleteExpenseId); setDeleteExpenseId(null); } }}
+        title="Delete expense entry?"
+        isPending={delExpense.isPending}
+      />
     </div>
   );
 }
@@ -454,6 +473,7 @@ export default function PropertyPage() {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [deletePropertyId, setDeletePropertyId] = useState<string | null>(null);
 
   const { data: properties = [], isLoading } = useQuery<Property[]>({
     queryKey: queryKeys.properties.all(),
@@ -561,7 +581,7 @@ export default function PropertyPage() {
                           />
                         </DialogContent>
                       </Dialog>
-                      <Button size="sm" variant="ghost" onClick={() => del.mutate(p.id)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
+                      <Button size="sm" variant="ghost" onClick={() => setDeletePropertyId(p.id)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -611,6 +631,14 @@ export default function PropertyPage() {
           {properties.length === 0 && <Card><CardContent className="py-10 text-center text-muted-foreground">No properties yet. Add one above.</CardContent></Card>}
         </div>
       )}
+      <ConfirmDeleteDialog
+        open={deletePropertyId !== null}
+        onOpenChange={(open) => { if (!open) setDeletePropertyId(null); }}
+        onConfirm={() => { if (deletePropertyId) { del.mutate(deletePropertyId); setDeletePropertyId(null); } }}
+        title="Delete property?"
+        description="This will permanently delete this property, its mortgage details, and all income and expense entries associated with it. This cannot be undone."
+        isPending={del.isPending}
+      />
     </div>
   );
 }

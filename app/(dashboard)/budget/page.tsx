@@ -13,6 +13,7 @@ import { CurrencyAmount } from "@/components/ui/currency-amount";
 import { Trash2, PlusCircle, ChevronDown, ChevronUp, SlidersHorizontal, X, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useState, useRef } from "react";
 import type { BudgetItemInput } from "@/lib/schemas";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type BudgetItem = {
   id: string;
@@ -473,7 +474,7 @@ function ItemRow({
   bankAccounts,
   showType,
   updateMutation,
-  delMutation,
+  onDelete,
 }: {
   item: BudgetItem;
   monthlyIncome: number;
@@ -482,7 +483,7 @@ function ItemRow({
   bankAccounts: BankAccount[];
   showType: boolean;
   updateMutation: { mutate: (d: { id: string } & Partial<BudgetItemInput>) => void };
-  delMutation: { mutate: (id: string) => void };
+  onDelete: (id: string) => void;
 }) {
   const amountRef = useRef<HTMLInputElement>(null);
   const displayAmount = fromMonthly(item.monthlyAmount, item.frequency);
@@ -566,7 +567,7 @@ function ItemRow({
         )}
       </td>
       <td className="px-2">
-        <Button size="sm" variant="ghost" onClick={() => delMutation.mutate(item.id)}>
+        <Button size="sm" variant="ghost" onClick={() => onDelete(item.id)}>
           <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
         </Button>
       </td>
@@ -627,12 +628,12 @@ function ManagePanel({
   label,
   items,
   addMutation,
-  deleteMutation,
+  onDelete,
 }: {
   label: string;
   items: LabelRow[];
   addMutation: { mutate: (name: string) => void; isPending: boolean };
-  deleteMutation: { mutate: (id: string) => void };
+  onDelete: (id: string) => void;
 }) {
   const [newName, setNewName] = useState("");
   return (
@@ -642,7 +643,7 @@ function ManagePanel({
         {items.map((item) => (
           <li key={item.id} className="flex items-center justify-between text-sm py-0.5">
             <span>{item.name}</span>
-            <Button size="sm" variant="ghost" className="h-6 px-1.5" onClick={() => deleteMutation.mutate(item.id)}>
+            <Button size="sm" variant="ghost" className="h-6 px-1.5" onClick={() => onDelete(item.id)}>
               <Trash2 className="h-3 w-3 text-muted-foreground" />
             </Button>
           </li>
@@ -757,6 +758,10 @@ export default function BudgetPage() {
     localStorage.setItem("budget-view-mode", mode);
   };
 
+  // Confirm delete state
+  type PendingDelete = { type: "item" | "type" | "category"; id: string; label: string } | null;
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete>(null);
+
   // Filter state
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [showFilters, setShowFilters] = useState(false);
@@ -796,7 +801,17 @@ export default function BudgetPage() {
   const hasNoAccountItems = items.some((i) => !i.bankAccount);
   const bankAccountNames = bankAccounts.map((a) => a.name);
 
-  const rowProps = { monthlyIncome, typeNames, categoryNames, bankAccounts, updateMutation, delMutation };
+  const rowProps = {
+    monthlyIncome,
+    typeNames,
+    categoryNames,
+    bankAccounts,
+    updateMutation,
+    onDelete: (id: string) => {
+      const item = items.find((i) => i.id === id);
+      setPendingDelete({ type: "item", id, label: item?.name ?? "this item" });
+    },
+  };
 
   return (
     <div className="space-y-6">
@@ -1100,18 +1115,44 @@ export default function BudgetPage() {
                 label="Budget Types"
                 items={budgetTypes}
                 addMutation={{ mutate: addTypeMutation.mutate, isPending: addTypeMutation.isPending }}
-                deleteMutation={{ mutate: delTypeMutation.mutate }}
+                onDelete={(id) => {
+                  const t = budgetTypes.find((x) => x.id === id);
+                  setPendingDelete({ type: "type", id, label: t?.name ?? "this type" });
+                }}
               />
               <ManagePanel
                 label="Expense Categories"
                 items={budgetCategories}
                 addMutation={{ mutate: addCategoryMutation.mutate, isPending: addCategoryMutation.isPending }}
-                deleteMutation={{ mutate: delCategoryMutation.mutate }}
+                onDelete={(id) => {
+                  const c = budgetCategories.find((x) => x.id === id);
+                  setPendingDelete({ type: "category", id, label: c?.name ?? "this category" });
+                }}
               />
             </div>
           </CardContent>
         )}
       </Card>
+
+      <ConfirmDeleteDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => { if (!open) setPendingDelete(null); }}
+        onConfirm={() => {
+          if (!pendingDelete) return;
+          if (pendingDelete.type === "item") delMutation.mutate(pendingDelete.id);
+          else if (pendingDelete.type === "type") delTypeMutation.mutate(pendingDelete.id);
+          else delCategoryMutation.mutate(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+        title={
+          pendingDelete?.type === "item"
+            ? `Delete "${pendingDelete.label}"?`
+            : pendingDelete?.type === "type"
+            ? `Delete type "${pendingDelete?.label}"?`
+            : `Delete category "${pendingDelete?.label}"?`
+        }
+        isPending={delMutation.isPending || delTypeMutation.isPending || delCategoryMutation.isPending}
+      />
     </div>
   );
 }

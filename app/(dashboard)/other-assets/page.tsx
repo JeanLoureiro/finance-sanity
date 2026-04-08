@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Trash2, PlusCircle } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type OtherAsset = {
   id: string; description: string; purchaseDate: string; units: string | number;
@@ -21,6 +22,7 @@ type OtherAsset = {
 export default function OtherAssetsPage() {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: assets = [], isLoading } = useQuery<OtherAsset[]>({
     queryKey: queryKeys.otherAssets(),
@@ -123,7 +125,7 @@ export default function OtherAssetsPage() {
                   </td>
                   <td className="py-3 px-4 text-right font-medium"><CurrencyAmount value={a.liveValue} /></td>
                   <td className={`py-3 px-4 text-right ${a.gain >= 0 ? "text-green-600" : "text-red-600"}`}><CurrencyAmount value={a.gain} showSign /></td>
-                  <td className="py-3 px-4"><Button size="sm" variant="ghost" onClick={() => del.mutate(a.id)}><Trash2 className="h-3 w-3" /></Button></td>
+                  <td className="py-3 px-4"><Button size="sm" variant="ghost" onClick={() => setDeleteId(a.id)}><Trash2 className="h-3 w-3" /></Button></td>
                 </tr>
               ))}
               {assets.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No other assets. Add one above.</td></tr>}
@@ -131,6 +133,13 @@ export default function OtherAssetsPage() {
           </table>
         </div>
       )}
+      <ConfirmDeleteDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        onConfirm={() => { if (deleteId) { del.mutate(deleteId); setDeleteId(null); } }}
+        title="Delete asset?"
+        isPending={del.isPending}
+      />
     </div>
   );
 }
