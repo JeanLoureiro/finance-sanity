@@ -13,6 +13,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
 function parseCSV(csv: string): Record<string, string>[] {
   const lines = csv.trim().split(/\r?\n/);
@@ -33,14 +34,15 @@ function endOfMonth(dateStr: string): Date {
   return new Date(Date.UTC(yr, mo, 0));
 }
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   try {
     const { csv } = await request.json() as { csv: string };
     if (!csv || typeof csv !== "string") {
       return Response.json({ error: "Missing csv field" }, { status: 400 });
     }
 
-    const settings = await prisma.userSettings.findFirst();
+    const { settingsId } = await getAuthorisedSettings("WRITE");
+    const settings = await prisma.userSettings.findUnique({ where: { id: settingsId } });
     if (!settings) {
       return Response.json({ error: "No settings found" }, { status: 404 });
     }
@@ -111,4 +113,4 @@ export async function POST(request: Request) {
     console.error(err);
     return Response.json({ error: "Failed to backfill history" }, { status: 500 });
   }
-}
+});

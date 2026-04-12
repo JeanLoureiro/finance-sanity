@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { getAuthorisedSettings, assertOwnership, withAuth } from "@/lib/auth";
 
 const paymentSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
@@ -8,30 +9,36 @@ const paymentSchema = z.object({
   note: z.string().optional().nullable(),
 });
 
-export async function GET(
+export const GET = withAuth(async (
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const { id } = await params;
+    const authorisedSettings = await getAuthorisedSettings();
+    const loan = await prisma.loan.findUnique({ where: { id }, select: { settingsId: true } });
+    if (!loan) return Response.json({ error: "Not found" }, { status: 404 });
+    assertOwnership(loan.settingsId, authorisedSettings);
     const payments = await prisma.loanExtraPayment.findMany({
       where: { loanId: id },
       orderBy: { date: "asc" },
     });
-    return Response.json(
-      payments.map((p) => ({ ...p, amount: Number(p.amount) }))
-    );
+    return Response.json(payments.map((payment) => ({ ...payment, amount: Number(payment.amount) })));
   } catch {
     return Response.json({ error: "Failed to load payments" }, { status: 500 });
   }
-}
+});
 
-export async function POST(
+export const POST = withAuth(async (
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const { id } = await params;
+    const authorisedSettings = await getAuthorisedSettings("WRITE");
+    const loan = await prisma.loan.findUnique({ where: { id }, select: { settingsId: true } });
+    if (!loan) return Response.json({ error: "Not found" }, { status: 404 });
+    assertOwnership(loan.settingsId, authorisedSettings);
     const body = await req.json();
     const parsed = paymentSchema.safeParse(body);
     if (!parsed.success) {
@@ -49,4 +56,4 @@ export async function POST(
   } catch {
     return Response.json({ error: "Failed to add payment" }, { status: 500 });
   }
-}
+});

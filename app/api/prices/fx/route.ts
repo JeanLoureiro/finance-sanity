@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
+import { withAuth } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export const GET = withAuth(async (req: NextRequest) => {
   const { searchParams } = req.nextUrl;
   const pair = searchParams.get("pair"); // e.g. "AUDGBP" or "GBP"
 
@@ -28,4 +29,4 @@ export async function GET(req: NextRequest) {
     console.error("FX fetch error:", err);
     return Response.json({ error: "Failed to fetch exchange rate" }, { status: 500 });
   }
-}
+});

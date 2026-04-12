@@ -64,4 +64,8 @@ export const queryKeys = {
   fire: () => ["fire"] as const,
 
   otherAssets: () => ["other-assets"] as const,
+
+  sharing: {
+    grants: () => ["sharing", "grants"] as const,
+  },
 };

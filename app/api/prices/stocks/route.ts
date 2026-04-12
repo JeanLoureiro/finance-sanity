@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import yahooFinance from "yahoo-finance2";
 import { toYahooTicker } from "@/lib/tickerMapper";
+import { withAuth } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export const GET = withAuth(async (req: NextRequest) => {
   const { searchParams } = req.nextUrl;
   const tickersParam = searchParams.get("tickers");
 
@@ -41,4 +42,4 @@ export async function GET(req: NextRequest) {
     console.error("Price fetch error:", err);
     return Response.json({ error: "Failed to fetch prices" }, { status: 500 });
   }
-}
+});

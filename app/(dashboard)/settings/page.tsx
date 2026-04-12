@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import SharingSection from "@/components/SharingSection";
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
@@ -60,6 +61,7 @@ export default function SettingsPage() {
   if (isLoading) return <p className="text-muted-foreground">Loading…</p>;
 
   return (
+    <>
     <form onSubmit={handleSubmit((v) => mutate(v))} className="space-y-6">
       <h1 className="text-2xl font-bold">Settings</h1>
 
@@ -192,5 +194,12 @@ export default function SettingsPage() {
         {isPending ? "Saving…" : "Save Settings"}
       </Button>
     </form>
+
+    {data?.role === "OWNER" && (
+      <div className="mt-8">
+        <SharingSection />
+      </div>
+    )}
+    </>
   );
 }

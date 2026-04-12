@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { budgetTypeSchema } from "@/lib/schemas";
+import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
 const DEFAULT_TYPES = [
   "Fixed Costs",
@@ -10,15 +11,10 @@ const DEFAULT_TYPES = [
   "Investments",
 ];
 
-async function getSettingsId() {
-  const s = await prisma.userSettings.findFirst();
-  if (!s) throw new Error("No settings found");
-  return s.id;
-}
 
-export async function GET() {
+export const GET = withAuth(async () => {
   try {
-    const settingsId = await getSettingsId();
+    const { settingsId } = await getAuthorisedSettings();
     let types = await prisma.budgetType.findMany({
       where: { settingsId },
       orderBy: { sortOrder: "asc" },
@@ -34,16 +30,16 @@ export async function GET() {
   } catch {
     return Response.json({ error: "Failed to load budget types" }, { status: 500 });
   }
-}
+});
 
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async (req: NextRequest) => {
   try {
     const body = await req.json();
     const parsed = budgetTypeSchema.safeParse(body);
     if (!parsed.success) {
       return Response.json({ error: parsed.error.flatten() }, { status: 400 });
     }
-    const settingsId = await getSettingsId();
+    const { settingsId } = await getAuthorisedSettings("WRITE");
     const count = await prisma.budgetType.count({ where: { settingsId } });
     const type = await prisma.budgetType.create({
       data: { ...parsed.data, settingsId, sortOrder: parsed.data.sortOrder ?? count },
@@ -52,4 +48,4 @@ export async function POST(req: NextRequest) {
   } catch {
     return Response.json({ error: "Failed to create budget type" }, { status: 500 });
   }
-}
+});

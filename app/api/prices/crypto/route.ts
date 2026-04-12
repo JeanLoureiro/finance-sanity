@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
+import { withAuth } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export const GET = withAuth(async (req: NextRequest) => {
   const { searchParams } = req.nextUrl;
   const tickersParam = searchParams.get("tickers");
   const currency = searchParams.get("currency") ?? "aud";
@@ -49,4 +50,4 @@ export async function GET(req: NextRequest) {
     console.error("Crypto price fetch error:", err);
     return Response.json({ error: "Failed to fetch crypto prices" }, { status: 500 });
   }
-}
+});
