@@ -92,6 +92,18 @@ export const POST = withAuth(async (req: NextRequest) => {
   if (inviteError) {
     // Roll back the grant if the email fails
     await prisma.sharedAccess.delete({ where: { id: grant.id } });
+    
+    // Handle rate limiting specifically
+    if (inviteError.message?.includes('429') || inviteError.message?.toLowerCase().includes('rate limit')) {
+      return Response.json(
+        { 
+          error: "Rate limit exceeded. Please wait a few minutes before sending another invitation.",
+          detail: inviteError.message 
+        },
+        { status: 429 }
+      );
+    }
+    
     return Response.json(
       { error: "Failed to send invitation email", detail: inviteError.message },
       { status: 500 }
