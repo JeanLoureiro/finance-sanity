@@ -66,7 +66,10 @@ export default function SharingSection() {
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        throw new Error(body.error ?? "Failed to send invite");
+        const errorMessage = body.error ?? "Failed to send invite";
+        const error = new Error(errorMessage) as Error & { status?: number };
+        error.status = response.status;
+        throw error;
       }
       return response.json();
     },
@@ -78,8 +81,12 @@ export default function SharingSection() {
       setInviteSuccess(true);
       setTimeout(() => setInviteSuccess(false), 4000);
     },
-    onError: (error: Error) => {
-      setInviteError(error.message);
+    onError: (error: Error & { status?: number }) => {
+      if (error.status === 429) {
+        setInviteError("Rate limit exceeded. Please wait a few minutes before sending another invitation.");
+      } else {
+        setInviteError(error.message);
+      }
     },
   });
 
