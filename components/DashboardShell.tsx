@@ -41,7 +41,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="font-semibold text-sm flex-1">CompiledSanity Finance</span>
+          <span className="font-semibold text-sm flex-1">Finance Sanity</span>
           <ThemeToggle />
         </div>
 
