@@ -2,10 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { mortgageBalance, eomonth } from "@/lib/finance";
 import { computeFIFO, summariseCGTByFY, type Trade } from "@/lib/capitalGains";
 import { getFiscalYear } from "@/lib/australianFY";
+import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
-export async function POST() {
+export const POST = withAuth(async () => {
   try {
-    const settings = await prisma.userSettings.findFirst({
+    const { settingsId } = await getAuthorisedSettings("WRITE");
+  const settings = await prisma.userSettings.findUnique({
+    where: { id: settingsId },
       include: {
         bankAccounts: true,
         etfHoldings: { include: { purchases: true } },
@@ -182,4 +185,4 @@ export async function POST() {
     console.error(err);
     return Response.json({ error: "Failed to record month" }, { status: 500 });
   }
-}
+});

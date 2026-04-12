@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
-export async function GET() {
+export const GET = withAuth(async () => {
   try {
     const settings = await prisma.userSettings.findFirst();
     if (!settings) return Response.json([]);
@@ -38,4 +39,4 @@ export async function GET() {
     console.error(err);
     return Response.json({ error: "Failed to load history" }, { status: 500 });
   }
-}
+});

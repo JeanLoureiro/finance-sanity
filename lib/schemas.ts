@@ -122,7 +122,7 @@ export const etfHoldingSchema = z.object({
   sortOrder: z.coerce.number().int().optional(),
 });
 
-export type ETFHoldingInput = z.infer<typeof etfHoldingSchema>;
+export type ETFHoldingInput = z.input<typeof etfHoldingSchema>;
 
 // ---------------------------------------------------------------------------
 // Property

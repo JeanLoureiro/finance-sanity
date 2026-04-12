@@ -1,14 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { computeFIFO, summariseCGTByFY, type Trade } from "@/lib/capitalGains";
 import { getFiscalYear } from "@/lib/australianFY";
+import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const fyParam = searchParams.get("fy");
     const fy = fyParam ? parseInt(fyParam) : null;
 
-    const settings = await prisma.userSettings.findFirst({
+    const { settingsId } = await getAuthorisedSettings();
+  const settings = await prisma.userSettings.findUnique({
+    where: { id: settingsId },
       include: {
         etfHoldings: { include: { purchases: true } },
         stockHoldings: { include: { purchases: true } },
@@ -70,4 +73,4 @@ export async function GET(request: Request) {
     console.error(err);
     return Response.json({ error: "Failed to compute capital gains" }, { status: 500 });
   }
-}
+});

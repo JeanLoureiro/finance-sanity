@@ -7,11 +7,24 @@ datasource db {
   provider = "postgresql"
 }
 
+enum AccessRole {
+  READ
+  WRITE
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+}
+
 // ---------------------------------------------------------------------------
 // USER SETTINGS  (maps to SheetOptions sheet)
 // ---------------------------------------------------------------------------
 model UserSettings {
-  id String @id @default(cuid())
+  id         String  @id @default(cuid())
+  userId     String? @unique // Supabase auth.users UID — nullable for safe migration
+  ownerEmail String?         // stored at first invite creation for display purposes
 
   // General
   currency        String  @default("AUD")
@@ -97,6 +110,27 @@ model UserSettings {
   budgetCategories    BudgetCategory[]
   sideIncomeEntries   SideIncomeEntry[]
   monthlySnapshots    MonthlySnapshot[]
+  sharedAccessGrants  SharedAccess[]      @relation("OwnerSettings")
+}
+
+// ---------------------------------------------------------------------------
+// SHARED ACCESS (multi-user / invite system)
+// ---------------------------------------------------------------------------
+model SharedAccess {
+  id              String       @id @default(cuid())
+  ownerSettingsId String
+  ownerSettings   UserSettings @relation("OwnerSettings", fields: [ownerSettingsId], references: [id], onDelete: Cascade)
+  granteeUserId   String       @default("") // Supabase auth UID — set on accept
+  granteeEmail    String
+  ownerEmail      String
+  role            AccessRole
+  status          InviteStatus @default(PENDING)
+  token           String       @unique @default(cuid())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([granteeUserId])
+  @@index([ownerSettingsId])
 }
 
 // ---------------------------------------------------------------------------

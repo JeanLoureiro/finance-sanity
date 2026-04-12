@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { mortgageBalance } from "@/lib/finance";
 import { computeFIFO, summariseCGTByFY, type Trade } from "@/lib/capitalGains";
 import { getFiscalYear } from "@/lib/australianFY";
+import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
 function freqToPPY(freq?: string | null): number {
   switch (freq) {
@@ -15,9 +16,11 @@ function freqToPPY(freq?: string | null): number {
   }
 }
 
-export async function GET() {
+export const GET = withAuth(async () => {
   try {
-    const settings = await prisma.userSettings.findFirst({
+    const { settingsId } = await getAuthorisedSettings();
+  const settings = await prisma.userSettings.findUnique({
+    where: { id: settingsId },
       include: {
         bankAccounts: true,
         etfHoldings: { include: { purchases: true } },
@@ -262,4 +265,4 @@ export async function GET() {
     console.error(err);
     return Response.json({ error: "Failed to compute net worth" }, { status: 500 });
   }
-}
+});

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { fv, pv, nper } from "@/lib/finance";
 import { mortgageBalance } from "@/lib/finance";
+import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
 export type FIRERow = {
   year: number;
@@ -46,9 +47,11 @@ export type FIREResult = {
   rows: FIRERow[];
 };
 
-export async function GET() {
+export const GET = withAuth(async () => {
   try {
-    const settings = await prisma.userSettings.findFirst({
+    const { settingsId } = await getAuthorisedSettings();
+  const settings = await prisma.userSettings.findUnique({
+    where: { id: settingsId },
       include: {
         bankAccounts: true,
         etfHoldings: { include: { purchases: true } },
@@ -212,4 +215,4 @@ export async function GET() {
     console.error(err);
     return Response.json({ error: "Failed to compute FIRE projection" }, { status: 500 });
   }
-}
+});

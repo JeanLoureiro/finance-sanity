@@ -1,16 +1,12 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { dividendSchema } from "@/lib/schemas";
+import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
-async function getSettingsId() {
-  const s = await prisma.userSettings.findFirst();
-  if (!s) throw new Error("No settings found");
-  return s.id;
-}
 
-export async function GET() {
+export const GET = withAuth(async () => {
   try {
-    const settingsId = await getSettingsId();
+    const { settingsId } = await getAuthorisedSettings();
     const dividends = await prisma.dividend.findMany({
       where: { settingsId },
       orderBy: { paymentDate: "desc" },
@@ -19,16 +15,16 @@ export async function GET() {
   } catch {
     return Response.json({ error: "Failed to load dividends" }, { status: 500 });
   }
-}
+});
 
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async (req: NextRequest) => {
   try {
     const body = await req.json();
     const parsed = dividendSchema.safeParse(body);
     if (!parsed.success) {
       return Response.json({ error: parsed.error.flatten() }, { status: 400 });
     }
-    const settingsId = await getSettingsId();
+    const { settingsId } = await getAuthorisedSettings("WRITE");
     const dividend = await prisma.dividend.create({
       data: {
         settingsId,
@@ -45,4 +41,4 @@ export async function POST(req: NextRequest) {
   } catch {
     return Response.json({ error: "Failed to create dividend" }, { status: 500 });
   }
-}
+});

@@ -13,7 +13,9 @@
  * Returns: { imported: number, errors: string[] }
  */
 
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
 type AssetType = "ETF" | "Stock" | "MF" | "Crypto";
 
@@ -50,14 +52,15 @@ function validateRow(row: Record<string, string>, index: number): string | null 
   return null;
 }
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (req: NextRequest) => {
   try {
-    const { csv } = await request.json() as { csv: string };
+    const { csv } = await req.json() as { csv: string };
     if (!csv || typeof csv !== "string") {
       return Response.json({ error: "Missing csv field" }, { status: 400 });
     }
 
-    const settings = await prisma.userSettings.findFirst();
+    const { settingsId } = await getAuthorisedSettings("WRITE");
+    const settings = await prisma.userSettings.findUnique({ where: { id: settingsId } });
     if (!settings) {
       return Response.json({ error: "No settings found" }, { status: 404 });
     }
@@ -120,4 +123,4 @@ export async function POST(request: Request) {
     console.error(err);
     return Response.json({ error: "Failed to import purchases" }, { status: 500 });
   }
-}
+});
