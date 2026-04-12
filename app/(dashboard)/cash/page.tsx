@@ -74,6 +74,11 @@ export default function CashPage() {
     queryFn: () => fetch("/api/settings").then((r) => r.json()),
   });
 
+  const { data: budgetItems = [] } = useQuery<{ monthlyAmount: number }[]>({
+    queryKey: queryKeys.budget.items(),
+    queryFn: () => fetch("/api/budget/items").then((r) => r.json()),
+  });
+
   const { data: history = [] } = useQuery<HistorySnapshot[]>({
     queryKey: queryKeys.history.list(),
     queryFn: () => fetch("/api/history").then((r) => r.json()),
@@ -123,6 +128,7 @@ export default function CashPage() {
   }
 
   const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
+  const totalMonthlyExpenses = budgetItems.reduce((s, i) => s + Number(i.monthlyAmount), 0);
   const target = Number(settings?.cashSavingsTarget ?? 40000);
   const pctOfTarget = target > 0 ? Math.min(totalBalance / target, 1) : 0;
 
@@ -135,7 +141,7 @@ export default function CashPage() {
         <StatCard label="Total Balance" value={<CurrencyAmount value={totalBalance} />} />
         <StatCard label="Savings Target" value={<CurrencyAmount value={target} />} sub={`${(pctOfTarget * 100).toFixed(1)}% reached`} />
         <StatCard label="Net Monthly Income" value={<CurrencyAmount value={settings?.netIncome ?? 0} />} />
-        <StatCard label="Emergency Fund Target" value={<CurrencyAmount value={(settings?.emergencyFundMonths ?? 6) * (totalBalance / 12)} />} sub={`${settings?.emergencyFundMonths ?? 6} months of expenses`} />
+        <StatCard label="Emergency Fund Target" value={<CurrencyAmount value={(settings?.emergencyFundMonths ?? 6) * totalMonthlyExpenses} />} sub={`${settings?.emergencyFundMonths ?? 6} months of expenses`} />
       </div>
 
       {/* Progress bar */}
