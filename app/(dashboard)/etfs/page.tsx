@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { etfHoldingSchema, purchaseSchema, type ETFHoldingInput, type PurchaseInput } from "@/lib/schemas";
+import { etfHoldingSchema, type ETFHoldingInput, type ETFHoldingValues, type PurchaseInput } from "@/lib/schemas";
 import { queryKeys } from "@/lib/queryKeys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -112,7 +112,7 @@ export default function ETFsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteHoldingId, setDeleteHoldingId] = useState<string | null>(null);
 
-  const { register: regEdit, handleSubmit: handleEdit, reset: resetEdit } = useForm<ETFHoldingInput>({
+  const { register: regEdit, handleSubmit: handleEdit, reset: resetEdit } = useForm<ETFHoldingInput, unknown, ETFHoldingValues>({
     resolver: zodResolver(etfHoldingSchema),
   });
 
