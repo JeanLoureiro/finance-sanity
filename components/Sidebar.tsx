@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
 import {
@@ -23,7 +24,9 @@ import {
   ChevronRight,
   Upload,
   X,
+  LogOut,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/net-worth", label: "Net Worth", icon: LayoutDashboard },
@@ -47,6 +50,20 @@ const navItems = [
 
 export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setEmail(data.user?.email ?? null);
+    });
+  }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
 
   return (
     <aside className="w-56 flex-shrink-0 border-r bg-background flex flex-col h-full">
@@ -89,6 +106,18 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           );
         })}
       </nav>
+      <div className="p-2 border-t">
+        {email && (
+          <p className="px-3 py-1 text-xs text-muted-foreground truncate">{email}</p>
+        )}
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-2 px-3 py-2 text-sm rounded-md w-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <LogOut className="h-4 w-4 flex-shrink-0" />
+          <span>Sign out</span>
+        </button>
+      </div>
     </aside>
   );
 }
