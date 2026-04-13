@@ -34,6 +34,7 @@ export const POST = withAuth(async (req: NextRequest) => {
         annualRate: parsed.data.annualRate,
         regularPayment: parsed.data.regularPayment,
         startingBalance: parsed.data.startingBalance,
+        adminFee: parsed.data.adminFee,
       },
     });
     return Response.json(loan, { status: 201 });

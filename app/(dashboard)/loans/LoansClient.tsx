@@ -17,6 +17,7 @@ import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 type Loan = {
   id: string; name: string; startDate: string; interestFrequency: number;
   annualRate: string | number; regularPayment: string | number; startingBalance: string | number;
+  adminFee: string | number;
 };
 
 type ExtraPayment = {
@@ -35,11 +36,12 @@ function mortgageBalanceWithExtras(
   startBalance: number,
   annualRate: number,
   monthlyPayment: number,
+  adminFee: number,
   startDate: Date,
   extraPayments: ExtraPayment[],
   asOfDate: Date = new Date()
 ): number {
-  const monthRate = annualRate / 12;
+  const dailyRate = annualRate / 365;
   const monthsElapsed =
     (asOfDate.getFullYear() - startDate.getFullYear()) * 12 +
     (asOfDate.getMonth() - startDate.getMonth());
@@ -47,9 +49,17 @@ function mortgageBalanceWithExtras(
   if (monthsElapsed <= 0) return startBalance;
 
   let balance = startBalance;
+  let currentDate = new Date(startDate);
+  
   for (let i = 0; i < monthsElapsed; i++) {
-    const interest = balance * monthRate;
-    balance = Math.max(0, balance - (monthlyPayment - interest));
+    // Calculate days in this month
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Calculate interest for the month (daily interest × days in month)
+    const interest = balance * dailyRate * daysInMonth;
+    balance = balance + interest + adminFee - monthlyPayment;
 
     // Apply extra payments that fall in this calendar month
     const periodYear = startDate.getFullYear() + Math.floor((startDate.getMonth() + i + 1) / 12);
@@ -57,9 +67,14 @@ function mortgageBalanceWithExtras(
     for (const ep of extraPayments) {
       const d = new Date(ep.date);
       if (d.getFullYear() === periodYear && d.getMonth() === periodMonth) {
-        balance = Math.max(0, balance - ep.amount);
+        balance = balance - ep.amount;
       }
     }
+    
+    balance = Math.max(0, balance);
+    
+    // Move to next month
+    currentDate.setMonth(currentDate.getMonth() + 1);
   }
   return balance;
 }
@@ -71,7 +86,7 @@ function computeLoanStats(loan: Loan, extraPayments: ExtraPayment[]) {
   const startDate = new Date(loan.startDate);
 
   const currentBalance = mortgageBalanceWithExtras(
-    startBalance, annualRate, monthlyPayment, startDate, extraPayments
+    startBalance, annualRate, monthlyPayment, Number(loan.adminFee), startDate, extraPayments
   );
 
   // Months left from today ignoring future extra payments (conservative estimate)
@@ -88,7 +103,9 @@ function computeLoanStats(loan: Loan, extraPayments: ExtraPayment[]) {
   const totalPaid = startBalance - currentBalance + extraPayments.reduce((s, e) => s + e.amount, 0);
   const pctPaid = startBalance > 0 ? Math.min(100, (totalPaid / startBalance) * 100) : 0;
 
-  return { currentBalance, monthsLeft, payoffDate, totalPaid, pctPaid };
+  const monthlyInterest = currentBalance > 0 ? currentBalance * (annualRate / loan.interestFrequency) : 0;
+
+  return { currentBalance, monthsLeft, payoffDate, totalPaid, pctPaid, monthlyInterest };
 }
 
 function LoanForm({
@@ -112,7 +129,7 @@ function LoanForm({
           <Input type="date" {...register("startDate")} />
         </div>
         <div className="flex-1">
-          <label className="text-xs text-muted-foreground">Compounds per year</label>
+          <label className="text-xs text-muted-foreground">Compounds per year (12 for monthly)</label>
           <Input type="number" {...register("interestFrequency")} />
         </div>
       </div>
@@ -126,9 +143,15 @@ function LoanForm({
           <Input type="number" {...register("annualRate")} />
         </div>
       </div>
-      <div>
-        <label className="text-xs text-muted-foreground">Regular payment per period ($)</label>
-        <Input type="number" {...register("regularPayment")} />
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <label className="text-xs text-muted-foreground">Regular payment per period ($)</label>
+          <Input type="number" {...register("regularPayment")} />
+        </div>
+        <div className="flex-1">
+          <label className="text-xs text-muted-foreground">Admin fee per month ($)</label>
+          <Input type="number" step="0.01" {...register("adminFee")} />
+        </div>
       </div>
       <Button type="submit" className="w-full" disabled={isPending}>{submitLabel}</Button>
     </form>
@@ -346,7 +369,7 @@ export default function LoansPage() {
           <DialogContent>
             <DialogHeader><DialogTitle>Add Loan</DialogTitle></DialogHeader>
             <LoanForm
-              defaultValues={{ name: "", startDate: "", interestFrequency: 12, annualRate: 0, regularPayment: 0, startingBalance: 0 }}
+              defaultValues={{ name: "", startDate: "", interestFrequency: 12, annualRate: 0, regularPayment: 0, startingBalance: 0, adminFee: 0 }}
               onSubmit={(d) => add.mutate(d)}
               isPending={add.isPending}
               submitLabel="Add Loan"
@@ -386,6 +409,7 @@ export default function LoansPage() {
                               annualRate: Number(loan.annualRate),
                               regularPayment: Number(loan.regularPayment),
                               startingBalance: Number(loan.startingBalance),
+                              adminFee: Number(loan.adminFee),
                             }}
                             onSubmit={(d) => update.mutate({ id: loan.id, ...d })}
                             isPending={update.isPending}
@@ -400,12 +424,18 @@ export default function LoansPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-4 gap-4 text-sm mb-4">
+                  <div className="grid grid-cols-4 gap-4 text-sm mb-3">
                     <div><p className="text-muted-foreground">Remaining</p><p className="font-bold"><CurrencyAmount value={stats.currentBalance} /></p></div>
                     <div><p className="text-muted-foreground">Rate</p><p className="font-bold">{(Number(loan.annualRate) * 100).toFixed(2)}% p.a.</p></div>
                     <div><p className="text-muted-foreground">Payment</p><p className="font-bold"><CurrencyAmount value={Number(loan.regularPayment)} /></p></div>
                     <div><p className="text-muted-foreground">Payoff</p><p className="font-bold">{stats.monthsLeft > 0 ? stats.payoffDate.toLocaleDateString("en-AU", { month: "short", year: "numeric" }) : "Paid off"}</p></div>
                   </div>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Interest this period: <span className="font-medium text-foreground"><CurrencyAmount value={stats.monthlyInterest} /></span>
+                    {Number(loan.adminFee) > 0 && (
+                      <> · Admin fee/mo: <span className="font-medium text-foreground"><CurrencyAmount value={Number(loan.adminFee)} /></span> · Total monthly cost: <span className="font-medium text-foreground"><CurrencyAmount value={stats.monthlyInterest + Number(loan.adminFee)} /></span></>
+                    )}
+                  </p>
                   <div className="w-full bg-muted rounded-full h-2">
                     <div className="bg-primary h-2 rounded-full" style={{ width: `${Math.min(100, stats.pctPaid)}%` }} />
                   </div>

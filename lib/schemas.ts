@@ -179,6 +179,7 @@ export const loanSchema = z.object({
   annualRate: z.coerce.number().min(0).max(1),
   regularPayment: z.coerce.number().positive(),
   startingBalance: z.coerce.number().positive(),
+  adminFee: z.coerce.number().min(0).default(0),
 });
 
 export type LoanInput = z.infer<typeof loanSchema>;

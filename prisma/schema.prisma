@@ -384,6 +384,7 @@ model Loan {
   annualRate        Decimal            @db.Decimal(7, 6)
   regularPayment    Decimal            @db.Decimal(20, 6)
   startingBalance   Decimal            @db.Decimal(20, 6)
+  adminFee          Decimal            @default(0) @db.Decimal(20, 6)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   extraPayments     LoanExtraPayment[]
