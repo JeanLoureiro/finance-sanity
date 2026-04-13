@@ -9,7 +9,7 @@ import { CurrencyAmount } from "@/components/ui/currency-amount";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trash2, PlusCircle, Pencil, Check, X } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import dynamic from "next/dynamic";
 
@@ -179,8 +179,8 @@ export default function CashPage() {
               </thead>
               <tbody>
                 {accounts.map((acc) => (
-                  <>
-                    <tr key={acc.id} className="border-b hover:bg-muted/30">
+                  <Fragment key={acc.id}>
+                    <tr className="border-b hover:bg-muted/30">
                       <td className="px-4 py-2 font-medium">{acc.name}</td>
                       <td className="px-4 py-2 text-muted-foreground">{acc.bsb || <span className="italic text-xs">—</span>}</td>
                       <td className="px-4 py-2 text-muted-foreground">{acc.accountNumber || <span className="italic text-xs">—</span>}</td>
@@ -254,7 +254,7 @@ export default function CashPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
                 {accounts.length === 0 && (
                   <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">No accounts yet</td></tr>
