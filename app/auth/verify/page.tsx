@@ -1,11 +1,11 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function VerifyPage() {
+function VerifyContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const [loading, setLoading] = useState(false);
@@ -35,39 +35,40 @@ export default function VerifyPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle>Finance Sanity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-destructive">
-              Invalid link. Please request a new magic link from the{" "}
-              <a href="/login" className="underline">
-                login page
-              </a>
-              .
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <p className="text-sm text-destructive">
+        Invalid link. Please request a new magic link from the{" "}
+        <a href="/login" className="underline">
+          login page
+        </a>
+        .
+      </p>
     );
   }
 
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Click the button below to complete your sign in.
+      </p>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <Button onClick={handleSignIn} disabled={loading} className="w-full">
+        {loading ? "Signing in…" : "Sign in"}
+      </Button>
+    </div>
+  );
+}
+
+export default function VerifyPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Finance Sanity</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Click the button below to complete your sign in.
-          </p>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button onClick={handleSignIn} disabled={loading} className="w-full">
-            {loading ? "Signing in…" : "Sign in"}
-          </Button>
+        <CardContent>
+          <Suspense fallback={<p className="text-sm text-muted-foreground">Loading…</p>}>
+            <VerifyContent />
+          </Suspense>
         </CardContent>
       </Card>
     </div>
