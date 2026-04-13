@@ -34,15 +34,15 @@ export async function getAuthorisedSettings(
 ): Promise<AuthorisedSettings> {
   const supabase = await createClient();
   const {
-    data: { user },
+    data: { session },
     error,
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getSession();
 
-  if (error || !user) {
+  if (error || !session) {
     throw new AuthError(401, "Not authenticated");
   }
 
-  const userId = user.id;
+  const userId = session.user.id;
 
   // Check 1: Is this user the owner?
   const ownedSettings = await prisma.userSettings.findUnique({
