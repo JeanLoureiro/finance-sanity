@@ -5,11 +5,13 @@ import { queryKeys } from "@/lib/queryKeys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CurrencyAmount } from "@/components/ui/currency-amount";
-import {
-  ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend, ReferenceLine,
-} from "recharts";
 import type { FIREResult, FIRERow } from "@/app/api/fire/route";
+import dynamic from "next/dynamic";
+
+const FireChart = dynamic(() => import("./FireChart"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[348px] w-full" />,
+});
 
 const fmtCompact = (v: number) =>
   new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", notation: "compact", maximumFractionDigits: 1 }).format(v);
@@ -202,29 +204,7 @@ export default function FirePage() {
       </Card>
 
       {/* Projection chart */}
-      <Card>
-        <CardHeader><CardTitle className="text-base">FIRE Projection</CardTitle></CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <ComposedChart data={chartRows} margin={{ left: 10, right: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="year" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={fmtCompact} tick={{ fontSize: 11 }} width={65} />
-              <Tooltip
-                formatter={(v, name) => [fmtFull(Number(v)), name]}
-                labelFormatter={(l) => `${l} (age ${Number(l) - yearOfBirth})`}
-              />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              {preSuperFIREYear && (
-                <ReferenceLine x={preSuperFIREYear} stroke="#22c55e" strokeDasharray="4 2" label={{ value: "Pre-FIRE", fontSize: 10, fill: "#22c55e" }} />
-              )}
-              <Area type="monotone" dataKey="nwTarget" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.15} strokeWidth={1} name="NW Target" strokeDasharray="4 2" />
-              <Line type="monotone" dataKey="investNW" stroke="#2563eb" strokeWidth={2} dot={false} name="Investable NW" />
-              <Line type="monotone" dataKey="superBal" stroke="#64748b" strokeWidth={2} dot={false} name="Super Balance" />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      <FireChart chartRows={chartRows} preSuperFIREYear={preSuperFIREYear} yearOfBirth={yearOfBirth} />
 
       {/* Year-by-year table */}
       <Card>
