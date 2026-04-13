@@ -30,24 +30,34 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const { data, error: signInError } = await adminClient.auth.admin.generateLink({
+  // Get or create the Supabase user for this email
+  const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
     type: "magiclink",
     email,
   });
 
-  if (signInError || !data.properties?.hashed_token) {
-    return Response.json({ error: "Authentication failed" }, { status: 500 });
+  if (linkError || !linkData.user) {
+    return Response.json({ error: "Failed to resolve user account" }, { status: 500 });
   }
 
+  // Create a session directly — avoids PKCE verifier issues
+  const { data: sessionData, error: sessionError } = await adminClient.auth.admin.createSession(
+    linkData.user.id
+  );
+
+  if (sessionError || !sessionData.session) {
+    return Response.json({ error: "Failed to create session" }, { status: 500 });
+  }
+
+  // Set the session on the SSR client so auth cookies are written to the response
   const supabase = await createClient();
-  const { error: verifyError } = await supabase.auth.verifyOtp({
-    email,
-    token: data.properties.hashed_token,
-    type: "magiclink",
+  const { error: setError } = await supabase.auth.setSession({
+    access_token: sessionData.session.access_token,
+    refresh_token: sessionData.session.refresh_token,
   });
 
-  if (verifyError) {
-    return Response.json({ error: "Authentication failed" }, { status: 500 });
+  if (setError) {
+    return Response.json({ error: "Failed to establish session" }, { status: 500 });
   }
 
   await consumeOTP(parsed.data.token);
