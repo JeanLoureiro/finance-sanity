@@ -566,6 +566,24 @@ export default function PropertyPage() {
   const totalPropertyValue = properties.reduce((s, p) => s + Number(p.currentValue), 0);
   const totalEquity = properties.reduce((s, p) => s + computePropertyStats(p).equity, 0);
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+        </div>
+        <div className="space-y-4">
+          {[...Array(2)].map((_, index) => <Skeleton key={index} className="h-40 w-full" />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -595,10 +613,7 @@ export default function PropertyPage() {
         <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Total Equity</p><p className="text-2xl font-bold"><CurrencyAmount value={totalEquity} /></p></CardContent></Card>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-40 w-full" />)}</div>
-      ) : (
-        <div className="space-y-4">
+      <div className="space-y-4">
           {properties.map((p) => {
             const stats = computePropertyStats(p);
             return (
@@ -711,7 +726,6 @@ export default function PropertyPage() {
           })}
           {properties.length === 0 && <Card><CardContent className="py-10 text-center text-muted-foreground">No properties yet. Add one above.</CardContent></Card>}
         </div>
-      )}
       <ConfirmDeleteDialog
         open={deletePropertyId !== null}
         onOpenChange={(open) => { if (!open) setDeletePropertyId(null); }}

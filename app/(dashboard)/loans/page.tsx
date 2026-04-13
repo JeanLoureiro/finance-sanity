@@ -320,6 +320,21 @@ export default function LoansPage() {
     return s + computeLoanStats(l, extras).currentBalance;
   }, 0);
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-44" />
+          <Skeleton className="h-9 w-28" />
+        </div>
+        <Skeleton className="h-20 w-full" />
+        <div className="space-y-4">
+          {[...Array(2)].map((_, index) => <Skeleton key={index} className="h-32 w-full" />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -347,10 +362,7 @@ export default function LoansPage() {
         </CardContent>
       </Card>
 
-      {isLoading ? (
-        <div className="space-y-3">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}</div>
-      ) : (
-        <div className="space-y-4">
+      <div className="space-y-4">
           {loans.map((loan) => {
             const extras = allPayments.data?.[loan.id] ?? [];
             const stats = computeLoanStats(loan, extras);
@@ -411,7 +423,6 @@ export default function LoansPage() {
             <Card><CardContent className="py-10 text-center text-muted-foreground">No loans. Add one above.</CardContent></Card>
           )}
         </div>
-      )}
       <ConfirmDeleteDialog
         open={deleteLoanId !== null}
         onOpenChange={(open) => { if (!open) setDeleteLoanId(null); }}

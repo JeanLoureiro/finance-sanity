@@ -61,6 +61,21 @@ export default function SuperPage() {
 
   const totalSuper = accounts.reduce((s, a) => s + Number(a.balance), 0);
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-44" />
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <Skeleton className="h-24 w-full" />
+        <div className="space-y-3">
+          {[...Array(2)].map((_, index) => <Skeleton key={index} className="h-20 w-full" />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -93,10 +108,7 @@ export default function SuperPage() {
         </CardContent>
       </Card>
 
-      {isLoading ? (
-        <div className="space-y-3">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</div>
-      ) : (
-        <div className="space-y-3">
+      <div className="space-y-3">
           {accounts.map((a) => (
             <Card key={a.id}>
               <CardContent className="pt-4">
@@ -123,7 +135,6 @@ export default function SuperPage() {
           ))}
           {accounts.length === 0 && <Card><CardContent className="py-10 text-center text-muted-foreground">No super accounts. Add one above.</CardContent></Card>}
         </div>
-      )}
 
       <ConfirmDeleteDialog
         open={deleteId !== null}

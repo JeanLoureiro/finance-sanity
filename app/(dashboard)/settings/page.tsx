@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import SharingSection from "@/components/SharingSection";
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
@@ -58,7 +59,27 @@ export default function SettingsPage() {
     if (data && !data.error) reset(data);
   }, [data, reset]);
 
-  if (isLoading) return <p className="text-muted-foreground">Loading…</p>;
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-28" />
+        {[...Array(5)].map((_, index) => (
+          <Card key={index}>
+            <CardHeader><Skeleton className="h-5 w-40" /></CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              {[...Array(4)].map((_, fieldIndex) => (
+                <div key={fieldIndex} className="space-y-2">
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ))}
+        <Skeleton className="h-10 w-36" />
+      </div>
+    );
+  }
 
   return (
     <>

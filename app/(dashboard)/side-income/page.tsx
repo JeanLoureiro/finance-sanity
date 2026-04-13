@@ -54,6 +54,24 @@ export default function SideIncomePage() {
   const last12 = entries.filter((e) => { const d = new Date(e.date); const c = new Date(); c.setMonth(c.getMonth() - 12); return d >= c; });
   const rolling12Avg = last12.length > 0 ? last12.reduce((s, e) => s + Number(e.sideIncome) + Number(e.rentalIncome), 0) / last12.length : 0;
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-32" />
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-32" />
+            <Skeleton className="h-9 w-28" />
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          {[...Array(4)].map((_, index) => <Skeleton key={index} className="h-20" />)}
+        </div>
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -88,7 +106,7 @@ export default function SideIncomePage() {
         <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">12-month avg/month</p><p className="text-2xl font-bold"><CurrencyAmount value={rolling12Avg} /></p></CardContent></Card>
       </div>
 
-      {isLoading ? <Skeleton className="h-64 w-full" /> : (
+      {(
         <div className="rounded-lg border">
           <table className="w-full text-sm">
             <thead>

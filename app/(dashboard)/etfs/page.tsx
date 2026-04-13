@@ -164,6 +164,24 @@ export default function ETFsPage() {
 
   const portfolioValue = enriched.reduce((s, h) => s + (h.liveValue ?? h.costBasis), 0);
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-16" />
+          <Skeleton className="h-9 w-28" />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+        </div>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, index) => <Skeleton key={index} className="h-28 w-full" />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -200,10 +218,7 @@ export default function ETFsPage() {
       </div>
 
       {/* Holdings */}
-      {isLoading ? (
-        <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}</div>
-      ) : (
-        <div className="space-y-4">
+      <div className="space-y-4">
           {enriched.map((h) => (
             <Card key={h.id}>
               <CardContent className="pt-4">
@@ -285,7 +300,6 @@ export default function ETFsPage() {
             <Card><CardContent className="py-10 text-center text-muted-foreground">No ETF holdings yet. Add one above.</CardContent></Card>
           )}
         </div>
-      )}
       <ConfirmDeleteDialog
         open={deleteHoldingId !== null}
         onOpenChange={(open) => { if (!open) setDeleteHoldingId(null); }}

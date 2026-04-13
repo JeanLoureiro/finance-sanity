@@ -60,6 +60,19 @@ export default function OtherAssetsPage() {
 
   const totalValue = enriched.reduce((s, a) => s + a.liveValue, 0);
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-9 w-28" />
+        </div>
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -89,7 +102,7 @@ export default function OtherAssetsPage() {
 
       <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Total Other Assets</p><p className="text-2xl font-bold"><CurrencyAmount value={totalValue} /></p></CardContent></Card>
 
-      {isLoading ? <Skeleton className="h-64 w-full" /> : (
+      {(
         <div className="rounded-lg border">
           <table className="w-full text-sm">
             <thead>

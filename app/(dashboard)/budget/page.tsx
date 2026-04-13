@@ -816,6 +816,22 @@ export default function BudgetPage() {
     },
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-24" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, index) => <Skeleton key={index} className="h-20" />)}
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Skeleton className="h-16" />
+          <Skeleton className="h-16" />
+        </div>
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Budget</h1>
@@ -923,7 +939,7 @@ export default function BudgetPage() {
       )}
 
       {/* Results count */}
-      {isFiltered && !isLoading && (
+      {isFiltered && (
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <span>
             Showing <span className="font-medium text-foreground">{displayItems.length}</span> of {items.length} items
@@ -940,11 +956,7 @@ export default function BudgetPage() {
       )}
 
       {/* Items table */}
-      {isLoading ? (
-        <Card><CardContent className="p-4 space-y-2">
-          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
-        </CardContent></Card>
-      ) : resolvedViewMode === "grouped" ? (
+      {resolvedViewMode === "grouped" ? (
         <Card>
           <CardHeader><CardTitle className="text-base">Expense Items</CardTitle></CardHeader>
           <CardContent className="p-0 overflow-x-auto">
