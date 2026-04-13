@@ -78,8 +78,8 @@ export default function OtherAssetsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Other Assets</h1>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger>
-            <Button size="sm"><PlusCircle className="h-4 w-4 mr-1" /> Add Asset</Button>
+          <DialogTrigger render={<Button size="sm" />}>
+            <PlusCircle className="h-4 w-4 mr-1" /> Add Asset
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Add Other Asset</DialogTitle></DialogHeader>

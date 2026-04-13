@@ -169,8 +169,8 @@ export default function ManagedFundsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Managed Funds</h1>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger>
-            <Button size="sm"><PlusCircle className="h-4 w-4 mr-1" /> Add Fund</Button>
+          <DialogTrigger render={<Button size="sm" />}>
+            <PlusCircle className="h-4 w-4 mr-1" /> Add Fund
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Add Managed Fund</DialogTitle></DialogHeader>
@@ -224,8 +224,8 @@ export default function ManagedFundsPage() {
                   </div>
                   <div className="flex gap-2">
                     <Dialog>
-                      <DialogTrigger>
-                        <Button size="sm" variant="outline"><History className="h-4 w-4" /></Button>
+                      <DialogTrigger render={<Button size="sm" variant="outline" />}>
+                        <History className="h-4 w-4" />
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl">
                         <DialogHeader><DialogTitle>{h.ticker} — Transactions</DialogTitle></DialogHeader>

@@ -82,7 +82,7 @@ export default function SideIncomePage() {
             <SelectContent>{allFYs.map((fy) => <SelectItem key={fy} value={String(fy)}>{getFYLabel(fy)}</SelectItem>)}</SelectContent>
           </Select>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
-            <DialogTrigger><Button size="sm"><PlusCircle className="h-4 w-4 mr-1" /> Add Entry</Button></DialogTrigger>
+            <DialogTrigger render={<Button size="sm" />}><PlusCircle className="h-4 w-4 mr-1" /> Add Entry</DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Add Side Income Entry</DialogTitle></DialogHeader>
               <form onSubmit={handleSubmit((d) => add.mutate(d))} className="space-y-3">

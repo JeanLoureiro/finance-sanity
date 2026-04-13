@@ -340,8 +340,8 @@ export default function LoansPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Loans & Liabilities</h1>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger>
-            <Button size="sm"><PlusCircle className="h-4 w-4 mr-1" /> Add Loan</Button>
+          <DialogTrigger render={<Button size="sm" />}>
+            <PlusCircle className="h-4 w-4 mr-1" /> Add Loan
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Add Loan</DialogTitle></DialogHeader>
@@ -373,10 +373,8 @@ export default function LoansPage() {
                     <CardTitle className="text-lg">{loan.name}</CardTitle>
                     <div className="flex gap-1">
                       <Dialog open={editId === loan.id} onOpenChange={(open) => setEditId(open ? loan.id : null)}>
-                        <DialogTrigger>
-                          <Button size="sm" variant="ghost">
-                            <Pencil className="h-4 w-4 text-muted-foreground" />
-                          </Button>
+                        <DialogTrigger render={<Button size="sm" variant="ghost" />}>
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader><DialogTitle>Edit — {loan.name}</DialogTitle></DialogHeader>

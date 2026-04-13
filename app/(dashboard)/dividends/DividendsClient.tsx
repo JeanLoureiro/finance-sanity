@@ -85,8 +85,8 @@ export default function DividendsPage() {
             </SelectContent>
           </Select>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
-            <DialogTrigger>
-              <Button size="sm"><PlusCircle className="h-4 w-4 mr-1" /> Add Dividend</Button>
+            <DialogTrigger render={<Button size="sm" />}>
+              <PlusCircle className="h-4 w-4 mr-1" /> Add Dividend
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Add Dividend</DialogTitle></DialogHeader>
