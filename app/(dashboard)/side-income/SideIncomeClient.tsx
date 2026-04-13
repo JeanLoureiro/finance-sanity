@@ -11,8 +11,8 @@ import { CurrencyAmount } from "@/components/ui/currency-amount";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, PlusCircle } from "lucide-react";
-import { useState } from "react";
+import { Trash2, PlusCircle, Pencil } from "lucide-react";
+import { useState, useEffect } from "react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type SideIncomeEntry = { id: string; date: string; sideIncome: string | number; rentalIncome: string | number; notes: string | null };
@@ -22,6 +22,7 @@ export default function SideIncomePage() {
   const [addOpen, setAddOpen] = useState(false);
   const [selectedFY, setSelectedFY] = useState(currentFY());
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
 
   const { data: entries = [], isLoading } = useQuery<SideIncomeEntry[]>({
     queryKey: queryKeys.sideIncome.all(),
@@ -42,6 +43,26 @@ export default function SideIncomePage() {
       fetch("/api/side-income", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
     onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.sideIncome.all() }); reset(); setAddOpen(false); },
   });
+
+  const update = useMutation({
+    mutationFn: ({ id, ...data }: Record<string, unknown>) =>
+      fetch(`/api/side-income/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then((r) => r.json()),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.sideIncome.all() }); setEditId(null); },
+  });
+
+  useEffect(() => {
+    if (editId) {
+      const entry = entries.find((e) => e.id === editId);
+      if (entry) {
+        reset({
+          date: new Date(entry.date).toISOString().slice(0, 10),
+          sideIncome: Number(entry.sideIncome),
+          rentalIncome: Number(entry.rentalIncome),
+          notes: entry.notes || "",
+        });
+      }
+    }
+  }, [editId, entries, reset]);
 
   const fyEntries = entries.filter((e) => getFiscalYear(new Date(e.date)) === selectedFY);
   const allFYs = [...new Set(entries.map((e) => getFiscalYear(new Date(e.date))))].sort((a, b) => b - a);
@@ -127,10 +148,31 @@ export default function SideIncomePage() {
                   <td className="py-3 px-4 text-right"><CurrencyAmount value={Number(e.rentalIncome)} /></td>
                   <td className="py-3 px-4 text-right font-medium"><CurrencyAmount value={Number(e.sideIncome) + Number(e.rentalIncome)} /></td>
                   <td className="py-3 px-4 text-muted-foreground">{e.notes}</td>
-                  <td className="py-3 px-4"><Button size="sm" variant="ghost" onClick={() => setDeleteId(e.id)}><Trash2 className="h-3 w-3" /></Button></td>
+                  <td className="py-3 px-4">
+                    <div className="flex gap-1">
+                      <Dialog open={editId === e.id} onOpenChange={(open) => setEditId(open ? e.id : null)}>
+                        <DialogTrigger render={<Button size="sm" variant="ghost" />}>
+                          <Pencil className="h-3 w-3" />
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader><DialogTitle>Edit Side Income Entry</DialogTitle></DialogHeader>
+                          <form onSubmit={handleSubmit((d) => update.mutate({ id: e.id, ...d }))} className="space-y-3">
+                            <div><label className="text-sm font-medium">Date</label><Input type="date" {...register("date")} /></div>
+                            <div className="flex gap-2">
+                              <div className="flex-1"><label className="text-sm font-medium">Side income ($)</label><Input type="number" {...register("sideIncome")} /></div>
+                              <div className="flex-1"><label className="text-sm font-medium">Rental income ($)</label><Input type="number" {...register("rentalIncome")} /></div>
+                            </div>
+                            <div><label className="text-sm font-medium">Notes (optional)</label><Input placeholder="e.g. Freelance project" {...register("notes")} /></div>
+                            <Button type="submit" className="w-full" disabled={update.isPending}>Save Changes</Button>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                      <Button size="sm" variant="ghost" onClick={() => setDeleteId(e.id)}><Trash2 className="h-3 w-3" /></Button>
+                    </div>
+                  </td>
                 </tr>
               ))}
-              {fyEntries.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No entries for {getFYLabel(selectedFY)}</td></tr>}
+              {fyEntries.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No entries for {getFYLabel(selectedFY)}</td></tr>}
             </tbody>
           </table>
         </div>
