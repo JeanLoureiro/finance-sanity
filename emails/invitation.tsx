@@ -27,11 +27,11 @@ export default function InvitationEmail({
     <Html>
       <Head />
       <Preview>
-        You&apos;ve been invited to Finance Sanity by {invitedByEmail}
+        You&apos;ve been invited to Financial Sanity by {invitedByEmail}
       </Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Finance Sanity</Heading>
+          <Heading style={h1}>Financial Sanity</Heading>
           <Text style={text}>
             <strong>{invitedByEmail}</strong> has invited you to access their
             financial data with <strong>{role}</strong> permissions.

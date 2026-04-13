@@ -70,7 +70,7 @@ export default function AcceptInviteClient({ token, invite }: Props) {
           <p className="text-sm text-muted-foreground">
             <strong>{invite.ownerEmail || "Someone"}</strong> has invited{" "}
             <strong>{invite.granteeEmail}</strong> to access their{" "}
-            <strong>Finance Sanity</strong> data with{" "}
+            <strong>Financial Sanity</strong> data with{" "}
             <strong>{roleLabel}</strong> access.
           </p>
 

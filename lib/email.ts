@@ -20,16 +20,16 @@ export async function sendMagicLinkEmail(
     if (mockEmails) {
       console.log("📧 [MOCK] Magic Link Email");
       console.log("To:", email);
-      console.log("Subject: Sign in to Finance Sanity");
+      console.log("Subject: Sign in to Financial Sanity");
       console.log("Magic Link:", magicLink);
       console.log("---");
       return { success: true };
     }
 
     const { error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || "Finance Sanity <onboarding@resend.dev>",
+      from: process.env.EMAIL_FROM || "Financial Sanity <onboarding@resend.dev>",
       to: email,
-      subject: "Sign in to Finance Sanity",
+      subject: "Sign in to Financial Sanity",
       html: emailHtml,
     });
 
@@ -61,7 +61,7 @@ export async function sendInvitationEmail(
       console.log("To:", granteeEmail);
       console.log("From:", invitedByEmail);
       console.log("Role:", role);
-      console.log("Subject:", `${invitedByEmail} invited you to Finance Sanity`);
+      console.log("Subject:", `${invitedByEmail} invited you to Financial Sanity`);
       console.log("Invite Link:", inviteLink);
       console.log("---");
       return { success: true };
@@ -77,9 +77,9 @@ export async function sendInvitationEmail(
     );
 
     const { error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || "Finance Sanity <onboarding@resend.dev>",
+      from: process.env.EMAIL_FROM || "Financial Sanity <onboarding@resend.dev>",
       to: granteeEmail,
-      subject: `${invitedByEmail} invited you to Finance Sanity`,
+      subject: `${invitedByEmail} invited you to Financial Sanity`,
       html: emailHtml,
     });
 
