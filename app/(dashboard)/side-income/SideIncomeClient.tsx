@@ -52,7 +52,7 @@ export default function SideIncomePage() {
   const fyTotal = fySideIncome + fyRentalIncome;
 
   const last12 = entries.filter((e) => { const d = new Date(e.date); const c = new Date(); c.setMonth(c.getMonth() - 12); return d >= c; });
-  const rolling12Avg = last12.length > 0 ? last12.reduce((s, e) => s + Number(e.sideIncome) + Number(e.rentalIncome), 0) / last12.length : 0;
+  const rolling12Avg = last12.length > 0 ? last12.reduce((s, e) => s + Number(e.sideIncome) + Number(e.rentalIncome), 0) / 12 : 0;
 
   if (isLoading) {
     return (
