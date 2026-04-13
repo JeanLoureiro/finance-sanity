@@ -12,6 +12,7 @@ const inviteSchema = z.object({
 
 export const GET = withAuth(async () => {
   const { settingsId } = await getAuthorisedSettings("OWNER");
+  console.log("settingsId", settingsId);
   const grants = await prisma.sharedAccess.findMany({
     where: { ownerSettingsId: settingsId },
     orderBy: { createdAt: "desc" },
@@ -22,9 +23,15 @@ export const GET = withAuth(async () => {
       status: true,
       token: true,
       createdAt: true,
+      granteeUserId: true,
     },
   });
-  return Response.json(grants);
+  return Response.json(
+    grants.map(({ granteeUserId, ...grant }) => ({
+      ...grant,
+      wasAccepted: granteeUserId !== "",
+    }))
+  );
 });
 
 export const POST = withAuth(async (req: NextRequest) => {

@@ -4,6 +4,8 @@ import MagicLinkEmail from "@/emails/magic-link";
 import InvitationEmail from "@/emails/invitation";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const isDevelopment = process.env.NODE_ENV === "development";
+const mockEmails = process.env.MOCK_EMAILS === "true";
 
 export async function sendMagicLinkEmail(
   email: string,
@@ -13,6 +15,16 @@ export async function sendMagicLinkEmail(
     const emailHtml = await render(
       MagicLinkEmail({ magicLink, email })
     );
+
+    // Mock email sending in development if MOCK_EMAILS=true
+    if (mockEmails) {
+      console.log("📧 [MOCK] Magic Link Email");
+      console.log("To:", email);
+      console.log("Subject: Sign in to Finance Sanity");
+      console.log("Magic Link:", magicLink);
+      console.log("---");
+      return { success: true };
+    }
 
     const { error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || "Finance Sanity <onboarding@resend.dev>",
@@ -43,6 +55,18 @@ export async function sendInvitationEmail(
   role: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // Mock email sending in development if MOCK_EMAILS=true
+    if (mockEmails) {
+      console.log("📧 [MOCK] Invitation Email");
+      console.log("To:", granteeEmail);
+      console.log("From:", invitedByEmail);
+      console.log("Role:", role);
+      console.log("Subject:", `${invitedByEmail} invited you to Finance Sanity`);
+      console.log("Invite Link:", inviteLink);
+      console.log("---");
+      return { success: true };
+    }
+
     const emailHtml = await render(
       InvitationEmail({
         inviteLink,

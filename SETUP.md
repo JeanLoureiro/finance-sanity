@@ -14,10 +14,15 @@ RESEND_API_KEY=re_xxxxxxxxxxxxx
 # Email sender address (optional)
 # For development, you can use the default: onboarding@resend.dev
 # For production, use your verified domain: noreply@yourdomain.com
-EMAIL_FROM="CompiledSanity <noreply@yourdomain.com>"
+EMAIL_FROM="Finance Sanity <onboarding@resend.dev>"
 
 # App URL (required for magic links)
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Mock emails in development (optional)
+# Set to "true" to log emails to console instead of sending
+# Useful for testing invitations to multiple emails without domain verification
+MOCK_EMAILS=true
 ```
 
 ## Setup Steps
@@ -52,13 +57,28 @@ npx prisma migrate dev
 
 ### 4. Test the Setup
 
-1. Start your development server:
+**Option A: Mock Emails (Recommended for Testing Invitations)**
+
+1. Add to `.env.local`:
+   ```bash
+   MOCK_EMAILS=true
+   EMAIL_FROM="Finance Sanity <onboarding@resend.dev>"
+   ```
+
+2. Start your development server:
    ```bash
    npm run dev
    ```
 
-2. Navigate to `/login`
-3. Enter your email address
+3. Test invitations to any email - they'll be logged to console instead of sent
+4. Check server logs for magic links and invitation links
+5. Copy the links from console to test the flow
+
+**Option B: Real Emails (Limited to Verified Addresses)**
+
+1. Remove or set `MOCK_EMAILS=false` in `.env.local`
+2. Add test email addresses in Resend dashboard
+3. Navigate to `/login` and test with verified email
 4. Check your inbox for the magic link email
 
 ## Email Templates
