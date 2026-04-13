@@ -45,7 +45,7 @@ MOCK_EMAILS=true
 **For Production:**
 1. Add and verify your domain in Resend dashboard
 2. Update `EMAIL_FROM` with your domain email
-3. Example: `EMAIL_FROM="Financial Sanity <noreply@financesanity.com>"`
+3. Example: `EMAIL_FROM="Financial Sanity <noreply@financialsanity.app>"`
 
 ### 3. Run Database Migration
 
