@@ -92,6 +92,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             <Link
               key={href}
               href={href}
+              onClick={onClose}
               className={cn(
                 "flex items-center gap-2 px-3 py-2 text-sm rounded-md mx-1 transition-colors",
                 active
