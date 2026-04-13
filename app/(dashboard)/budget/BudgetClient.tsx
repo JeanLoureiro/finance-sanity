@@ -43,13 +43,19 @@ function toMonthly(amount: number, freq: string): number {
 }
 
 function fromMonthly(monthly: number, freq: string): number {
+  const validMonthly = Number(monthly) || 0;
   switch (freq) {
-    case "Weekly":      return monthly * 12 / 52;
-    case "Fortnightly": return monthly * 12 / 26;
-    case "Quarterly":   return monthly * 3;
-    case "Annually":    return monthly * 12;
-    default:            return monthly;
+    case "Weekly":      return validMonthly * 12 / 52;
+    case "Fortnightly": return validMonthly * 12 / 26;
+    case "Quarterly":   return validMonthly * 3;
+    case "Annually":    return validMonthly * 12;
+    default:            return validMonthly;
   }
+}
+
+function safeToFixed(value: any, decimals: number = 2): string {
+  const num = Number(value);
+  return (isNaN(num) || !isFinite(num)) ? "0" : num.toFixed(decimals);
 }
 
 function computeMonthlyIncome(netIncome: number, frequency: string): number {
@@ -128,20 +134,20 @@ function applyFilters(items: BudgetItem[], f: FilterState, monthlyIncome: number
   }
   if (f.amountMin) {
     const min = parseFloat(f.amountMin);
-    if (!isNaN(min)) result = result.filter((i) => i.monthlyAmount >= min);
+    if (!isNaN(min)) result = result.filter((i) => Number(i.monthlyAmount) >= min);
   }
   if (f.amountMax) {
     const max = parseFloat(f.amountMax);
-    if (!isNaN(max)) result = result.filter((i) => i.monthlyAmount <= max);
+    if (!isNaN(max)) result = result.filter((i) => Number(i.monthlyAmount) <= max);
   }
 
   result.sort((a, b) => {
     let diff = 0;
     switch (f.sortBy) {
       case "name":    diff = a.name.localeCompare(b.name); break;
-      case "monthly": diff = a.monthlyAmount - b.monthlyAmount; break;
-      case "annual":  diff = (a.monthlyAmount - b.monthlyAmount) * 12; break;
-      case "pct":     diff = monthlyIncome > 0 ? a.monthlyAmount - b.monthlyAmount : 0; break;
+      case "monthly": diff = Number(a.monthlyAmount) - Number(b.monthlyAmount); break;
+      case "annual":  diff = (Number(a.monthlyAmount) - Number(b.monthlyAmount)) * 12; break;
+      case "pct":     diff = monthlyIncome > 0 ? Number(a.monthlyAmount) - Number(b.monthlyAmount) : 0; break;
     }
     return f.sortDir === "asc" ? diff : -diff;
   });
@@ -486,7 +492,7 @@ function ItemRow({
   onDelete: (id: string) => void;
 }) {
   const amountRef = useRef<HTMLInputElement>(null);
-  const displayAmount = fromMonthly(item.monthlyAmount, item.frequency);
+  const displayAmount = fromMonthly(item.monthlyAmount || 0, item.frequency || "Monthly");
   const linkedAccount = bankAccounts.find((a) => a.name === item.bankAccount);
 
   return (
@@ -518,7 +524,7 @@ function ItemRow({
           value={item.frequency || "Monthly"}
           options={FREQ_LIST}
           onSave={(v) => {
-            const currentDisplay = fromMonthly(item.monthlyAmount, item.frequency);
+            const currentDisplay = fromMonthly(item.monthlyAmount || 0, item.frequency || "Monthly");
             updateMutation.mutate({
               id: item.id,
               frequency: v,
@@ -533,24 +539,24 @@ function ItemRow({
           ref={amountRef}
           className="text-right w-28 bg-transparent border-b border-transparent group-hover:border-border outline-none text-sm"
           type="number"
-          defaultValue={Number(displayAmount.toFixed(2))}
+          defaultValue={safeToFixed(displayAmount, 2)}
           onBlur={(e) => {
-            const monthly = toMonthly(Number(e.target.value), item.frequency);
+            const monthly = toMonthly(Number(e.target.value), item.frequency || "Monthly");
             updateMutation.mutate({ id: item.id, monthlyAmount: monthly });
           }}
         />
       </td>
       <td className="px-4 py-2 text-right text-muted-foreground text-sm">
-        <CurrencyAmount value={item.monthlyAmount} />
+        <CurrencyAmount value={Number(item.monthlyAmount)} />
       </td>
       <td className="px-4 py-2 text-right text-muted-foreground text-sm">
-        {monthlyIncome > 0 ? `${(item.monthlyAmount / monthlyIncome * 100).toFixed(1)}%` : "—"}
+        {monthlyIncome > 0 ? `${(Number(item.monthlyAmount) / monthlyIncome * 100).toFixed(1)}%` : "—"}
       </td>
       <td className="px-4 py-2 text-right text-muted-foreground text-sm">
-        <CurrencyAmount value={item.monthlyAmount / 4.33} />
+        <CurrencyAmount value={Number(item.monthlyAmount) / 4.33} />
       </td>
       <td className="px-4 py-2 text-right text-muted-foreground text-sm">
-        <CurrencyAmount value={item.monthlyAmount * 12} />
+        <CurrencyAmount value={Number(item.monthlyAmount) * 12} />
       </td>
       <td className="px-4 py-2 min-w-[140px]">
         <SelectCell
@@ -776,7 +782,7 @@ export default function BudgetPage() {
 
   // Derived values
   const monthlyIncome = settings ? computeMonthlyIncome(Number(settings.netIncome), settings.salaryFrequency) : 0;
-  const totalExpenses = items.reduce((s, i) => s + i.monthlyAmount, 0);
+  const totalExpenses = items.reduce((s, i) => s + Number(i.monthlyAmount), 0);
   const monthlySavings = monthlyIncome - totalExpenses;
   const savingsRate = monthlyIncome > 0 ? monthlySavings / monthlyIncome : 0;
   const emergencyTarget = (settings?.emergencyFundMonths ?? 6) * totalExpenses;
@@ -784,14 +790,14 @@ export default function BudgetPage() {
   const typeBreakdown = typeNames
     .map((type) => {
       const typeItems = items.filter((i) => i.budgetType === type);
-      const total = typeItems.reduce((s, i) => s + i.monthlyAmount, 0);
+      const total = typeItems.reduce((s, i) => s + Number(i.monthlyAmount), 0);
       return { type, total, pct: monthlyIncome > 0 ? total / monthlyIncome : 0 };
     })
     .filter((t) => t.total > 0);
 
   // Apply filters to get visible items
   const displayItems = applyFilters(items, filters, monthlyIncome);
-  const displayTotal = displayItems.reduce((s, i) => s + i.monthlyAmount, 0);
+  const displayTotal = displayItems.reduce((s, i) => s + Number(i.monthlyAmount), 0);
   const isFiltered = activeFilterCount > 0 || filters.sortBy !== "name" || filters.sortDir !== "asc";
 
   // Grouped view data (from filtered set)
@@ -964,7 +970,7 @@ export default function BudgetPage() {
               <TableHead showType={false} />
               <tbody>
                 {groupedItems.map(({ type, items: groupItems }) => {
-                  const groupTotal = groupItems.reduce((s, i) => s + i.monthlyAmount, 0);
+                  const groupTotal = groupItems.reduce((s, i) => s + Number(i.monthlyAmount), 0);
                   return (
                     <Fragment key={`group-${type}`}>
                       <tr className="bg-muted/40 border-b border-t">
