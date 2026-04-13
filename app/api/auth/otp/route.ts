@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
   try {
     const token = await generateOTP(parsed.data.email);
     
-    const redirectTo = parsed.data.redirectTo || `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/callback`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const redirectTo = parsed.data.redirectTo || `${appUrl}/auth/verify`;
     const magicLink = `${redirectTo}?token=${token}`;
 
     const { success, error } = await sendMagicLinkEmail(
