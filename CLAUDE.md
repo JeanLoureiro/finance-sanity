@@ -94,6 +94,7 @@ prisma/
 
 ### Key conventions
 
+- **Do NOT create `middleware.ts`** — this project uses `proxy.ts` as the edge middleware entry point. Adding `middleware.ts` is wrong; all middleware logic lives in `proxy.ts`. To make a path public (accessible without auth), add it to `PUBLIC_PREFIXES` in `proxy.ts`.
 - `lib/queryKeys.ts` is the single place to define React Query keys — always use it, never inline string keys.
 - `lib/schemas.ts` is the single place for Zod schemas — share between client validation and API route parsing.
 - All monetary values use `decimal.js` for arithmetic; never use plain JS floats for finance.
