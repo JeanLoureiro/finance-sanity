@@ -27,7 +27,7 @@ export async function sendMagicLinkEmail(
     }
 
     const { error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || "Financial Sanity <no-reply@financialsanity.app",
+      from: process.env.EMAIL_FROM || "Financial Sanity <noreply@financialsanity.app",
       to: email,
       subject: "Sign in to Financial Sanity",
       html: emailHtml,
@@ -77,7 +77,7 @@ export async function sendInvitationEmail(
     );
 
     const { error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || "Financial Sanity <no-reply@financialsanity.app",
+      from: process.env.EMAIL_FROM || "Financial Sanity <noreply@financialsanity.app",
       to: granteeEmail,
       subject: `${invitedByEmail} invited you to Financial Sanity`,
       html: emailHtml,
