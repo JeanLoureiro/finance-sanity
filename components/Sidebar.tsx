@@ -52,7 +52,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     <aside className="w-56 flex-shrink-0 border-r bg-background flex flex-col h-full">
       <div className="p-4 border-b flex items-center justify-between">
         <h1 className="font-bold text-sm tracking-tight">
-          Finance Sanity<br />
+          Financial Sanity<br />
           <span className="text-muted-foreground font-normal">Finance</span>
         </h1>
         <div className="flex items-center gap-1">

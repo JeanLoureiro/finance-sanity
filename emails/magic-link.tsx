@@ -23,10 +23,10 @@ export default function MagicLinkEmail({
   return (
     <Html>
       <Head />
-      <Preview>Sign in to Finance Sanity</Preview>
+      <Preview>Sign in to Financial Sanity</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Finance Sanity</Heading>
+          <Heading style={h1}>Financial Sanity</Heading>
           <Text style={text}>
             Click the button below to sign in to your account:
           </Text>
