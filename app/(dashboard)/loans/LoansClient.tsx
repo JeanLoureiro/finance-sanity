@@ -28,6 +28,18 @@ function toDateInput(iso: string) {
   try { return new Date(iso).toISOString().slice(0, 10); } catch { return ""; }
 }
 
+function formatDateDisplay(iso: string) {
+  try {
+    const date = new Date(iso);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch {
+    return "";
+  }
+}
+
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -231,7 +243,7 @@ function ExtraPaymentsPanel({ loan }: { loan: Loan }) {
               <tbody>
                 {payments.map((p) => (
                   <tr key={p.id} className="border-b last:border-0">
-                    <td className="py-1.5">{toDateInput(p.date)}</td>
+                    <td className="py-1.5">{formatDateDisplay(p.date)}</td>
                     <td className="py-1.5 text-right font-medium"><CurrencyAmount value={p.amount} /></td>
                     <td className="py-1.5 pl-3 text-muted-foreground">{p.note || "—"}</td>
                     <td className="py-1.5 text-right">
