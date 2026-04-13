@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { verifyOTP } from "@/lib/otp";
+import { verifyOTP, consumeOTP } from "@/lib/otp";
 import { z } from "zod";
 
 const verifySchema = z.object({
@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
   if (verifyError) {
     return Response.json({ error: "Authentication failed" }, { status: 500 });
   }
+
+  await consumeOTP(parsed.data.token);
 
   return NextResponse.json({ redirectTo: "/net-worth" });
 }

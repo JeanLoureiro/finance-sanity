@@ -43,10 +43,12 @@ export async function verifyOTP(
     return { valid: false, error: "Token has expired" };
   }
 
+  return { valid: true, email: otpRecord.email };
+}
+
+export async function consumeOTP(token: string): Promise<void> {
   await prisma.oTPToken.update({
     where: { token },
     data: { usedAt: new Date() },
   });
-
-  return { valid: true, email: otpRecord.email };
 }
