@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CompiledSanity Finance",
+  title: "Finance Sanity",
   description: "Personal wealth tracker",
 };
 

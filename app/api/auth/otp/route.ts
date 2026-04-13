@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { generateOTP } from "@/lib/otp";
+import { sendMagicLinkEmail } from "@/lib/email";
 
 const otpSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -18,34 +19,33 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const adminClient = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  try {
+    const token = await generateOTP(parsed.data.email);
+    
+    const redirectTo = parsed.data.redirectTo || `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/callback`;
+    const magicLink = `${redirectTo}?token=${token}`;
 
-  const { error } = await adminClient.auth.signInWithOtp({
-    email: parsed.data.email,
-    options: {
-      emailRedirectTo: parsed.data.redirectTo,
-    },
-  });
+    const { success, error } = await sendMagicLinkEmail(
+      parsed.data.email,
+      magicLink
+    );
 
-  if (error) {
-    if (error.message?.includes('429') || error.message?.toLowerCase().includes('rate limit')) {
+    if (!success) {
       return Response.json(
-        { 
-          error: "Rate limit exceeded. Please wait a few minutes before trying again.",
-          detail: error.message 
-        },
-        { status: 429 }
+        { error: "Failed to send magic link", detail: error },
+        { status: 500 }
       );
     }
-    
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error("Error in OTP route:", error);
     return Response.json(
-      { error: "Failed to send magic link", detail: error.message },
+      { 
+        error: "Failed to send magic link", 
+        detail: error instanceof Error ? error.message : "Unknown error" 
+      },
       { status: 500 }
     );
   }
-
-  return Response.json({ success: true });
 }

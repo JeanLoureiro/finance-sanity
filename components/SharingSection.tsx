@@ -28,6 +28,7 @@ type Grant = {
   status: "PENDING" | "ACCEPTED" | "REVOKED";
   token: string;
   createdAt: string;
+  wasAccepted: boolean;
 };
 
 const statusLabel: Record<Grant["status"], string> = {
@@ -102,14 +103,29 @@ export default function SharingSection() {
     },
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ token, status }: { token: string; status: "PENDING" | "ACCEPTED" }) => {
+      const response = await fetch(`/api/invitations/${token}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error ?? "Failed to update status");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.sharing.grants() });
+    },
+  });
+
   function handleInvite(event: React.FormEvent) {
     event.preventDefault();
     setInviteError(null);
     setInviteSuccess(false);
     inviteMutation.mutate({ email, role });
   }
-
-  const activeGrants = grants.filter((grant) => grant.status !== "REVOKED");
 
   return (
     <div className="space-y-6">
@@ -163,7 +179,7 @@ export default function SharingSection() {
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
-      ) : activeGrants.length > 0 ? (
+      ) : grants.length > 0 ? (
         <Table>
           <TableHeader>
             <TableRow>
@@ -174,20 +190,47 @@ export default function SharingSection() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {activeGrants.map((grant) => (
+            {grants.map((grant) => (
               <TableRow key={grant.id}>
                 <TableCell>{grant.granteeEmail}</TableCell>
                 <TableCell>{roleLabel[grant.role]}</TableCell>
                 <TableCell>{statusLabel[grant.status]}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={revokeMutation.isPending}
-                    onClick={() => revokeMutation.mutate(grant.token)}
-                  >
-                    Revoke
-                  </Button>
+                  {grant.status === "REVOKED" ? (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={updateStatusMutation.isPending}
+                        onClick={() =>
+                          updateStatusMutation.mutate({ token: grant.token, status: "PENDING" })
+                        }
+                      >
+                        Re-invite
+                      </Button>
+                      {grant.wasAccepted && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={updateStatusMutation.isPending}
+                          onClick={() =>
+                            updateStatusMutation.mutate({ token: grant.token, status: "ACCEPTED" })
+                          }
+                        >
+                          Restore access
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={revokeMutation.isPending}
+                      onClick={() => revokeMutation.mutate(grant.token)}
+                    >
+                      Revoke
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

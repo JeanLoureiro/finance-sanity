@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorisedSettings, withAuth } from "@/lib/auth";
+import { sendInvitationEmail } from "@/lib/email";
 import { z } from "zod";
 
 const inviteSchema = z.object({
@@ -12,6 +12,7 @@ const inviteSchema = z.object({
 
 export const GET = withAuth(async () => {
   const { settingsId } = await getAuthorisedSettings("OWNER");
+  console.log("settingsId", settingsId);
   const grants = await prisma.sharedAccess.findMany({
     where: { ownerSettingsId: settingsId },
     orderBy: { createdAt: "desc" },
@@ -22,9 +23,15 @@ export const GET = withAuth(async () => {
       status: true,
       token: true,
       createdAt: true,
+      granteeUserId: true,
     },
   });
-  return Response.json(grants);
+  return Response.json(
+    grants.map(({ granteeUserId, ...grant }) => ({
+      ...grant,
+      wasAccepted: granteeUserId !== "",
+    }))
+  );
 });
 
 export const POST = withAuth(async (req: NextRequest) => {
@@ -75,37 +82,23 @@ export const POST = withAuth(async (req: NextRequest) => {
     },
   });
 
-  // Send invitation email via Supabase Admin API
-  const adminClient = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
+  // Send invitation email via Resend
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
+  const inviteLink = `${appUrl}/accept-invite?token=${grant.token}`;
+  
+  const { success, error: emailError } = await sendInvitationEmail(
     parsed.data.email,
-    {
-      redirectTo: `${appUrl}/accept-invite?token=${grant.token}`,
-    }
+    ownerEmail,
+    inviteLink,
+    parsed.data.role
   );
 
-  if (inviteError) {
+  if (!success) {
     // Roll back the grant if the email fails
     await prisma.sharedAccess.delete({ where: { id: grant.id } });
     
-    // Handle rate limiting specifically
-    if (inviteError.message?.includes('429') || inviteError.message?.toLowerCase().includes('rate limit')) {
-      return Response.json(
-        { 
-          error: "Rate limit exceeded. Please wait a few minutes before sending another invitation.",
-          detail: inviteError.message 
-        },
-        { status: 429 }
-      );
-    }
-    
     return Response.json(
-      { error: "Failed to send invitation email", detail: inviteError.message },
+      { error: "Failed to send invitation email", detail: emailError },
       { status: 500 }
     );
   }
