@@ -32,7 +32,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 export default function SettingsPage() {
   const qc = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<SettingsInput & { error?: string }>({
     queryKey: queryKeys.settings(),
     queryFn: () => fetch("/api/settings").then((r) => r.json()),
   });
@@ -58,6 +58,8 @@ export default function SettingsPage() {
   useEffect(() => {
     if (data && !data.error) reset(data);
   }, [data, reset]);
+
+  console.log("Role value:", data?.role, "Type:", typeof data?.role, "Comparison:", data?.role === "OWNER")
 
   if (isLoading) {
     return (
@@ -216,10 +218,17 @@ export default function SettingsPage() {
       </Button>
     </form>
 
+    {console.log("Rendering sharing section check, role:", data?.role, "should show:", data?.role === "OWNER")}
+
     {data?.role === "OWNER" && (
-      <div className="mt-8">
-        <SharingSection />
-      </div>
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle className="text-base">Sharing</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SharingSection />
+        </CardContent>
+      </Card>
     )}
     </>
   );

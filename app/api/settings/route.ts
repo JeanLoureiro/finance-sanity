@@ -20,11 +20,18 @@ async function getOrCreateSettingsForUser(userId: string) {
   if (unlinked) {
     return prisma.userSettings.update({
       where: { id: unlinked.id },
-      data: { userId },
+      data: { userId, role: "OWNER" },
     });
   }
 
-  return prisma.userSettings.create({ data: { userId, salary: 0, netIncome: 0 } });
+  return prisma.userSettings.create({ 
+    data: { 
+      userId, 
+      salary: 0, 
+      netIncome: 0,
+      role: "OWNER"
+    } 
+  });
 }
 
 export const GET = withAuth(async () => {
@@ -49,12 +56,12 @@ export const GET = withAuth(async () => {
     if (!settings) {
       return Response.json({ error: "Settings not found" }, { status: 404 });
     }
-    return Response.json({ ...settings, role: authorisedSettings.role });
+    return Response.json(settings);
   }
 
   // Owner path: get-or-create.
   const settings = await getOrCreateSettingsForUser(user.id);
-  return Response.json({ ...settings, role: "OWNER" });
+  return Response.json(settings);
 });
 
 export const PATCH = withAuth(async (req: NextRequest) => {

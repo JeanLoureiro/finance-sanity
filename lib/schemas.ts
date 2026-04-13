@@ -4,6 +4,7 @@ import { z } from "zod";
 // Settings
 // ---------------------------------------------------------------------------
 export const settingsBaseSchema = z.object({
+    role: z.enum(["READ", "WRITE", "OWNER"]).default("OWNER"),
     currency: z.string().length(3).default("AUD"),
     salary: z.coerce.number().min(0),
     taxBracket: z.coerce.number().min(0).max(1),

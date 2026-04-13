@@ -10,6 +10,7 @@ datasource db {
 enum AccessRole {
   READ
   WRITE
+  OWNER
 }
 
 enum InviteStatus {
@@ -22,9 +23,10 @@ enum InviteStatus {
 // USER SETTINGS  (maps to SheetOptions sheet)
 // ---------------------------------------------------------------------------
 model UserSettings {
-  id         String  @id @default(cuid())
-  userId     String? @unique // Supabase auth.users UID — nullable for safe migration
-  ownerEmail String?         // stored at first invite creation for display purposes
+  id         String      @id @default(cuid())
+  userId     String?     @unique // Supabase auth.users UID — nullable for safe migration
+  ownerEmail String?             // stored at first invite creation for display purposes
+  role       AccessRole  @default(OWNER) // Role of the user who owns this settings row
 
   // General
   currency        String  @default("AUD")
