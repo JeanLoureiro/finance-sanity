@@ -14,7 +14,7 @@ RESEND_API_KEY=re_xxxxxxxxxxxxx
 # Email sender address (optional)
 # For development, you can use the default: onboarding@resend.dev
 # For production, use your verified domain: noreply@yourdomain.com
-EMAIL_FROM="Financial Sanity <onboarding@resend.dev>"
+EMAIL_FROM="Financial Sanity <no-reply@financialsanity.app"
 
 # App URL (required for magic links)
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -62,7 +62,7 @@ npx prisma migrate dev
 1. Add to `.env.local`:
    ```bash
    MOCK_EMAILS=true
-   EMAIL_FROM="Financial Sanity <onboarding@resend.dev>"
+   EMAIL_FROM="Financial Sanity <no-reply@financialsanity.app"
    ```
 
 2. Start your development server:

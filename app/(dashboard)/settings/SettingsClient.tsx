@@ -59,8 +59,6 @@ export default function SettingsPage() {
     if (data && !data.error) reset(data);
   }, [data, reset]);
 
-  console.log("Role value:", data?.role, "Type:", typeof data?.role, "Comparison:", data?.role === "OWNER")
-
   if (isLoading) {
     return (
       <div className="space-y-6">
