@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import type { SettingsInput } from "@/lib/schemas";
 import { queryKeys } from "@/lib/queryKeys";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,8 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 
 export default function SettingsPage() {
   const qc = useQueryClient();
+  const [testEmailStatus, setTestEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [testEmailMessage, setTestEmailMessage] = useState("");
 
   const { data, isLoading } = useQuery<SettingsInput & { error?: string }>({
     queryKey: queryKeys.settings(),
@@ -224,6 +226,74 @@ export default function SettingsPage() {
           <Field label="Super Contribution % (e.g. 0.115)">
             <Input type="number" {...register("superContribPct")} />
           </Field>
+        </CardContent>
+      </Card>
+
+      {/* Snapshot Email Sections */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Snapshot Email</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-muted-foreground">
+              Choose which sections appear in the automatic snapshot email. Sections with no data are omitted regardless.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={testEmailStatus === "sending"}
+              onClick={async () => {
+                setTestEmailStatus("sending");
+                setTestEmailMessage("");
+                const response = await fetch("/api/history/send-test-email", { method: "POST" });
+                const json = await response.json();
+                if (response.ok) {
+                  setTestEmailStatus("sent");
+                  setTestEmailMessage(`Sent to ${json.sentTo}`);
+                } else {
+                  setTestEmailStatus("error");
+                  setTestEmailMessage(json.error ?? "Failed to send");
+                }
+              }}
+            >
+              {testEmailStatus === "sending" ? "Sending…" : "Send test email"}
+            </Button>
+          </div>
+          {testEmailMessage && (
+            <p className={`text-xs mb-3 ${testEmailStatus === "error" ? "text-red-500" : "text-green-600"}`}>
+              {testEmailMessage}
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            {(
+              [
+                { key: "snapshotEmailCash",         label: "Cash" },
+                { key: "snapshotEmailETFs",         label: "ETFs" },
+                { key: "snapshotEmailStocks",       label: "Stocks" },
+                { key: "snapshotEmailManagedFunds", label: "Managed Funds" },
+                { key: "snapshotEmailCrypto",       label: "Crypto" },
+                { key: "snapshotEmailOtherAssets",  label: "Other Assets" },
+                { key: "snapshotEmailSuper",        label: "Superannuation" },
+                { key: "snapshotEmailProperty",     label: "Property" },
+                { key: "snapshotEmailLoans",        label: "Loans" },
+                { key: "snapshotEmailBudget",       label: "Budget" },
+                { key: "snapshotEmailSideIncome",   label: "Side Income" },
+                { key: "snapshotEmailDividends",    label: "Dividends" },
+              ] as const
+            ).map(({ key, label }) => (
+              <div key={key} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id={key}
+                  className="h-4 w-4 cursor-pointer rounded border-gray-300"
+                  {...register(key)}
+                />
+                <label htmlFor={key} className="cursor-pointer text-sm">
+                  {label}
+                </label>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

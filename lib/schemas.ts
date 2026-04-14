@@ -58,6 +58,18 @@ export const settingsBaseSchema = z.object({
     useFIRE: z.boolean().default(true),
     useSuper: z.boolean().default(true),
     autoSnapshot: z.boolean().default(false),
+    snapshotEmailCash: z.boolean().default(true),
+    snapshotEmailETFs: z.boolean().default(true),
+    snapshotEmailStocks: z.boolean().default(true),
+    snapshotEmailManagedFunds: z.boolean().default(true),
+    snapshotEmailCrypto: z.boolean().default(true),
+    snapshotEmailOtherAssets: z.boolean().default(false),
+    snapshotEmailSuper: z.boolean().default(true),
+    snapshotEmailProperty: z.boolean().default(true),
+    snapshotEmailLoans: z.boolean().default(true),
+    snapshotEmailBudget: z.boolean().default(true),
+    snapshotEmailSideIncome: z.boolean().default(false),
+    snapshotEmailDividends: z.boolean().default(false),
   });
 
 export const settingsSchema = settingsBaseSchema.refine(

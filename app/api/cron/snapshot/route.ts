@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isPayday } from "@/lib/paydayUtils";
 import { recordSnapshotForSettings } from "@/lib/snapshotService";
+import { fetchSnapshotEmailSections } from "@/lib/snapshotEmailSections";
+import { sendSnapshotEmail } from "@/lib/email";
 
 export const GET = async (request: NextRequest) => {
   const cronSecret = process.env.CRON_SECRET;
@@ -16,9 +18,27 @@ export const GET = async (request: NextRequest) => {
     where: { autoSnapshot: true },
     select: {
       id: true,
+      ownerEmail: true,
       salaryFrequency: true,
       dayOfMonthPaid: true,
       jobStartDate: true,
+      netIncome: true,
+      snapshotEmailCash: true,
+      snapshotEmailETFs: true,
+      snapshotEmailStocks: true,
+      snapshotEmailManagedFunds: true,
+      snapshotEmailCrypto: true,
+      snapshotEmailOtherAssets: true,
+      snapshotEmailSuper: true,
+      snapshotEmailProperty: true,
+      snapshotEmailLoans: true,
+      snapshotEmailBudget: true,
+      snapshotEmailSideIncome: true,
+      snapshotEmailDividends: true,
+      sharedAccessGrants: {
+        where: { status: "ACCEPTED" },
+        select: { granteeEmail: true },
+      },
     },
   });
 
@@ -40,7 +60,46 @@ export const GET = async (request: NextRequest) => {
     }
 
     try {
-      await recordSnapshotForSettings(settings.id, today);
+      const snapshot = await recordSnapshotForSettings(settings.id, today);
+
+      const sections = await fetchSnapshotEmailSections(settings.id, {
+        snapshotEmailCash: settings.snapshotEmailCash,
+        snapshotEmailETFs: settings.snapshotEmailETFs,
+        snapshotEmailStocks: settings.snapshotEmailStocks,
+        snapshotEmailManagedFunds: settings.snapshotEmailManagedFunds,
+        snapshotEmailCrypto: settings.snapshotEmailCrypto,
+        snapshotEmailOtherAssets: settings.snapshotEmailOtherAssets,
+        snapshotEmailSuper: settings.snapshotEmailSuper,
+        snapshotEmailProperty: settings.snapshotEmailProperty,
+        snapshotEmailLoans: settings.snapshotEmailLoans,
+        snapshotEmailBudget: settings.snapshotEmailBudget,
+        snapshotEmailSideIncome: settings.snapshotEmailSideIncome,
+        snapshotEmailDividends: settings.snapshotEmailDividends,
+        netIncome: Number(settings.netIncome),
+      });
+
+      const granteeEmails = settings.sharedAccessGrants.map(
+        (grant) => grant.granteeEmail
+      );
+      const recipients = settings.ownerEmail
+        ? [settings.ownerEmail, ...granteeEmails]
+        : granteeEmails;
+
+      if (recipients.length > 0) {
+        await sendSnapshotEmail(recipients, {
+          snapshotDate: snapshot.snapshotDate,
+          netWorth: Number(snapshot.netWorth),
+          totalAssets: Number(snapshot.totalAssets),
+          liabilitiesTotal: Number(snapshot.liabilitiesTotal),
+          ownerEmail: settings.ownerEmail ?? "",
+          sections,
+        });
+      } else {
+        console.warn(
+          `No recipients for settings ${settings.id} — ownerEmail not yet populated`
+        );
+      }
+
       processed++;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

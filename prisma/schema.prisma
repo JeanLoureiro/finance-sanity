@@ -82,6 +82,20 @@ model UserSettings {
   // Automation
   autoSnapshot    Boolean @default(false)
 
+  // Snapshot email sections (user opt-in per section)
+  snapshotEmailCash         Boolean @default(true)
+  snapshotEmailETFs         Boolean @default(true)
+  snapshotEmailStocks       Boolean @default(true)
+  snapshotEmailManagedFunds Boolean @default(true)
+  snapshotEmailCrypto       Boolean @default(true)
+  snapshotEmailOtherAssets  Boolean @default(false)
+  snapshotEmailSuper        Boolean @default(true)
+  snapshotEmailProperty     Boolean @default(true)
+  snapshotEmailLoans        Boolean @default(true)
+  snapshotEmailBudget       Boolean @default(true)
+  snapshotEmailSideIncome   Boolean @default(false)
+  snapshotEmailDividends    Boolean @default(false)
+
   // Feature flags
   useBudget       Boolean @default(true)
   useCash         Boolean @default(true)

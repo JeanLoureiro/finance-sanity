@@ -8,10 +8,19 @@ import { getAuthorisedSettings, withAuth } from "@/lib/auth";
  * Gets or creates the UserSettings row for the given Supabase user ID.
  * On first login after the multi-user migration is deployed, claims the
  * existing unlinked row rather than creating a fresh one.
+ * Always keeps ownerEmail in sync so the cron job can reliably email the owner.
  */
-async function getOrCreateSettingsForUser(userId: string) {
+async function getOrCreateSettingsForUser(userId: string, email: string) {
   const linked = await prisma.userSettings.findUnique({ where: { userId } });
-  if (linked) return linked;
+  if (linked) {
+    if (linked.ownerEmail !== email) {
+      return prisma.userSettings.update({
+        where: { id: linked.id },
+        data: { ownerEmail: email },
+      });
+    }
+    return linked;
+  }
 
   // Migration path: claim the unlinked legacy row if exactly one exists.
   const unlinked = await prisma.userSettings.findFirst({
@@ -20,17 +29,18 @@ async function getOrCreateSettingsForUser(userId: string) {
   if (unlinked) {
     return prisma.userSettings.update({
       where: { id: unlinked.id },
-      data: { userId, role: "OWNER" },
+      data: { userId, ownerEmail: email, role: "OWNER" },
     });
   }
 
-  return prisma.userSettings.create({ 
-    data: { 
-      userId, 
-      salary: 0, 
+  return prisma.userSettings.create({
+    data: {
+      userId,
+      ownerEmail: email,
+      salary: 0,
       netIncome: 0,
       role: "OWNER"
-    } 
+    }
   });
 }
 
@@ -60,7 +70,7 @@ export const GET = withAuth(async () => {
   }
 
   // Owner path: get-or-create.
-  const settings = await getOrCreateSettingsForUser(user.id);
+  const settings = await getOrCreateSettingsForUser(user.id, user.email ?? "");
   return Response.json(settings);
 });
 
