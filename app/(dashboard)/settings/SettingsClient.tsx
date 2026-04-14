@@ -115,6 +115,22 @@ export default function SettingsPage() {
           <Field label="Day of Month Paid" error={errors.dayOfMonthPaid?.message}>
             <Input type="number" min={1} max={31} {...register("dayOfMonthPaid")} />
           </Field>
+          <div className="col-span-2 flex items-start gap-3 pt-1">
+            <input
+              type="checkbox"
+              id="autoSnapshot"
+              className="mt-0.5 h-4 w-4 cursor-pointer rounded border-gray-300"
+              {...register("autoSnapshot")}
+            />
+            <div>
+              <label htmlFor="autoSnapshot" className="cursor-pointer text-sm font-medium">
+                Auto-record snapshot on payday
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Automatically saves a net-worth snapshot each time you get paid. Weekly and fortnightly users need a Job Start Date set to calculate the cycle.
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

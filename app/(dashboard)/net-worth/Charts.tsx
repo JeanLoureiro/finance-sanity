@@ -51,18 +51,57 @@ export function AllocationChart({ allocationData, totalInvestable }: { allocatio
             <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0))} />
           </PieChart>
         </ResponsiveContainer>
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 space-y-4">
           {allocationData.map((allocationItem, index) => {
             const actual = totalInvestable > 0 ? allocationItem.value / totalInvestable : 0;
             const delta = actual - allocationItem.target;
+            const hasTarget = allocationItem.target > 0;
+            const isOverTarget = hasTarget && delta > 0.05;
+            const isUnderTarget = hasTarget && delta < -0.05;
+
             return (
-              <div key={allocationItem.name} className="flex items-center gap-2 text-xs">
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS[index % COLORS.length] }} />
-                <span className="w-20">{allocationItem.name}</span>
-                <span className="text-muted-foreground">{(actual * 100).toFixed(1)}% / {(allocationItem.target * 100).toFixed(0)}% target</span>
-                <Badge variant={Math.abs(delta) < 0.05 ? "outline" : "destructive"} className="ml-auto text-xs">
-                  {delta > 0 ? "+" : ""}{(delta * 100).toFixed(1)}%
-                </Badge>
+              <div key={allocationItem.name} className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: COLORS[index % COLORS.length] }} />
+                    <span className="font-medium">{allocationItem.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold tabular-nums">{(actual * 100).toFixed(1)}%</span>
+                    {hasTarget && (
+                      <Badge
+                        variant={isOverTarget || isUnderTarget ? "destructive" : "outline"}
+                        className="text-xs"
+                      >
+                        {delta > 0 ? "+" : ""}{(delta * 100).toFixed(1)}% vs target
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="relative h-2 rounded-full bg-muted overflow-visible">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${Math.min(actual * 100, 100)}%`,
+                      background: COLORS[index % COLORS.length],
+                    }}
+                  />
+                  {hasTarget && (
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full bg-foreground/40"
+                      style={{ left: `${Math.min(allocationItem.target * 100, 100)}%` }}
+                      title={`Target: ${(allocationItem.target * 100).toFixed(0)}%`}
+                    />
+                  )}
+                </div>
+
+                {hasTarget && (
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{isOverTarget ? "Overweight" : isUnderTarget ? "Underweight" : "On target"}</span>
+                    <span>Target: {(allocationItem.target * 100).toFixed(0)}%</span>
+                  </div>
+                )}
               </div>
             );
           })}

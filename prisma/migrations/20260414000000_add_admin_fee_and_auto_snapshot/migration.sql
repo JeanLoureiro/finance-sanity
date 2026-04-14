@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Loan" ADD COLUMN IF NOT EXISTS "adminFee" DECIMAL(20,6) NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "UserSettings" ADD COLUMN IF NOT EXISTS "autoSnapshot" BOOLEAN NOT NULL DEFAULT false;

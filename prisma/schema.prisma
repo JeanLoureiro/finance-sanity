@@ -79,6 +79,9 @@ model UserSettings {
   preservationAge Int     @default(55)
   superContribPct Decimal @db.Decimal(5, 4) @default(0.115)
 
+  // Automation
+  autoSnapshot    Boolean @default(false)
+
   // Feature flags
   useBudget       Boolean @default(true)
   useCash         Boolean @default(true)

@@ -57,6 +57,7 @@ export const settingsBaseSchema = z.object({
     useCapitalGains: z.boolean().default(true),
     useFIRE: z.boolean().default(true),
     useSuper: z.boolean().default(true),
+    autoSnapshot: z.boolean().default(false),
   });
 
 export const settingsSchema = settingsBaseSchema.refine(
