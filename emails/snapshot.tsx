@@ -378,7 +378,7 @@ const subtitle = {
 const summaryBox = {
   backgroundColor: "#f0fdf4",
   borderRadius: "8px",
-  margin: "0 40px 24px",
+  margin: "0 0 24px",
   padding: "24px",
 };
 
