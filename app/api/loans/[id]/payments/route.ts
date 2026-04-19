@@ -1,13 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { z } from "zod";
+import { loanPaymentSchema } from "@/lib/schemas";
 import { getAuthorisedSettings, assertOwnership, withAuth } from "@/lib/auth";
-
-const paymentSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
-  amount: z.coerce.number().positive("Amount must be positive"),
-  note: z.string().optional().nullable(),
-});
 
 export const GET = withAuth(async (
   _req: NextRequest,
@@ -40,7 +34,7 @@ export const POST = withAuth(async (
     if (!loan) return Response.json({ error: "Not found" }, { status: 404 });
     assertOwnership(loan.settingsId, authorisedSettings);
     const body = await req.json();
-    const parsed = paymentSchema.safeParse(body);
+    const parsed = loanPaymentSchema.safeParse(body);
     if (!parsed.success) {
       return Response.json({ error: parsed.error.flatten() }, { status: 400 });
     }

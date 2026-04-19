@@ -310,3 +310,52 @@ export const otherAssetSchema = z.object({
   soldUnits: z.coerce.number().min(0).default(0),
 });
 export type OtherAssetInput = z.infer<typeof otherAssetSchema>;
+
+// ---------------------------------------------------------------------------
+// Loan Extra Payment
+// ---------------------------------------------------------------------------
+export const loanPaymentSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+  amount: z.coerce.number().positive("Amount must be positive"),
+  note: z.string().optional().nullable(),
+});
+
+export type LoanPaymentInput = z.infer<typeof loanPaymentSchema>;
+
+// ---------------------------------------------------------------------------
+// Auth — OTP request
+// ---------------------------------------------------------------------------
+export const otpSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  redirectTo: z.string().url().optional(),
+});
+
+export type OtpInput = z.infer<typeof otpSchema>;
+
+// ---------------------------------------------------------------------------
+// Auth — OTP verify
+// ---------------------------------------------------------------------------
+export const verifySchema = z.object({
+  token: z.string().min(1),
+});
+
+export type VerifyInput = z.infer<typeof verifySchema>;
+
+// ---------------------------------------------------------------------------
+// Invitation — create invite
+// ---------------------------------------------------------------------------
+export const inviteSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  role: z.enum(["READ", "WRITE"]),
+});
+
+export type InviteInput = z.infer<typeof inviteSchema>;
+
+// ---------------------------------------------------------------------------
+// Invitation — update status
+// ---------------------------------------------------------------------------
+export const updateInviteStatusSchema = z.object({
+  status: z.enum(["PENDING", "ACCEPTED"]),
+});
+
+export type UpdateInviteStatusInput = z.infer<typeof updateInviteStatusSchema>;

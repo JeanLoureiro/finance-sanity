@@ -2,11 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyOTP, consumeOTP } from "@/lib/otp";
-import { z } from "zod";
-
-const verifySchema = z.object({
-  token: z.string().min(1),
-});
+import { verifySchema } from "@/lib/schemas";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();

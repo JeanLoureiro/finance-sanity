@@ -1,12 +1,7 @@
 import { NextRequest } from "next/server";
-import { z } from "zod";
+import { otpSchema } from "@/lib/schemas";
 import { generateOTP } from "@/lib/otp";
 import { sendMagicLinkEmail } from "@/lib/email";
-
-const otpSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  redirectTo: z.string().url().optional(),
-});
 
 export async function POST(req: NextRequest) {
   const body = await req.json();

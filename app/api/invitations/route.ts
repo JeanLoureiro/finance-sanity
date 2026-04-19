@@ -3,12 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 import { sendInvitationEmail } from "@/lib/email";
-import { z } from "zod";
-
-const inviteSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  role: z.enum(["READ", "WRITE"]),
-});
+import { inviteSchema } from "@/lib/schemas";
 
 export const GET = withAuth(async () => {
   const { settingsId } = await getAuthorisedSettings("OWNER");

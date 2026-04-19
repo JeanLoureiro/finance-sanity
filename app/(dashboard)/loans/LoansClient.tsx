@@ -61,7 +61,7 @@ function mortgageBalanceWithExtras(
   if (monthsElapsed <= 0) return startBalance;
 
   let balance = startBalance;
-  let currentDate = new Date(startDate);
+  const currentDate = new Date(startDate);
   
   for (let i = 0; i < monthsElapsed; i++) {
     // Calculate days in this month
@@ -196,7 +196,7 @@ function ExtraPaymentsPanel({ loan }: { loan: Loan }) {
       }).then((r) => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.loans.payments(loan.id) });
-      qc.invalidateQueries({ queryKey: ["loans", "all-payments"] });
+      qc.invalidateQueries({ queryKey: queryKeys.loans.allPayments() });
       setAmount(""); setNote("");
     },
   });
@@ -206,7 +206,7 @@ function ExtraPaymentsPanel({ loan }: { loan: Loan }) {
       fetch(`/api/loans/${loan.id}/payments/${paymentId}`, { method: "DELETE" }).then((r) => r.json()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.loans.payments(loan.id) });
-      qc.invalidateQueries({ queryKey: ["loans", "all-payments"] });
+      qc.invalidateQueries({ queryKey: queryKeys.loans.allPayments() });
     },
   });
 
@@ -336,7 +336,7 @@ export default function LoansPage() {
 
   // Pre-fetch extra payments for all loans so stats are accurate on load
   const allPayments = useQuery<Record<string, ExtraPayment[]>>({
-    queryKey: ["loans", "all-payments", loans.map((l) => l.id).join(",")],
+    queryKey: queryKeys.loans.allPaymentsByLoans(loans.map((loan) => loan.id)),
     queryFn: async () => {
       const results = await Promise.all(
         loans.map(async (l) => {

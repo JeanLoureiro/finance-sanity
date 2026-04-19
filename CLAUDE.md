@@ -17,6 +17,10 @@ npm run lint           # ESLint (flat config, Next.js core-web-vitals + TS)
 npm test               # Run all tests once (Vitest)
 npm run test:watch     # Vitest in watch mode
 npm run test:coverage  # Vitest with v8 coverage
+npm run check          # Full pre-commit check: tsc + lint + arch fitness + tests
+npm run check:types    # TypeScript type check only
+npm run check:lint     # ESLint only (zero warnings)
+npm run check:arch     # Architecture fitness only (decimal.js, schemas, queryKeys)
 ```
 
 **Run a single test file:**
@@ -116,3 +120,233 @@ Tests live in `lib/**/*.test.ts` and run in a Node (non-browser) environment. Co
 - Never abbreviate variable or parameter names; use full, human-readable names. For example: `properties.map(property => property.name)` not `properties.map(p => p.name)`.
 - Keep tests up to date whenever code changes affect them.
 - When you notice a potential improvement in code that is unrelated to the requested changes, point it out to the user rather than silently applying it.
+
+---
+
+## Service Topologies
+
+This project has four recurring code shapes. When creating or modifying code, match the topology exactly. The architecture sensor (`npm run check:arch`) enforces these conventions automatically.
+
+---
+
+### Topology 1: CRUD API Route
+
+Two files per resource: `app/api/{resource}/route.ts` (list + create) and `app/api/{resource}/[id]/route.ts` (update + delete).
+
+**`app/api/{resource}/route.ts`**
+```typescript
+import { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { resourceSchema } from "@/lib/schemas";           // always from lib/schemas.ts
+import { getAuthorisedSettings, withAuth } from "@/lib/auth";
+
+export const GET = withAuth(async () => {
+  try {
+    const { settingsId } = await getAuthorisedSettings();
+    const items = await prisma.resourceModel.findMany({
+      where: { settingsId },
+      orderBy: { createdAt: "asc" },
+    });
+    return Response.json(items);
+  } catch {
+    return Response.json({ error: "Failed to load resources" }, { status: 500 });
+  }
+});
+
+export const POST = withAuth(async (req: NextRequest) => {
+  try {
+    const { settingsId } = await getAuthorisedSettings("WRITE");
+    const body = await req.json();
+    const parsed = resourceSchema.safeParse(body);
+    if (!parsed.success) {
+      return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+    const item = await prisma.resourceModel.create({
+      data: { ...parsed.data, settingsId },
+    });
+    return Response.json(item, { status: 201 });
+  } catch {
+    return Response.json({ error: "Failed to create resource" }, { status: 500 });
+  }
+});
+```
+
+**`app/api/{resource}/[id]/route.ts`**
+```typescript
+import { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { resourceSchema } from "@/lib/schemas";
+import { getAuthorisedSettings, assertOwnership, withAuth } from "@/lib/auth";
+
+export const PATCH = withAuth(async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }   // params is a Promise in Next.js 16
+) => {
+  try {
+    const { id } = await params;
+    const authorisedSettings = await getAuthorisedSettings("WRITE");
+    const existing = await prisma.resourceModel.findUnique({ where: { id }, select: { settingsId: true } });
+    if (!existing) return Response.json({ error: "Not found" }, { status: 404 });
+    assertOwnership(existing.settingsId, authorisedSettings);
+    const body = await req.json();
+    const parsed = resourceSchema.partial().safeParse(body);
+    if (!parsed.success) {
+      return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+    const item = await prisma.resourceModel.update({ where: { id }, data: parsed.data });
+    return Response.json(item);
+  } catch {
+    return Response.json({ error: "Failed to update resource" }, { status: 500 });
+  }
+});
+
+export const DELETE = withAuth(async (
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
+  try {
+    const { id } = await params;
+    const authorisedSettings = await getAuthorisedSettings("WRITE");
+    const existing = await prisma.resourceModel.findUnique({ where: { id }, select: { settingsId: true } });
+    if (!existing) return Response.json({ error: "Not found" }, { status: 404 });
+    assertOwnership(existing.settingsId, authorisedSettings);
+    await prisma.resourceModel.delete({ where: { id } });
+    return Response.json({ success: true });
+  } catch {
+    return Response.json({ error: "Failed to delete resource" }, { status: 500 });
+  }
+});
+```
+
+**Rules:**
+- Zod schema in `lib/schemas.ts` — never defined inline in the route file
+- Always use `withAuth` wrapper — never handle `AuthError` manually in route bodies
+- Always call `assertOwnership` in `[id]` routes before any mutation
+- `params` is a `Promise` in Next.js 16 — always `await params`
+- `getAuthorisedSettings()` defaults to `"READ"` — pass `"WRITE"` for mutations
+
+---
+
+### Topology 2: React Query Client Component
+
+```typescript
+"use client";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";              // always from lib/queryKeys.ts
+
+type ResourceItem = { id: string; /* fields */ };
+
+export default function ResourceClient() {
+  const queryClient = useQueryClient();
+
+  const { data: items = [], isLoading } = useQuery<ResourceItem[]>({
+    queryKey: queryKeys.resources.all(),                  // never inline strings
+    queryFn: () => fetch("/api/resources").then((response) => response.json()),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: Omit<ResourceItem, "id">) =>
+      fetch("/api/resources", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then((response) => response.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.resources.all() });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, ...data }: ResourceItem) =>
+      fetch(`/api/resources/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then((response) => response.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.resources.all() });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`/api/resources/${id}`, { method: "DELETE" }).then((response) => response.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.resources.all() });
+    },
+  });
+
+  // render using items, createMutation, updateMutation, deleteMutation
+}
+```
+
+**Rules:**
+- Add new query key factory functions to `lib/queryKeys.ts` before using them here
+- Never write `queryKey: ["some-string"]` inline — always `queryKeys.something()`
+- Do not perform monetary arithmetic in client components — push that to API routes or `lib/`
+- Monetary API responses arrive as `number` (JSON) — format for display only, never compute with them
+
+---
+
+### Topology 3: Domain Library Function
+
+```typescript
+import Decimal from "decimal.js";                         // required for all monetary math
+
+/**
+ * [Brief description of what this function computes.]
+ */
+export function computeSomething(amount: Decimal, rate: Decimal): Decimal {
+  // All intermediate values stay as Decimal
+  const factor = new Decimal(1).plus(rate);
+  return amount.times(factor);
+}
+```
+
+**Rules:**
+- All monetary parameters and return values must use `Decimal` from `decimal.js`
+- Never use `+`, `-`, `*`, `/` on monetary values — use `.plus()`, `.minus()`, `.times()`, `.div()`
+- Functions must be pure (no Prisma calls, no fetch) and testable in isolation
+- Every new function in `lib/` must have a corresponding test in `lib/*.test.ts`
+- Non-monetary helpers (dates, string formatting) may use plain JS primitives
+
+---
+
+### Topology 4: Email Template
+
+```typescript
+import {
+  Body, Container, Head, Html, Preview, Section, Text
+} from "@react-email/components";
+
+interface ResourceEmailProps {
+  // typed props — no `any`
+}
+
+export default function ResourceEmail({ ...props }: ResourceEmailProps) {
+  return (
+    <Html>
+      <Head />
+      <Preview>Preview text shown in email client inbox</Preview>
+      <Body style={bodyStyle}>
+        <Container style={containerStyle}>
+          <Section>
+            <Text style={headingStyle}>Heading</Text>
+          </Section>
+        </Container>
+      </Body>
+    </Html>
+  );
+}
+
+const bodyStyle: React.CSSProperties = { backgroundColor: "#f6f9fc", fontFamily: "sans-serif" };
+const containerStyle: React.CSSProperties = { maxWidth: "600px", margin: "0 auto", padding: "20px" };
+const headingStyle: React.CSSProperties = { fontSize: "24px", fontWeight: "bold" };
+```
+
+**Rules:**
+- Styles are inline `React.CSSProperties` objects — no Tailwind classes (email clients strip stylesheets)
+- Email components live in `emails/` — never in `app/` or `components/`
+- Send via `lib/email.ts` which wraps Resend — do not instantiate Resend directly in routes or components
+- Preview with `npm run email:dev` at localhost:3001

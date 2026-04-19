@@ -41,6 +41,8 @@ export const queryKeys = {
   loans: {
     all: () => ["loans"] as const,
     payments: (id: string) => ["loans", id, "payments"] as const,
+    allPayments: () => ["loans", "all-payments"] as const,
+    allPaymentsByLoans: (loanIds: string[]) => ["loans", "all-payments", loanIds.join(",")] as const,
   },
 
   budget: {
