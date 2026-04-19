@@ -1,6 +1,6 @@
+import Decimal from "decimal.js";
 import { prisma } from "@/lib/prisma";
 import { fv, pv, nper } from "@/lib/finance";
-import { mortgageBalance } from "@/lib/finance";
 import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
 export type FIRERow = {
@@ -80,25 +80,40 @@ export const GET = withAuth(async () => {
     const netRate = marketReturn - inflationRate;
 
     // Current investable NW (exc. property & super) — mirrors E45
-    const cashTotal = settings.bankAccounts.reduce((s, a) => s + Number(a.balance), 0);
-    const etfCost = settings.etfHoldings.reduce((s, h) =>
-      s + h.purchases.filter(p => p.direction === "BUY")
-        .reduce((a, p) => a + Number(p.units) * Number(p.price) + Number(p.brokerage), 0), 0);
-    const stockCost = settings.stockHoldings.reduce((s, h) =>
-      s + h.purchases.filter(p => p.direction === "BUY")
-        .reduce((a, p) => a + Number(p.units) * Number(p.price) + Number(p.brokerage), 0), 0);
-    const mfCost = settings.managedFundHoldings.reduce((s, h) =>
-      s + h.purchases.filter(p => p.direction === "BUY")
-        .reduce((a, p) => a + Number(p.units) * Number(p.price) + Number(p.brokerage), 0), 0);
-    const cryptoCost = settings.cryptoHoldings.reduce((s, h) =>
-      s + h.purchases.filter(p => p.direction === "BUY")
-        .reduce((a, p) => a + Number(p.units) * Number(p.price) + Number(p.brokerage), 0), 0);
+    const cashTotal = settings.bankAccounts.reduce(
+      (sum, account) => sum.plus(new Decimal(account.balance.toString())),
+      new Decimal(0)
+    ).toNumber();
+
+    const holdingCost = (purchases: { direction: string; units: { toString(): string }; price: { toString(): string }; brokerage: { toString(): string } }[]) =>
+      purchases
+        .filter((purchase) => purchase.direction === "BUY")
+        .reduce(
+          (acc, purchase) =>
+            acc.plus(
+              new Decimal(purchase.units.toString())
+                .times(new Decimal(purchase.price.toString()))
+                .plus(new Decimal(purchase.brokerage.toString()))
+            ),
+          new Decimal(0)
+        )
+        .toNumber();
+
+    const etfCost = settings.etfHoldings.reduce((sum, holding) => sum + holdingCost(holding.purchases), 0);
+    const stockCost = settings.stockHoldings.reduce((sum, holding) => sum + holdingCost(holding.purchases), 0);
+    const mfCost = settings.managedFundHoldings.reduce((sum, holding) => sum + holdingCost(holding.purchases), 0);
+    const cryptoCost = settings.cryptoHoldings.reduce((sum, holding) => sum + holdingCost(holding.purchases), 0);
 
     const currentNW = cashTotal + etfCost + stockCost + mfCost + cryptoCost;
-    const currentSuper = settings.superAccounts.reduce((s, a) => s + Number(a.balance), 0);
+    const currentSuper = settings.superAccounts.reduce(
+      (sum, account) => sum.plus(new Decimal(account.balance.toString())),
+      new Decimal(0)
+    ).toNumber();
 
     // Annual super contribution: salary * superContribPct
-    const superContrib = Number(settings.salary) * Number(settings.superContribPct);
+    const superContrib = new Decimal(settings.salary.toString())
+      .times(new Decimal(settings.superContribPct.toString()))
+      .toNumber();
 
     // Yearly spend & savings: 12-month average from snapshots, fallback to net income
     const recentSnapshots = settings.monthlySnapshots.slice(-12);

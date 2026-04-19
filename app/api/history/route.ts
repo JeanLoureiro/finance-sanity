@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getAuthorisedSettings, withAuth } from "@/lib/auth";
+import { withAuth } from "@/lib/auth";
 
 export const GET = withAuth(async () => {
   try {

@@ -1,7 +1,9 @@
+import Decimal from "decimal.js";
 import { prisma } from "@/lib/prisma";
 import { mortgageBalance } from "@/lib/finance";
 import { computeFIFO, summariseCGTByFY, type Trade } from "@/lib/capitalGains";
 import { getFiscalYear } from "@/lib/australianFY";
+
 export async function recordSnapshotForSettings(
   settingsId: string,
   snapshotDate: Date
@@ -26,76 +28,91 @@ export async function recordSnapshotForSettings(
   }
 
   const cashTotal = settings.bankAccounts.reduce(
-    (sum, account) => sum + Number(account.balance),
-    0
+    (sum, account) => sum.plus(new Decimal(account.balance.toString())),
+    new Decimal(0)
   );
 
   const etfCost = settings.etfHoldings.reduce(
     (sum, holding) =>
-      sum +
-      holding.purchases
-        .filter((purchase) => purchase.direction === "BUY")
-        .reduce(
-          (acc, purchase) => acc + Number(purchase.units) * Number(purchase.price),
-          0
-        ),
-    0
+      sum.plus(
+        holding.purchases
+          .filter((purchase) => purchase.direction === "BUY")
+          .reduce(
+            (acc, purchase) =>
+              acc.plus(
+                new Decimal(purchase.units.toString()).times(new Decimal(purchase.price.toString()))
+              ),
+            new Decimal(0)
+          )
+      ),
+    new Decimal(0)
   );
 
   const stockCost = settings.stockHoldings.reduce(
     (sum, holding) =>
-      sum +
-      holding.purchases
-        .filter((purchase) => purchase.direction === "BUY")
-        .reduce(
-          (acc, purchase) => acc + Number(purchase.units) * Number(purchase.price),
-          0
-        ),
-    0
+      sum.plus(
+        holding.purchases
+          .filter((purchase) => purchase.direction === "BUY")
+          .reduce(
+            (acc, purchase) =>
+              acc.plus(
+                new Decimal(purchase.units.toString()).times(new Decimal(purchase.price.toString()))
+              ),
+            new Decimal(0)
+          )
+      ),
+    new Decimal(0)
   );
 
   const managedFundCost = settings.managedFundHoldings.reduce(
     (sum, holding) =>
-      sum +
-      holding.purchases
-        .filter((purchase) => purchase.direction === "BUY")
-        .reduce(
-          (acc, purchase) => acc + Number(purchase.units) * Number(purchase.price),
-          0
-        ),
-    0
+      sum.plus(
+        holding.purchases
+          .filter((purchase) => purchase.direction === "BUY")
+          .reduce(
+            (acc, purchase) =>
+              acc.plus(
+                new Decimal(purchase.units.toString()).times(new Decimal(purchase.price.toString()))
+              ),
+            new Decimal(0)
+          )
+      ),
+    new Decimal(0)
   );
 
   const cryptoCost = settings.cryptoHoldings.reduce(
     (sum, holding) =>
-      sum +
-      holding.purchases
-        .filter((purchase) => purchase.direction === "BUY")
-        .reduce(
-          (acc, purchase) => acc + Number(purchase.units) * Number(purchase.price),
-          0
-        ),
-    0
+      sum.plus(
+        holding.purchases
+          .filter((purchase) => purchase.direction === "BUY")
+          .reduce(
+            (acc, purchase) =>
+              acc.plus(
+                new Decimal(purchase.units.toString()).times(new Decimal(purchase.price.toString()))
+              ),
+            new Decimal(0)
+          )
+      ),
+    new Decimal(0)
   );
 
   const otherTotal = settings.otherAssets.reduce((sum, asset) => {
-    const remainingUnits = Number(asset.units) - Number(asset.soldUnits);
-    return (
-      sum +
-      remainingUnits * Number(asset.liveUnitPrice ?? asset.unitPurchasePrice)
-    );
-  }, 0);
+    const remainingUnits = new Decimal(asset.units.toString()).minus(new Decimal(asset.soldUnits.toString()));
+    const unitPrice = new Decimal((asset.liveUnitPrice ?? asset.unitPurchasePrice).toString());
+    return sum.plus(remainingUnits.times(unitPrice));
+  }, new Decimal(0));
 
   const superTotal = settings.superAccounts.reduce(
-    (sum, account) => sum + Number(account.balance),
-    0
+    (sum, account) => sum.plus(new Decimal(account.balance.toString())),
+    new Decimal(0)
   );
 
   const propertyValue = settings.properties.reduce(
-    (sum, property) => sum + Number(property.currentValue),
-    0
+    (sum, property) => sum.plus(new Decimal(property.currentValue.toString())),
+    new Decimal(0)
   );
 
+  // mortgageBalance() is a number-based function — convert at boundary only
   const mortgageTotal = settings.properties.reduce((sum, property) => {
     if (
       !property.mortgageStartDate ||
@@ -105,26 +122,25 @@ export async function recordSnapshotForSettings(
     ) {
       return sum;
     }
-    return (
-      sum +
-      mortgageBalance(
-        Number(property.mortgageStartBalance),
-        Number(property.mortgageAnnualRate),
-        Number(property.mortgageMonthlyPayment),
-        new Date(property.mortgageStartDate)
-      )
+    const balance = mortgageBalance(
+      new Decimal(property.mortgageStartBalance.toString()).toNumber(),
+      new Decimal(property.mortgageAnnualRate.toString()).toNumber(),
+      new Decimal(property.mortgageMonthlyPayment.toString()).toNumber(),
+      new Date(property.mortgageStartDate)
     );
-  }, 0);
+    return sum.plus(new Decimal(balance));
+  }, new Decimal(0));
 
-  const propertyEquity = propertyValue - mortgageTotal;
+  const propertyEquity = propertyValue.minus(mortgageTotal);
 
   const loansTotal = settings.loans.reduce(
-    (sum, loan) => sum + Number(loan.startingBalance),
-    0
+    (sum, loan) => sum.plus(new Decimal(loan.startingBalance.toString())),
+    new Decimal(0)
   );
 
-  let cgtLiability = 0;
+  let cgtLiability = new Decimal(0);
   if (settings.cgtShowInLiabilities) {
+    // computeFIFO / Trade interface uses plain numbers — convert at boundary only
     const trades: Trade[] = [];
     for (const holding of settings.etfHoldings) {
       for (const purchase of holding.purchases) {
@@ -132,9 +148,9 @@ export async function recordSnapshotForSettings(
           id: purchase.id,
           ticker: holding.ticker,
           date: new Date(purchase.date),
-          units: Number(purchase.units),
-          price: Number(purchase.price),
-          brokerage: Number(purchase.brokerage),
+          units: new Decimal(purchase.units.toString()).toNumber(),
+          price: new Decimal(purchase.price.toString()).toNumber(),
+          brokerage: new Decimal(purchase.brokerage.toString()).toNumber(),
           direction: purchase.direction as "BUY" | "SELL",
         });
       }
@@ -145,9 +161,9 @@ export async function recordSnapshotForSettings(
           id: purchase.id,
           ticker: holding.ticker,
           date: new Date(purchase.date),
-          units: Number(purchase.units),
-          price: Number(purchase.price),
-          brokerage: Number(purchase.brokerage),
+          units: new Decimal(purchase.units.toString()).toNumber(),
+          price: new Decimal(purchase.price.toString()).toNumber(),
+          brokerage: new Decimal(purchase.brokerage.toString()).toNumber(),
           direction: purchase.direction as "BUY" | "SELL",
         });
       }
@@ -158,9 +174,9 @@ export async function recordSnapshotForSettings(
           id: purchase.id,
           ticker: holding.ticker,
           date: new Date(purchase.date),
-          units: Number(purchase.units),
-          price: Number(purchase.price),
-          brokerage: Number(purchase.brokerage),
+          units: new Decimal(purchase.units.toString()).toNumber(),
+          price: new Decimal(purchase.price.toString()).toNumber(),
+          brokerage: new Decimal(purchase.brokerage.toString()).toNumber(),
           direction: purchase.direction as "BUY" | "SELL",
         });
       }
@@ -171,50 +187,49 @@ export async function recordSnapshotForSettings(
           id: purchase.id,
           ticker: holding.ticker,
           date: new Date(purchase.date),
-          units: Number(purchase.units),
-          price: Number(purchase.price),
-          brokerage: Number(purchase.brokerage),
+          units: new Decimal(purchase.units.toString()).toNumber(),
+          price: new Decimal(purchase.price.toString()).toNumber(),
+          brokerage: new Decimal(purchase.brokerage.toString()).toNumber(),
           direction: purchase.direction as "BUY" | "SELL",
         });
       }
     }
-    const shortRate = Number(settings.shortTermTaxRate);
-    const longRate = Number(settings.longTermTaxRate);
+    const shortRate = new Decimal(settings.shortTermTaxRate.toString()).toNumber();
+    const longRate = new Decimal(settings.longTermTaxRate.toString()).toNumber();
     const allRows = computeFIFO(trades, shortRate, longRate);
     const currentFiscalYear = getFiscalYear(snapshotDate);
-    const fiscalYearSummary = summariseCGTByFY(allRows, shortRate, longRate).find(
+    const fiscalYearSummary = summariseCGTByFY(allRows).find(
       (summary) => summary.fy === currentFiscalYear
     );
-    cgtLiability = fiscalYearSummary?.estimatedTax ?? 0;
+    cgtLiability = new Decimal(fiscalYearSummary?.estimatedTax ?? 0);
   }
 
-  const liabilitiesTotal = mortgageTotal + loansTotal + cgtLiability;
-  const totalAssets =
-    cashTotal +
-    etfCost +
-    stockCost +
-    managedFundCost +
-    cryptoCost +
-    otherTotal +
-    superTotal +
-    propertyValue;
-  const netWorth = totalAssets - liabilitiesTotal;
+  const liabilitiesTotal = mortgageTotal.plus(loansTotal).plus(cgtLiability);
+  const totalAssets = cashTotal
+    .plus(etfCost)
+    .plus(stockCost)
+    .plus(managedFundCost)
+    .plus(cryptoCost)
+    .plus(otherTotal)
+    .plus(superTotal)
+    .plus(propertyValue);
+  const netWorth = totalAssets.minus(liabilitiesTotal);
 
   const snapshotData = {
-    cashTotal,
-    etfTotal: etfCost,
-    stockTotal: stockCost,
-    managedFundTotal: managedFundCost,
-    cryptoTotal: cryptoCost,
-    otherAssetsTotal: otherTotal,
-    superTotal,
-    propertyValue,
-    propertyEquity,
-    mortgageBalance: mortgageTotal,
-    liabilitiesTotal,
-    totalAssets,
-    netWorth,
-    salary: Number(settings.netIncome),
+    cashTotal: cashTotal.toNumber(),
+    etfTotal: etfCost.toNumber(),
+    stockTotal: stockCost.toNumber(),
+    managedFundTotal: managedFundCost.toNumber(),
+    cryptoTotal: cryptoCost.toNumber(),
+    otherAssetsTotal: otherTotal.toNumber(),
+    superTotal: superTotal.toNumber(),
+    propertyValue: propertyValue.toNumber(),
+    propertyEquity: propertyEquity.toNumber(),
+    mortgageBalance: mortgageTotal.toNumber(),
+    liabilitiesTotal: liabilitiesTotal.toNumber(),
+    totalAssets: totalAssets.toNumber(),
+    netWorth: netWorth.toNumber(),
+    salary: new Decimal(settings.netIncome.toString()).toNumber(),
   };
 
   return prisma.monthlySnapshot.upsert({

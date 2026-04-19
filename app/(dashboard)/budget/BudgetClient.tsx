@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CurrencyAmount } from "@/components/ui/currency-amount";
-import { Trash2, PlusCircle, ChevronDown, ChevronUp, SlidersHorizontal, X, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Trash2, PlusCircle, ChevronDown, ChevronUp, SlidersHorizontal, X, Search, ArrowUp, ArrowDown } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { BudgetItemInput } from "@/lib/schemas";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
@@ -53,7 +53,7 @@ function fromMonthly(monthly: number, freq: string): number {
   }
 }
 
-function safeToFixed(value: any, decimals: number = 2): string {
+function safeToFixed(value: unknown, decimals: number = 2): string {
   const num = Number(value);
   return (isNaN(num) || !isFinite(num)) ? "0" : num.toFixed(decimals);
 }
@@ -338,7 +338,7 @@ function FilterPanel({
             <span className="text-[11px] text-muted-foreground self-center">Active:</span>
             {filters.search && (
               <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary border border-primary/30 rounded-full px-2 py-0.5">
-                Search: "{filters.search}"
+                Search: &ldquo;{filters.search}&rdquo;
                 <button onClick={() => onChange({ search: "" })}><X className="h-3 w-3" /></button>
               </span>
             )}
@@ -757,6 +757,7 @@ export default function BudgetPage() {
 
   useEffect(() => {
     const stored = localStorage.getItem("budget-view-mode");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setViewMode(stored === "grouped" || stored === "flat" ? stored : "grouped");
   }, []);
 

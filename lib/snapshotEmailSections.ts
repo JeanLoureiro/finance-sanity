@@ -1,3 +1,4 @@
+import Decimal from "decimal.js";
 import { prisma } from "@/lib/prisma";
 import { mortgageBalance } from "@/lib/finance";
 import { getFiscalYear, getFYStartDate } from "@/lib/australianFY";
@@ -132,7 +133,10 @@ export async function fetchSnapshotEmailSections(
       select: { name: true, balance: true },
       orderBy: { sortOrder: "asc" },
     });
-    const total = accounts.reduce((sum, account) => sum + Number(account.balance), 0);
+    const total = accounts.reduce(
+      (sum, account) => sum.plus(new Decimal(account.balance.toString())),
+      new Decimal(0)
+    ).toNumber();
     sections.cash = {
       accounts: accounts.map((account) => ({ name: account.name, balance: Number(account.balance) })),
       total,
@@ -183,9 +187,9 @@ export async function fetchSnapshotEmailSections(
   if (flags.snapshotEmailOtherAssets) {
     const assets = await prisma.otherAsset.findMany({ where: { settingsId } });
     const lines = assets.map((asset) => {
-      const remainingUnits = Number(asset.units) - Number(asset.soldUnits);
-      const pricePerUnit = Number(asset.liveUnitPrice ?? asset.unitPurchasePrice);
-      return { description: asset.description, value: remainingUnits * pricePerUnit };
+      const remainingUnits = new Decimal(asset.units.toString()).minus(new Decimal(asset.soldUnits.toString()));
+      const pricePerUnit = new Decimal((asset.liveUnitPrice ?? asset.unitPurchasePrice).toString());
+      return { description: asset.description, value: remainingUnits.times(pricePerUnit).toNumber() };
     });
     sections.otherAssets = {
       assets: lines,
@@ -199,7 +203,10 @@ export async function fetchSnapshotEmailSections(
       where: { settingsId },
       orderBy: { sortOrder: "asc" },
     });
-    const total = accounts.reduce((sum, account) => sum + Number(account.balance), 0);
+    const total = accounts.reduce(
+      (sum, account) => sum.plus(new Decimal(account.balance.toString())),
+      new Decimal(0)
+    ).toNumber();
     sections.super = {
       accounts: accounts.map((account) => ({
         name: account.name,
@@ -257,7 +264,7 @@ export async function fetchSnapshotEmailSections(
     });
     sections.loans = {
       loans: loanLines,
-      total: loanLines.reduce((sum, loan) => sum + loan.currentBalance, 0),
+      total: loanLines.reduce((sum, loan) => sum + loan.currentBalance, 0), // currentBalance is already a number from mortgageBalance()
     };
   }
 
@@ -265,9 +272,9 @@ export async function fetchSnapshotEmailSections(
   if (flags.snapshotEmailBudget) {
     const budgetItems = await prisma.budgetItem.findMany({ where: { settingsId } });
     const monthlySpend = budgetItems.reduce(
-      (sum, item) => sum + Number(item.monthlyAmount),
-      0
-    );
+      (sum, item) => sum.plus(new Decimal(item.monthlyAmount.toString())),
+      new Decimal(0)
+    ).toNumber();
     const monthlyIncome = flags.netIncome;
     const monthlySavings = monthlyIncome - monthlySpend;
     const savingsRate = monthlyIncome > 0 ? monthlySavings / monthlyIncome : 0;
@@ -280,9 +287,12 @@ export async function fetchSnapshotEmailSections(
       where: { settingsId, date: { gte: fyStart } },
     });
     const fyTotal = entries.reduce(
-      (sum, entry) => sum + Number(entry.sideIncome) + Number(entry.rentalIncome),
-      0
-    );
+      (sum, entry) =>
+        sum
+          .plus(new Decimal(entry.sideIncome.toString()))
+          .plus(new Decimal(entry.rentalIncome.toString())),
+      new Decimal(0)
+    ).toNumber();
     sections.sideIncome = { fyTotal, fyLabel };
   }
 
@@ -291,10 +301,16 @@ export async function fetchSnapshotEmailSections(
     const dividends = await prisma.dividend.findMany({
       where: { settingsId, paymentDate: { gte: fyStart } },
     });
-    const fyTotal = dividends.reduce((sum, dividend) => sum + Number(dividend.netAmount), 0);
+    const fyTotal = dividends.reduce(
+      (sum, dividend) => sum.plus(new Decimal(dividend.netAmount.toString())),
+      new Decimal(0)
+    ).toNumber();
     const reinvested = dividends
       .filter((dividend) => dividend.reinvested)
-      .reduce((sum, dividend) => sum + Number(dividend.netAmount), 0);
+      .reduce(
+        (sum, dividend) => sum.plus(new Decimal(dividend.netAmount.toString())),
+        new Decimal(0)
+      ).toNumber();
     sections.dividends = {
       fyTotal,
       reinvested,
@@ -327,17 +343,23 @@ function buildInvestmentSection(holdings: HoldingLike[]): InvestmentSection {
     .map((holding) => {
       const buyUnits = holding.purchases
         .filter((purchase) => purchase.direction === "BUY")
-        .reduce((sum, purchase) => sum + Number(purchase.units), 0);
+        .reduce((sum, purchase) => sum.plus(new Decimal(purchase.units.toString())), new Decimal(0))
+        .toNumber();
       const sellUnits = holding.purchases
         .filter((purchase) => purchase.direction === "SELL")
-        .reduce((sum, purchase) => sum + Number(purchase.units), 0);
+        .reduce((sum, purchase) => sum.plus(new Decimal(purchase.units.toString())), new Decimal(0))
+        .toNumber();
       const netUnits = buyUnits - sellUnits;
       const costBasis = holding.purchases
         .filter((purchase) => purchase.direction === "BUY")
         .reduce(
-          (sum, purchase) => sum + Number(purchase.units) * Number(purchase.price),
-          0
-        );
+          (sum, purchase) =>
+            sum.plus(
+              new Decimal(purchase.units.toString()).times(new Decimal(purchase.price.toString()))
+            ),
+          new Decimal(0)
+        )
+        .toNumber();
       return { ticker: holding.ticker, name: holding.name ?? null, netUnits, costBasis };
     })
     .filter((line) => line.netUnits > 0);

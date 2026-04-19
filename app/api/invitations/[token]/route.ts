@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthorisedSettings, withAuth } from "@/lib/auth";
-import { z } from "zod";
+import { updateInviteStatusSchema } from "@/lib/schemas";
 
 // GET is public — no auth required (used by the accept-invite page before login)
 export async function GET(
@@ -70,10 +70,6 @@ export const DELETE = withAuth(async (
   }
 });
 
-const updateStatusSchema = z.object({
-  status: z.enum(["PENDING", "ACCEPTED"]),
-});
-
 // PATCH updates status of a revoked grant — owner only
 export const PATCH = withAuth(async (
   req: NextRequest,
@@ -84,7 +80,7 @@ export const PATCH = withAuth(async (
     const { settingsId } = await getAuthorisedSettings("OWNER");
 
     const body = await req.json();
-    const parsed = updateStatusSchema.safeParse(body);
+    const parsed = updateInviteStatusSchema.safeParse(body);
     if (!parsed.success) {
       return Response.json({ error: parsed.error.flatten() }, { status: 400 });
     }
