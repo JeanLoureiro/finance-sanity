@@ -1,3 +1,4 @@
+import Decimal from "decimal.js";
 import { prisma } from "@/lib/prisma";
 import { mortgageBalance } from "@/lib/finance";
 import { computeFIFO, summariseCGTByFY, type Trade } from "@/lib/capitalGains";
@@ -41,65 +42,66 @@ export const GET = withAuth(async () => {
 
     // Cash total
     const cashTotal = settings.bankAccounts.reduce(
-      (s, a) => s + Number(a.balance),
-      0
-    );
+      (sum, account) => sum.plus(new Decimal(account.balance.toString())),
+      new Decimal(0)
+    ).toNumber();
 
     // Investment totals — sum of (units held × latest price placeholder)
     // Live prices are fetched client-side; here we return unit counts and cost bases
-    const etfUnits = settings.etfHoldings.map((h) => ({
-      id: h.id,
-      ticker: h.ticker,
-      name: h.name,
-      targetAllocation: Number(h.targetAllocation),
-      unitsHeld: h.purchases
-        .filter((p) => p.direction === "BUY")
-        .reduce((s, p) => s + Number(p.units), 0) -
-        h.purchases
-          .filter((p) => p.direction === "SELL")
-          .reduce((s, p) => s + Number(p.units), 0),
-      costBasis: h.purchases
-        .filter((p) => p.direction === "BUY")
-        .reduce((s, p) => s + Number(p.units) * Number(p.price) + Number(p.brokerage), 0),
+    function sumUnits(purchases: { direction: string; units: { toString(): string } }[], direction: "BUY" | "SELL"): number {
+      return purchases
+        .filter((purchase) => purchase.direction === direction)
+        .reduce((acc, purchase) => acc.plus(new Decimal(purchase.units.toString())), new Decimal(0))
+        .toNumber();
+    }
+
+    function sumCostBasis(purchases: { direction: string; units: { toString(): string }; price: { toString(): string }; brokerage: { toString(): string } }[]): number {
+      return purchases
+        .filter((purchase) => purchase.direction === "BUY")
+        .reduce(
+          (acc, purchase) =>
+            acc.plus(
+              new Decimal(purchase.units.toString())
+                .times(new Decimal(purchase.price.toString()))
+                .plus(new Decimal(purchase.brokerage.toString()))
+            ),
+          new Decimal(0)
+        )
+        .toNumber();
+    }
+
+    const etfUnits = settings.etfHoldings.map((holding) => ({
+      id: holding.id,
+      ticker: holding.ticker,
+      name: holding.name,
+      targetAllocation: Number(holding.targetAllocation),
+      unitsHeld: sumUnits(holding.purchases, "BUY") - sumUnits(holding.purchases, "SELL"),
+      costBasis: sumCostBasis(holding.purchases),
     }));
 
-    const stockUnits = settings.stockHoldings.map((h) => ({
-      id: h.id,
-      ticker: h.ticker,
-      name: h.name,
-      targetAllocation: Number(h.targetAllocation),
-      unitsHeld: h.purchases
-        .filter((p) => p.direction === "BUY")
-        .reduce((s, p) => s + Number(p.units), 0) -
-        h.purchases
-          .filter((p) => p.direction === "SELL")
-          .reduce((s, p) => s + Number(p.units), 0),
-      costBasis: h.purchases
-        .filter((p) => p.direction === "BUY")
-        .reduce((s, p) => s + Number(p.units) * Number(p.price) + Number(p.brokerage), 0),
+    const stockUnits = settings.stockHoldings.map((holding) => ({
+      id: holding.id,
+      ticker: holding.ticker,
+      name: holding.name,
+      targetAllocation: Number(holding.targetAllocation),
+      unitsHeld: sumUnits(holding.purchases, "BUY") - sumUnits(holding.purchases, "SELL"),
+      costBasis: sumCostBasis(holding.purchases),
     }));
 
-    const cryptoUnits = settings.cryptoHoldings.map((h) => ({
-      id: h.id,
-      ticker: h.ticker,
-      name: h.name,
-      targetAllocation: Number(h.targetAllocation),
-      unitsHeld: h.purchases
-        .filter((p) => p.direction === "BUY")
-        .reduce((s, p) => s + Number(p.units), 0) -
-        h.purchases
-          .filter((p) => p.direction === "SELL")
-          .reduce((s, p) => s + Number(p.units), 0),
-      costBasis: h.purchases
-        .filter((p) => p.direction === "BUY")
-        .reduce((s, p) => s + Number(p.units) * Number(p.price) + Number(p.brokerage), 0),
+    const cryptoUnits = settings.cryptoHoldings.map((holding) => ({
+      id: holding.id,
+      ticker: holding.ticker,
+      name: holding.name,
+      targetAllocation: Number(holding.targetAllocation),
+      unitsHeld: sumUnits(holding.purchases, "BUY") - sumUnits(holding.purchases, "SELL"),
+      costBasis: sumCostBasis(holding.purchases),
     }));
 
     // Super total
     const superTotal = settings.superAccounts.reduce(
-      (s, a) => s + Number(a.balance),
-      0
-    );
+      (sum, account) => sum.plus(new Decimal(account.balance.toString())),
+      new Decimal(0)
+    ).toNumber();
 
     // Property & mortgage
     const asOfDate = new Date();
@@ -166,7 +168,10 @@ export const GET = withAuth(async () => {
         purchaseValue: Number(p.purchaseValue),
         currentValue: Number(p.currentValue),
         netRentProfit: Number(p.netRentProfit),
-        gain: Number(p.currentValue) - Number(p.purchaseValue) + Number(p.netRentProfit),
+        gain: new Decimal(p.currentValue.toString())
+          .minus(new Decimal(p.purchaseValue.toString()))
+          .plus(new Decimal(p.netRentProfit.toString()))
+          .toNumber(),
         currentMortgageBalance: totalPropertyDebt,
         mortgageRemainingBalance,
         equityLoanBalance,
@@ -179,9 +184,9 @@ export const GET = withAuth(async () => {
 
     // Loans
     const loansTotal = settings.loans.reduce(
-      (s, l) => s + Number(l.startingBalance),
-      0
-    );
+      (sum, loan) => sum.plus(new Decimal(loan.startingBalance.toString())),
+      new Decimal(0)
+    ).toNumber();
 
     // CGT liability — estimated tax owed for current FY SELL events
     let cgtLiability = 0;
@@ -211,7 +216,7 @@ export const GET = withAuth(async () => {
       const longRate = Number(settings.longTermTaxRate);
       const allRows = computeFIFO(trades, shortRate, longRate);
       const currentFY = getFiscalYear(new Date());
-      const fySummary = summariseCGTByFY(allRows, shortRate, longRate).find((s) => s.fy === currentFY);
+      const fySummary = summariseCGTByFY(allRows).find((s) => s.fy === currentFY);
       cgtLiability = fySummary?.estimatedTax ?? 0;
     }
 

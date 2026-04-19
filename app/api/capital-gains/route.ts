@@ -54,7 +54,7 @@ export const GET = withAuth(async (request: Request) => {
     }
 
     const allRows = computeFIFO(trades, shortRate, longRate);
-    const summaries = summariseCGTByFY(allRows, shortRate, longRate);
+    const summaries = summariseCGTByFY(allRows);
     const availableFYs = [...new Set(allRows.map((r) => getFiscalYear(r.date)))].sort();
 
     const filteredRows = fy ? allRows.filter((r) => getFiscalYear(r.date) === fy) : allRows;

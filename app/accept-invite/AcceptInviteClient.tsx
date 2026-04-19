@@ -20,7 +20,7 @@ type Props = {
 export default function AcceptInviteClient({ token, invite }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [checkingAuth, setCheckingAuth] = useState(false);
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -55,11 +55,6 @@ export default function AcceptInviteClient({ token, invite }: Props) {
     router.push("/net-worth");
   }
 
-  async function handleSignIn() {
-    setCheckingAuth(true);
-    router.push(`/login?redirectedFrom=/accept-invite?token=${token}`);
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-sm">
@@ -79,7 +74,7 @@ export default function AcceptInviteClient({ token, invite }: Props) {
           <Button
             className="w-full"
             onClick={handleAccept}
-            disabled={loading || checkingAuth}
+            disabled={loading}
           >
             {loading ? "Accepting…" : "Accept invitation"}
           </Button>

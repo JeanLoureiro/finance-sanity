@@ -198,7 +198,7 @@ export async function recordSnapshotForSettings(
     const longRate = new Decimal(settings.longTermTaxRate.toString()).toNumber();
     const allRows = computeFIFO(trades, shortRate, longRate);
     const currentFiscalYear = getFiscalYear(snapshotDate);
-    const fiscalYearSummary = summariseCGTByFY(allRows, shortRate, longRate).find(
+    const fiscalYearSummary = summariseCGTByFY(allRows).find(
       (summary) => summary.fy === currentFiscalYear
     );
     cgtLiability = new Decimal(fiscalYearSummary?.estimatedTax ?? 0);

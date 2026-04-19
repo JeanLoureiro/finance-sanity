@@ -134,11 +134,7 @@ export interface CGTSummary {
   estimatedTax: number;
 }
 
-export function summariseCGTByFY(
-  rows: CGTRow[],
-  shortTermRate: number,
-  longTermRate: number
-): CGTSummary[] {
+export function summariseCGTByFY(rows: CGTRow[]): CGTSummary[] {
   const fyMap = new Map<number, CGTSummary>();
 
   for (const row of rows) {

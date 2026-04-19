@@ -158,7 +158,7 @@ describe("summariseCGTByFY", () => {
       { id: "4", ticker: "BTC",  date: d("2024-08-01"), units: 1,   price: 50000, brokerage: 0, direction: "SELL" },
     ];
     const rows = computeFIFO(trades, SHORT_RATE, LONG_RATE);
-    const summaries = summariseCGTByFY(rows, SHORT_RATE, LONG_RATE);
+    const summaries = summariseCGTByFY(rows);
 
     const fy2024 = summaries.find((s) => s.fy === 2024);
     const fy2025 = summaries.find((s) => s.fy === 2025);
@@ -179,7 +179,7 @@ describe("summariseCGTByFY", () => {
       { id: "2", ticker: "A200", date: d("2024-07-01"), units: 10, price: 110, brokerage: 0, direction: "SELL" },
     ];
     const rows = computeFIFO(trades, SHORT_RATE, LONG_RATE);
-    const summaries = summariseCGTByFY(rows, SHORT_RATE, LONG_RATE);
+    const summaries = summariseCGTByFY(rows);
     // Jul 1 2024 → FY2025 (not FY2024)
     expect(summaries.find((s) => s.fy === 2025)).toBeDefined();
     expect(summaries.find((s) => s.fy === 2024)).toBeUndefined();
@@ -192,7 +192,7 @@ describe("summariseCGTByFY", () => {
       { id: "3", ticker: "A200", date: d("2024-04-01"), units: 50,  price: 130, brokerage: 0, direction: "SELL" },
     ];
     const rows = computeFIFO(trades, SHORT_RATE, LONG_RATE);
-    const summaries = summariseCGTByFY(rows, SHORT_RATE, LONG_RATE);
+    const summaries = summariseCGTByFY(rows);
     const fy2024 = summaries.find((s) => s.fy === 2024)!;
     // First sell gain: 50*(120-100) = 1000; second sell gain: 50*(130-100) = 1500; total = 2500
     expect(fy2024.totalGain).toBeCloseTo(2500, 0);
