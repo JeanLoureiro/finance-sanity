@@ -21,6 +21,9 @@ npm run check          # Full pre-commit check: tsc + lint + arch fitness + test
 npm run check:types    # TypeScript type check only
 npm run check:lint     # ESLint only (zero warnings)
 npm run check:arch     # Architecture fitness only (decimal.js, schemas, queryKeys)
+npm run test:e2e       # Run Playwright E2E tests
+npm run test:e2e:ui    # Playwright UI mode
+npm run test:e2e:headed # Run E2E tests in headed browser
 ```
 
 **Run a single test file:**

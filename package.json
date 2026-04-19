@@ -15,7 +15,10 @@
     "check:types": "tsc --noEmit",
     "check:lint": "eslint --max-warnings=0",
     "check:arch": "node scripts/check-arch.mjs",
-    "check": "npm run check:types && npm run check:lint && npm run check:arch && npm test"
+    "check": "npm run check:types && npm run check:lint && npm run check:arch && npm test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
@@ -49,6 +52,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@react-email/preview-server": "^5.2.10",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

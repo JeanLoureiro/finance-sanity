@@ -19,7 +19,7 @@ const targetFile = process.argv[2] ? resolve(process.argv[2]) : null;
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
-const SKIP_DIRS = ["node_modules", ".next", ".git", "app/generated", "emails"];
+const SKIP_DIRS = ["node_modules", ".next", ".git", "app/generated", "emails", "e2e"];
 
 function walkDir(directory, files = []) {
   for (const entry of readdirSync(directory)) {
