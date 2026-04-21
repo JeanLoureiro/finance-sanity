@@ -2,21 +2,18 @@
 
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
-import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return <div className="h-8 w-8" />;
-
-  const isDark = resolvedTheme === "dark";
+  // Default to dark during SSR (matches defaultTheme="dark").
+  // suppressHydrationWarning lets React keep the server-rendered icon
+  // during hydration rather than patching the DOM, eliminating the
+  // empty-space → icon repaint that the mounted guard previously caused.
+  const isDark = resolvedTheme !== "light";
 
   return (
     <button
+      suppressHydrationWarning
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={() => setTheme(isDark ? "light" : "dark")}
       className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"

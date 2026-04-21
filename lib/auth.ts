@@ -1,5 +1,17 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+
+/**
+ * Cached per-request wrapper around supabase.auth.getUser().
+ * React.cache() deduplicates calls within a single server render tree,
+ * so DashboardLayout and page-level server components share one network
+ * round-trip instead of each making their own.
+ */
+export const getAuthUser = cache(async () => {
+  const supabase = await createClient();
+  return supabase.auth.getUser();
+});
 
 export type AuthorisedSettings = {
   settingsId: string;
@@ -32,11 +44,10 @@ const roleHierarchy: Record<string, number> = { READ: 1, WRITE: 2, OWNER: 3 };
 export async function getAuthorisedSettings(
   requiredRole: "READ" | "WRITE" | "OWNER" = "READ"
 ): Promise<AuthorisedSettings> {
-  const supabase = await createClient();
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser();
+  } = await getAuthUser();
 
   if (error || !user) {
     throw new AuthError(401, "Not authenticated");
