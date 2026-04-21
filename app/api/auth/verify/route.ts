@@ -3,6 +3,7 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyOTP, consumeOTP } from "@/lib/otp";
 import { verifySchema } from "@/lib/schemas";
+import { getOrCreateSettingsForUser } from "@/lib/userSettings";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -51,6 +52,14 @@ export async function POST(request: NextRequest) {
   }
 
   await consumeOTP(parsed.data.token);
+
+  // Provision UserSettings for new users so every page works immediately after sign-in.
+  const {
+    data: { user: signedInUser },
+  } = await supabase.auth.getUser();
+  if (signedInUser) {
+    await getOrCreateSettingsForUser(signedInUser.id, signedInUser.email ?? "");
+  }
 
   return NextResponse.json({ redirectTo: "/net-worth" });
 }
