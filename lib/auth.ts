@@ -1,16 +1,29 @@
 import { cache } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
 /**
- * Cached per-request wrapper around supabase.auth.getUser().
- * React.cache() deduplicates calls within a single server render tree,
- * so DashboardLayout and page-level server components share one network
- * round-trip instead of each making their own.
+ * Reads the verified user identity from the request headers injected by
+ * proxy.ts middleware. The middleware calls getUser() once (server-side JWT
+ * verification) and writes the result into x-user-id / x-user-email so that
+ * server components never need a second Supabase network round-trip.
+ *
+ * React.cache() deduplicates within a single render tree — multiple server
+ * components calling getAuthUser() share one header read per request.
  */
 export const getAuthUser = cache(async () => {
-  const supabase = await createClient();
-  return supabase.auth.getUser();
+  const headersList = await headers();
+  const userId = headersList.get("x-user-id");
+  const email = headersList.get("x-user-email");
+
+  if (!userId) {
+    return { data: { user: null }, error: new Error("Not authenticated") } as const;
+  }
+
+  return {
+    data: { user: { id: userId, email: email ?? undefined } },
+    error: null,
+  } as const;
 });
 
 export type AuthorisedSettings = {
