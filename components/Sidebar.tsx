@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { createClient } from "@/lib/supabase/client";
 import {
   LayoutDashboard,
   Banknote,
@@ -26,7 +26,6 @@ import {
   X,
   LogOut,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/net-worth", label: "Net Worth", icon: LayoutDashboard },
@@ -48,16 +47,8 @@ const navItems = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export function Sidebar({ onClose }: { onClose?: () => void }) {
+export function Sidebar({ onClose, email }: { onClose?: () => void; email: string | null }) {
   const pathname = usePathname();
-  const [email, setEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setEmail(data.user?.email ?? null);
-    });
-  }, []);
 
   async function handleSignOut() {
     const supabase = createClient();

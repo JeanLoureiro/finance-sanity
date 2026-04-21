@@ -5,7 +5,7 @@ import { Menu } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { ThemeToggle } from "./ThemeToggle";
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+export function DashboardShell({ children, email }: { children: React.ReactNode; email: string | null }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -27,7 +27,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        <Sidebar onClose={() => setSidebarOpen(false)} />
+        <Sidebar onClose={() => setSidebarOpen(false)} email={email} />
       </div>
 
       {/* Main content */}
