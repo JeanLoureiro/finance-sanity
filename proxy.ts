@@ -86,7 +86,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  return response;
+  // Forward the verified user identity to server components via internal request
+  // headers so they never need to call getUser() themselves (saves one Supabase
+  // network round-trip per page render). Strip the headers first to prevent
+  // client forgery.
+  const forwardHeaders = new Headers(request.headers);
+  forwardHeaders.delete("x-user-id");
+  forwardHeaders.delete("x-user-email");
+  if (user) {
+    forwardHeaders.set("x-user-id", user.id);
+    if (user.email) forwardHeaders.set("x-user-email", user.email);
+  }
+  const finalResponse = NextResponse.next({ request: { headers: forwardHeaders } });
+  // Re-apply cookies set during token refresh (if setAll was called above)
+  response.cookies.getAll().forEach(({ name, value, ...opts }) =>
+    finalResponse.cookies.set(name, value, opts)
+  );
+  return finalResponse;
 }
 
 export const config = {
