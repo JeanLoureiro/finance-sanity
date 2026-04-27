@@ -54,9 +54,9 @@ const roleHierarchy: Record<string, number> = { READ: 1, WRITE: 2, OWNER: 3 };
  * Throws AuthError(401) if not authenticated.
  * Throws AuthError(403) if authenticated but not authorised.
  */
-export async function getAuthorisedSettings(
+export const getAuthorisedSettings = cache(async (
   requiredRole: "READ" | "WRITE" | "OWNER" = "READ"
-): Promise<AuthorisedSettings> {
+): Promise<AuthorisedSettings> => {
   const {
     data: { user },
     error,
@@ -105,7 +105,7 @@ export async function getAuthorisedSettings(
     settingsId: grant.ownerSettingsId,
     role: grant.role as "READ" | "WRITE",
   };
-}
+});
 
 /**
  * Verifies that a resource's settingsId matches the authorised settings row.
