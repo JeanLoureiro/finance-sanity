@@ -61,13 +61,13 @@ npx prisma generate      # Regenerate client only (no migration)
 ```
 app/
   (dashboard)/         # Route group — all authenticated pages share layout.tsx
-    net-worth/         # Main dashboard (aggregated net worth + chart)
+    dashboard/         # Main dashboard (aggregated net worth + chart)
     cash/ stocks/ etfs/ crypto/ managed-funds/
     dividends/ budget/ loans/ property/ super/
     side-income/ other-assets/ capital-gains/ fire/ import/ settings/
   api/                 # 53 route handlers — one folder per domain
   layout.tsx           # Root layout — mounts <Providers> (QueryClient, ThemeProvider)
-  page.tsx             # Redirects to /net-worth
+  page.tsx             # Landing page
 components/
   DashboardShell.tsx   # Sidebar + mobile nav wrapper
   Providers.tsx        # Client boundary for React Query + next-themes

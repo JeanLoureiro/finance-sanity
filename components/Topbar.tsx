@@ -6,7 +6,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "@/lib/utils";
 
 const BREADCRUMBS: Record<string, { section: string; page: string }> = {
-  "/net-worth":     { section: "Overview",         page: "Net Worth" },
+  "/dashboard":     { section: "Overview",         page: "Dashboard" },
   "/etfs":          { section: "Investments",      page: "ETFs" },
   "/stocks":        { section: "Investments",      page: "Stocks" },
   "/crypto":        { section: "Investments",      page: "Crypto" },

@@ -3,7 +3,7 @@ type AssetType = "etfs" | "stocks" | "managed-funds" | "crypto";
 export const queryKeys = {
   settings: () => ["settings"] as const,
 
-  netWorth: () => ["net-worth"] as const,
+  dashboard: () => ["dashboard"] as const,
 
   history: {
     list: () => ["history", "list"] as const,

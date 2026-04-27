@@ -176,7 +176,7 @@ export default function ImportPage() {
         description="Import ETF, Stock, Managed Fund, or Crypto purchases/sales. Creates the holding if it doesn't exist."
         exampleCSV={PURCHASE_EXAMPLE}
         endpoint="/api/import/purchases"
-        invalidateKeys={["holdings", "capital-gains", "net-worth"]}
+        invalidateKeys={["holdings", "capital-gains", "dashboard"]}
         fields={[
           { name: "type", note: "ETF | Stock | MF | Crypto" },
           { name: "ticker", note: "e.g. A200.AX" },
@@ -193,7 +193,7 @@ export default function ImportPage() {
         description="Populate monthly snapshot history from your spreadsheet. Dates are snapped to end-of-month automatically."
         exampleCSV={HISTORY_EXAMPLE}
         endpoint="/api/history/backfill"
-        invalidateKeys={["history", "net-worth"]}
+        invalidateKeys={["history", "dashboard"]}
         fields={[
           { name: "date", note: "YYYY-MM-DD" },
           { name: "cashTotal", note: "" },

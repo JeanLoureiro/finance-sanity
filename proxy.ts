@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 // Paths that require authentication
 const PROTECTED_PREFIXES = [
-  "/net-worth",
+  "/dashboard",
   "/cash",
   "/stocks",
   "/etfs",

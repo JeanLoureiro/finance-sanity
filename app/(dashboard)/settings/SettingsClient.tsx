@@ -192,7 +192,7 @@ export default function SettingsPage() {
           <div className="divide-y divide-border">
             <SwitchRow
               label="Auto-record snapshot on payday"
-              description="Saves a net-worth snapshot each time you get paid. Weekly and fortnightly users need a Job Start Date set to calculate the cycle."
+              description="Saves a dashboard snapshot each time you get paid. Weekly and fortnightly users need a Job Start Date set to calculate the cycle."
               checked={!!watchedValues.autoSnapshot}
               onCheckedChange={(checked) => setValue("autoSnapshot", checked)}
             />

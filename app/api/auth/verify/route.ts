@@ -61,5 +61,5 @@ export async function POST(request: NextRequest) {
     await getOrCreateSettingsForUser(signedInUser.id, signedInUser.email ?? "");
   }
 
-  return NextResponse.json({ redirectTo: "/net-worth" });
+  return NextResponse.json({ redirectTo: "/dashboard" });
 }
