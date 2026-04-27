@@ -12,8 +12,6 @@ import {
   CheckCircle,
   Calculator,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import LandingNav from "@/components/landing/LandingNav"
 import FeatureCard from "@/components/landing/FeatureCard"
@@ -126,19 +124,13 @@ export default async function LandingPage() {
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/login"
-              className={cn(
-                buttonVariants({ size: "lg" }),
-                "bg-white px-8 font-semibold text-black hover:bg-white/90"
-              )}
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-white px-8 text-sm font-semibold text-black transition-all hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
             >
               Get started
             </Link>
             <a
               href="#features"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "lg" }),
-                "border-white/20 px-8 text-white hover:bg-white/10"
-              )}
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-white/20 bg-transparent px-8 text-sm font-medium text-white transition-all hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
             >
               See features
             </a>
@@ -266,10 +258,7 @@ export default async function LandingPage() {
         </p>
         <Link
           href="/login"
-          className={cn(
-            buttonVariants({ size: "lg" }),
-            "bg-white px-10 font-semibold text-black hover:bg-white/90"
-          )}
+          className="inline-flex h-9 items-center justify-center rounded-lg bg-white px-10 text-sm font-semibold text-black transition-all hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           Get started
         </Link>
