@@ -21,7 +21,16 @@ type HistoryItem = {
   savingsRate: number | null;
 };
 
-const COLORS = ["#2563eb", "#16a34a", "#d97706", "#9333ea", "#ef4444", "#0891b2", "#64748b"];
+// Approximate the Sanctum oklch category tokens as hex for Recharts (which cannot use CSS variables)
+const COLORS = [
+  "#4060c8", // cat-etf      oklch(0.55 0.080 250)
+  "#3a7a48", // cat-property oklch(0.55 0.060 140)
+  "#8040a0", // cat-super    oklch(0.55 0.075 320)
+  "#6050b8", // cat-stock    oklch(0.50 0.080 280)
+  "#3888b0", // cat-cash     oklch(0.62 0.060 200)
+  "#b07020", // cat-crypto   oklch(0.65 0.090 60)
+  "#2a7080", // cat-mf       oklch(0.50 0.060 180)
+];
 
 function formatDate(dateStr: string) {
   try { return format(new Date(dateStr), "MMM yy"); } catch { return dateStr; }
@@ -121,13 +130,13 @@ export function HistoryCharts({ history }: { history: HistoryItem[] }) {
             <AreaChart data={history} margin={{ left: 10, right: 10 }}>
               <defs>
                 {[
-                  ["etfGrad", "#2563eb"],
-                  ["stockGrad", "#16a34a"],
-                  ["cryptoGrad", "#d97706"],
-                  ["mfGrad", "#9333ea"],
-                  ["cashGrad", "#0891b2"],
-                  ["superGrad", "#64748b"],
-                  ["propGrad", "#ea580c"],
+                  ["etfGrad",    "#4060c8"],
+                  ["stockGrad",  "#6050b8"],
+                  ["cryptoGrad", "#b07020"],
+                  ["mfGrad",     "#2a7080"],
+                  ["cashGrad",   "#3888b0"],
+                  ["superGrad",  "#8040a0"],
+                  ["propGrad",   "#3a7a48"],
                 ].map(([gradientId, color]) => (
                   <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={color} stopOpacity={0.5} />
@@ -140,13 +149,13 @@ export function HistoryCharts({ history }: { history: HistoryItem[] }) {
               <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11 }} width={65} />
               <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0))} labelFormatter={(label) => formatDate(String(label))} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Area type="monotone" dataKey="etfTotal" stackId="a" stroke="#2563eb" fill="url(#etfGrad)" name="ETFs" strokeWidth={1.5} />
-              <Area type="monotone" dataKey="stockTotal" stackId="a" stroke="#16a34a" fill="url(#stockGrad)" name="Stocks" strokeWidth={1.5} />
-              <Area type="monotone" dataKey="cryptoTotal" stackId="a" stroke="#d97706" fill="url(#cryptoGrad)" name="Crypto" strokeWidth={1.5} />
-              <Area type="monotone" dataKey="managedFundTotal" stackId="a" stroke="#9333ea" fill="url(#mfGrad)" name="Managed Funds" strokeWidth={1.5} />
-              <Area type="monotone" dataKey="cashTotal" stackId="a" stroke="#0891b2" fill="url(#cashGrad)" name="Cash" strokeWidth={1.5} />
-              <Area type="monotone" dataKey="superTotal" stackId="a" stroke="#64748b" fill="url(#superGrad)" name="Super" strokeWidth={1.5} />
-              <Area type="monotone" dataKey="propertyValue" stackId="a" stroke="#ea580c" fill="url(#propGrad)" name="Property" strokeWidth={1.5} />
+              <Area type="monotone" dataKey="etfTotal"          stackId="a" stroke="#4060c8" fill="url(#etfGrad)"    name="ETFs"          strokeWidth={1.5} />
+              <Area type="monotone" dataKey="stockTotal"        stackId="a" stroke="#6050b8" fill="url(#stockGrad)"  name="Stocks"        strokeWidth={1.5} />
+              <Area type="monotone" dataKey="cryptoTotal"       stackId="a" stroke="#b07020" fill="url(#cryptoGrad)" name="Crypto"        strokeWidth={1.5} />
+              <Area type="monotone" dataKey="managedFundTotal"  stackId="a" stroke="#2a7080" fill="url(#mfGrad)"     name="Managed Funds" strokeWidth={1.5} />
+              <Area type="monotone" dataKey="cashTotal"         stackId="a" stroke="#3888b0" fill="url(#cashGrad)"   name="Cash"          strokeWidth={1.5} />
+              <Area type="monotone" dataKey="superTotal"        stackId="a" stroke="#8040a0" fill="url(#superGrad)"  name="Super"         strokeWidth={1.5} />
+              <Area type="monotone" dataKey="propertyValue"     stackId="a" stroke="#3a7a48" fill="url(#propGrad)"   name="Property"      strokeWidth={1.5} />
             </AreaChart>
           </ResponsiveContainer>
         </CardContent>

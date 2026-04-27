@@ -3,51 +3,87 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "./ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 import {
   LayoutDashboard,
-  Banknote,
   TrendingUp,
   BarChart3,
   Bitcoin,
-  Building2,
-  Wallet,
-  Flame,
-  History,
-  PiggyBank,
-  Receipt,
-  Clock,
+  Globe,
+  Landmark,
+  Home,
+  Banknote,
   Package,
   CreditCard,
-  Settings,
-  ChevronRight,
+  Wallet,
+  Clock,
+  Flame,
+  Receipt,
+  DollarSign,
   Upload,
-  X,
+  Settings,
   LogOut,
+  X,
 } from "lucide-react";
 
-const navItems = [
-  { href: "/net-worth", label: "Net Worth", icon: LayoutDashboard },
-  { href: "/cash", label: "Cash", icon: Banknote },
-  { href: "/etfs", label: "ETFs", icon: TrendingUp },
-  { href: "/stocks", label: "Stocks", icon: BarChart3 },
-  { href: "/managed-funds", label: "Managed Funds", icon: BarChart3 },
-  { href: "/crypto", label: "Crypto", icon: Bitcoin },
-  { href: "/dividends", label: "Dividends", icon: Receipt },
-  { href: "/property", label: "Property", icon: Building2 },
-  { href: "/loans", label: "Loans", icon: CreditCard },
-  { href: "/budget", label: "Budget", icon: Wallet },
-  { href: "/side-income", label: "Side Income", icon: Clock },
-  { href: "/super", label: "Super", icon: PiggyBank },
-  { href: "/capital-gains", label: "Capital Gains", icon: History },
-  { href: "/fire", label: "FIRE 🔥", icon: Flame },
-  { href: "/other-assets", label: "Other Assets", icon: Package },
-  { href: "/import", label: "Import CSV", icon: Upload },
-  { href: "/settings", label: "Settings", icon: Settings },
+const NAV_GROUPS = [
+  {
+    name: "Overview",
+    items: [
+      { href: "/net-worth", label: "Net Worth", icon: LayoutDashboard },
+    ],
+  },
+  {
+    name: "Investments",
+    items: [
+      { href: "/etfs",          label: "ETFs",          icon: TrendingUp },
+      { href: "/stocks",        label: "Stocks",        icon: BarChart3 },
+      { href: "/crypto",        label: "Crypto",        icon: Bitcoin },
+      { href: "/managed-funds", label: "Managed Funds", icon: Globe },
+      { href: "/super",         label: "Super",         icon: Landmark },
+      { href: "/dividends",     label: "Dividends",     icon: DollarSign },
+    ],
+  },
+  {
+    name: "Real assets & cash",
+    items: [
+      { href: "/property",     label: "Property",      icon: Home },
+      { href: "/cash",         label: "Cash & Savings", icon: Banknote },
+      { href: "/other-assets", label: "Other Assets",  icon: Package },
+    ],
+  },
+  {
+    name: "Liabilities",
+    items: [
+      { href: "/loans", label: "Loans & Debt", icon: CreditCard },
+    ],
+  },
+  {
+    name: "Planning",
+    items: [
+      { href: "/budget",        label: "Budget",         icon: Wallet },
+      { href: "/side-income",   label: "Side Income",    icon: Clock },
+      { href: "/fire",          label: "FIRE Projection", icon: Flame },
+      { href: "/capital-gains", label: "Capital Gains",  icon: Receipt },
+    ],
+  },
 ];
 
-export function Sidebar({ onClose, email }: { onClose?: () => void; email: string | null }) {
+function getInitials(email: string | null): string {
+  if (!email) return "U";
+  const local = email.split("@")[0];
+  const parts = local.split(/[._-]/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return local.slice(0, 2).toUpperCase();
+}
+
+interface SidebarProps {
+  collapsed: boolean;
+  onClose?: () => void;
+  email: string | null;
+}
+
+export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
   const pathname = usePathname();
 
   async function handleSignOut() {
@@ -56,59 +92,143 @@ export function Sidebar({ onClose, email }: { onClose?: () => void; email: strin
     window.location.href = "/login";
   }
 
+  const initials = getInitials(email);
+
   return (
-    <aside className="w-56 flex-shrink-0 border-r bg-background flex flex-col h-full">
-      <div className="p-4 border-b flex items-center justify-between">
-        <h1 className="font-bold text-sm tracking-tight">
-          Financial Sanity<br />
-          <span className="text-muted-foreground font-normal">Finance</span>
-        </h1>
-        <div className="flex items-center gap-1">
-          <ThemeToggle />
-          {onClose && (
-            <button
-              aria-label="Close navigation"
-              className="md:hidden p-1 rounded-md hover:bg-muted transition-colors"
-              onClick={onClose}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+    <aside
+      className={cn(
+        "flex flex-col h-full border-r border-border bg-card transition-[width] duration-200 overflow-hidden",
+        collapsed ? "w-16" : "w-[240px]"
+      )}
+    >
+      {/* Brand */}
+      <div className={cn(
+        "flex items-center gap-3 border-b border-border flex-shrink-0",
+        collapsed ? "px-4 py-4 justify-center" : "px-4 py-[18px]"
+      )}>
+        <div className="size-8 rounded-lg bg-foreground text-background grid place-items-center text-xs font-semibold tracking-wide flex-shrink-0">
+          FS
         </div>
-      </div>
-      <nav className="flex-1 overflow-y-auto py-2">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onClose}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2 text-sm rounded-md mx-1 transition-colors",
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              )}
-            >
-              <Icon className="h-4 w-4 flex-shrink-0" />
-              <span className="flex-1 truncate">{label}</span>
-              {active && <ChevronRight className="h-3 w-3" />}
-            </Link>
-          );
-        })}
-      </nav>
-      <div className="p-2 border-t">
-        {email && (
-          <p className="px-3 py-1 text-xs text-muted-foreground truncate">{email}</p>
+        {!collapsed && (
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold tracking-tight leading-none">Financial Sanity</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Personal · AUD</div>
+          </div>
         )}
-        <button
-          onClick={handleSignOut}
-          className="flex items-center gap-2 px-3 py-2 text-sm rounded-md w-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-        >
-          <LogOut className="h-4 w-4 flex-shrink-0" />
-          <span>Sign out</span>
-        </button>
+        {/* Mobile close button */}
+        {!collapsed && onClose && (
+          <button
+            aria-label="Close navigation"
+            className="md:hidden p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors ml-auto"
+            onClick={onClose}
+          >
+            <X className="size-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className={cn("flex-1 overflow-y-auto py-3", collapsed ? "px-1.5" : "px-2")} aria-label="Main navigation">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.name} className="mb-4">
+            {!collapsed && (
+              <div className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
+                {group.name}
+              </div>
+            )}
+            <div className="flex flex-col gap-px">
+              {group.items.map(({ href, label, icon: Icon }) => {
+                const isActive = pathname === href || pathname.startsWith(href + "/");
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={onClose}
+                    title={collapsed ? label : undefined}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all",
+                      collapsed ? "px-2 py-2 justify-center" : "px-2.5 py-[7px]",
+                      isActive
+                        ? "bg-fs-surface-inv text-fs-ink-on-inv"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    )}
+                  >
+                    <Icon className={cn("flex-shrink-0", collapsed ? "size-[18px]" : "size-4 opacity-85")} />
+                    {!collapsed && <span className="truncate">{label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {/* Footer links */}
+      {!collapsed && (
+        <div className="border-t border-border px-2 py-2 flex flex-col gap-px">
+          <Link
+            href="/import"
+            onClick={onClose}
+            className={cn(
+              "flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all",
+              pathname === "/import"
+                ? "bg-fs-surface-inv text-fs-ink-on-inv"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+            )}
+          >
+            <Upload className="size-4 flex-shrink-0 opacity-85" />
+            <span>Import CSV</span>
+          </Link>
+          <Link
+            href="/settings"
+            onClick={onClose}
+            className={cn(
+              "flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all",
+              pathname === "/settings"
+                ? "bg-fs-surface-inv text-fs-ink-on-inv"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+            )}
+          >
+            <Settings className="size-4 flex-shrink-0 opacity-85" />
+            <span>Settings</span>
+          </Link>
+        </div>
+      )}
+
+      {/* User footer */}
+      <div className={cn(
+        "border-t border-border flex-shrink-0",
+        collapsed ? "px-2 py-3 flex justify-center" : "px-3 py-3"
+      )}>
+        {collapsed ? (
+          <div
+            className="size-8 rounded-full grid place-items-center text-xs font-semibold flex-shrink-0"
+            style={{ background: "var(--fs-accent-100)", color: "var(--fs-accent-700)" }}
+            title={email ?? undefined}
+          >
+            {initials}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5">
+            <div
+              className="size-8 rounded-full grid place-items-center text-xs font-semibold flex-shrink-0"
+              style={{ background: "var(--fs-accent-100)", color: "var(--fs-accent-700)" }}
+            >
+              {initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[13px] font-medium truncate leading-none">{email?.split("@")[0] ?? "Account"}</div>
+              {email && <div className="text-[11px] text-muted-foreground truncate mt-0.5">{email}</div>}
+            </div>
+            <button
+              onClick={handleSignOut}
+              aria-label="Sign out"
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex-shrink-0"
+            >
+              <LogOut className="size-3.5" />
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );

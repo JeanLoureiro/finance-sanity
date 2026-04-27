@@ -5,10 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Shadcn variable mappings */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
-  --font-mono: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
   --font-heading: var(--font-inter);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -46,75 +47,231 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Sanctum semantic gain / loss utilities */
+  --color-gain: var(--fs-gain);
+  --color-gain-soft: var(--fs-gain-soft);
+  --color-gain-strong: var(--fs-gain-strong);
+  --color-loss: var(--fs-loss);
+  --color-loss-soft: var(--fs-loss-soft);
+  --color-loss-strong: var(--fs-loss-strong);
+
+  /* Sanctum accent utilities */
+  --color-fs-accent: var(--fs-accent-500);
+  --color-fs-accent-fg: var(--fs-accent-fg);
+  --color-fs-accent-hover: var(--fs-accent-600);
+  --color-fs-accent-subtle: var(--fs-accent-50);
+  --color-fs-accent-muted: var(--fs-accent-100);
+  --color-fs-accent-strong: var(--fs-accent-700);
+
+  /* Sanctum info / warn utilities */
+  --color-info-soft: var(--fs-info-soft);
+  --color-info-strong: var(--fs-info-strong);
+  --color-warn-soft: var(--fs-warn-soft);
+  --color-warn-strong: var(--fs-warn-strong);
+
+  /* Asset category colour utilities */
+  --color-cat-cash: var(--fs-cat-cash);
+  --color-cat-etf: var(--fs-cat-etf);
+  --color-cat-stock: var(--fs-cat-stock);
+  --color-cat-crypto: var(--fs-cat-crypto);
+  --color-cat-property: var(--fs-cat-property);
+  --color-cat-super: var(--fs-cat-super);
+  --color-cat-mf: var(--fs-cat-mf);
+  --color-cat-other: var(--fs-cat-other);
+
+  /* Sanctum surface / ink utilities */
+  --color-fs-surface-0: var(--fs-surface-0);
+  --color-fs-surface-1: var(--fs-surface-1);
+  --color-fs-surface-2: var(--fs-surface-2);
+  --color-fs-surface-3: var(--fs-surface-3);
+  --color-fs-surface-inv: var(--fs-surface-inv);
+  --color-fs-ink-1: var(--fs-ink-1);
+  --color-fs-ink-2: var(--fs-ink-2);
+  --color-fs-ink-3: var(--fs-ink-3);
+  --color-fs-ink-4: var(--fs-ink-4);
+  --color-fs-ink-on-inv: var(--fs-ink-on-inv);
 }
 
+/* ============================================================
+   LIGHT — Sanctum "warm neutral" palette
+   ============================================================ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* --- Shadcn variables (Sanctum-mapped) --- */
+  --background: oklch(0.992 0.004 80);      /* fs-surface-0 */
+  --foreground: oklch(0.18 0.008 60);        /* fs-ink-1 */
+  --card: oklch(0.985 0.005 80);             /* fs-surface-1 */
+  --card-foreground: oklch(0.18 0.008 60);
+  --popover: oklch(0.985 0.005 80);
+  --popover-foreground: oklch(0.18 0.008 60);
+  --primary: oklch(0.18 0.008 60);           /* ink-coloured buttons */
+  --primary-foreground: oklch(0.985 0.005 80);
+  --secondary: oklch(0.965 0.008 80);        /* fs-surface-2 */
+  --secondary-foreground: oklch(0.18 0.008 60);
+  --muted: oklch(0.965 0.008 80);
+  --muted-foreground: oklch(0.55 0.012 65);  /* fs-ink-3 */
+  --accent: oklch(0.62 0.115 50);            /* fs-accent-500 clay/amber */
+  --accent-foreground: oklch(0.985 0.005 80);
+  --destructive: oklch(0.58 0.155 28);       /* fs-loss */
+  --border: oklch(0.92 0.008 75);            /* fs-line-1 */
+  --input: oklch(0.88 0.010 75);             /* fs-line-2 */
+  --ring: oklch(0.36 0.010 60);              /* fs-ink-2 */
+  --chart-1: oklch(0.55 0.080 250);          /* cat-etf */
+  --chart-2: oklch(0.50 0.080 280);          /* cat-stock */
+  --chart-3: oklch(0.65 0.090 60);           /* cat-crypto */
+  --chart-4: oklch(0.55 0.060 140);          /* cat-property */
+  --chart-5: oklch(0.62 0.060 200);          /* cat-cash */
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.985 0.005 80);
+  --sidebar-foreground: oklch(0.18 0.008 60);
+  --sidebar-primary: oklch(0.18 0.008 60);
+  --sidebar-primary-foreground: oklch(0.985 0.005 80);
+  --sidebar-accent: oklch(0.965 0.008 80);
+  --sidebar-accent-foreground: oklch(0.18 0.008 60);
+  --sidebar-border: oklch(0.92 0.008 75);
+  --sidebar-ring: oklch(0.36 0.010 60);
+
+  /* --- Sanctum surface layers --- */
+  --fs-surface-0: oklch(0.992 0.004 80);
+  --fs-surface-1: oklch(0.985 0.005 80);
+  --fs-surface-2: oklch(0.965 0.008 80);
+  --fs-surface-3: oklch(0.945 0.010 80);
+  --fs-surface-inv: oklch(0.18 0.008 60);
+
+  /* --- Sanctum ink --- */
+  --fs-ink-1: oklch(0.18 0.008 60);
+  --fs-ink-2: oklch(0.36 0.010 60);
+  --fs-ink-3: oklch(0.55 0.012 65);
+  --fs-ink-4: oklch(0.72 0.012 70);
+  --fs-ink-on-inv: oklch(0.985 0.005 80);
+
+  /* --- Sanctum lines --- */
+  --fs-line-1: oklch(0.92 0.008 75);
+  --fs-line-2: oklch(0.88 0.010 75);
+  --fs-line-3: oklch(0.82 0.012 75);
+
+  /* --- Sanctum accent (clay / amber) --- */
+  --fs-accent-50: oklch(0.97 0.020 55);
+  --fs-accent-100: oklch(0.93 0.045 55);
+  --fs-accent-300: oklch(0.78 0.090 55);
+  --fs-accent-500: oklch(0.62 0.115 50);
+  --fs-accent-600: oklch(0.54 0.115 48);
+  --fs-accent-700: oklch(0.45 0.100 48);
+  --fs-accent-fg: oklch(0.985 0.005 80);
+
+  /* --- Semantic: gains / losses --- */
+  --fs-gain-soft: oklch(0.94 0.040 155);
+  --fs-gain: oklch(0.55 0.115 155);
+  --fs-gain-strong: oklch(0.45 0.105 155);
+  --fs-loss-soft: oklch(0.94 0.040 28);
+  --fs-loss: oklch(0.58 0.155 28);
+  --fs-loss-strong: oklch(0.48 0.150 28);
+
+  /* --- Info / Warn --- */
+  --fs-info-soft: oklch(0.94 0.030 240);
+  --fs-info-strong: oklch(0.42 0.090 240);
+  --fs-warn-soft: oklch(0.94 0.045 75);
+  --fs-warn-strong: oklch(0.45 0.110 60);
+
+  /* --- Asset category colours --- */
+  --fs-cat-cash: oklch(0.62 0.060 200);
+  --fs-cat-etf: oklch(0.55 0.080 250);
+  --fs-cat-stock: oklch(0.50 0.080 280);
+  --fs-cat-crypto: oklch(0.65 0.090 60);
+  --fs-cat-property: oklch(0.55 0.060 140);
+  --fs-cat-super: oklch(0.55 0.075 320);
+  --fs-cat-mf: oklch(0.50 0.060 180);
+  --fs-cat-other: oklch(0.55 0.020 90);
 }
 
+/* ============================================================
+   DARK — Sanctum dark palette
+   ============================================================ */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  /* --- Shadcn variables (Sanctum dark) --- */
+  --background: oklch(0.155 0.008 60);
+  --foreground: oklch(0.97 0.005 80);
+  --card: oklch(0.185 0.008 60);
+  --card-foreground: oklch(0.97 0.005 80);
+  --popover: oklch(0.185 0.008 60);
+  --popover-foreground: oklch(0.97 0.005 80);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --secondary: oklch(0.215 0.010 60);
+  --secondary-foreground: oklch(0.97 0.005 80);
+  --muted: oklch(0.215 0.010 60);
+  --muted-foreground: oklch(0.62 0.012 70);
+  --accent: oklch(0.72 0.115 55);
+  --accent-foreground: oklch(0.18 0.008 60);
+  --destructive: oklch(0.72 0.150 28);
+  --border: oklch(0.28 0.010 65);
+  --input: oklch(0.34 0.010 65);
+  --ring: oklch(0.78 0.010 75);
+  --chart-1: oklch(0.70 0.100 250);
+  --chart-2: oklch(0.66 0.100 280);
+  --chart-3: oklch(0.78 0.110 60);
+  --chart-4: oklch(0.72 0.080 140);
+  --chart-5: oklch(0.74 0.080 200);
+  --sidebar: oklch(0.185 0.008 60);
+  --sidebar-foreground: oklch(0.97 0.005 80);
+  --sidebar-primary: oklch(0.922 0 0);
+  --sidebar-primary-foreground: oklch(0.205 0 0);
+  --sidebar-accent: oklch(0.250 0.010 60);
+  --sidebar-accent-foreground: oklch(0.97 0.005 80);
+  --sidebar-border: oklch(0.28 0.010 65);
+  --sidebar-ring: oklch(0.78 0.010 75);
+
+  /* --- Sanctum surface layers (dark) --- */
+  --fs-surface-0: oklch(0.155 0.008 60);
+  --fs-surface-1: oklch(0.185 0.008 60);
+  --fs-surface-2: oklch(0.215 0.010 60);
+  --fs-surface-3: oklch(0.250 0.010 60);
+  --fs-surface-inv: oklch(0.985 0.005 80);
+
+  /* --- Sanctum ink (dark) --- */
+  --fs-ink-1: oklch(0.97 0.005 80);
+  --fs-ink-2: oklch(0.78 0.010 75);
+  --fs-ink-3: oklch(0.62 0.012 70);
+  --fs-ink-4: oklch(0.45 0.012 65);
+  --fs-ink-on-inv: oklch(0.18 0.008 60);
+
+  /* --- Sanctum lines (dark) --- */
+  --fs-line-1: oklch(0.28 0.010 65);
+  --fs-line-2: oklch(0.34 0.010 65);
+  --fs-line-3: oklch(0.40 0.012 65);
+
+  /* --- Sanctum accent (dark) --- */
+  --fs-accent-50: oklch(0.30 0.030 55);
+  --fs-accent-100: oklch(0.36 0.060 55);
+  --fs-accent-300: oklch(0.55 0.100 55);
+  --fs-accent-500: oklch(0.72 0.115 55);
+  --fs-accent-600: oklch(0.78 0.120 55);
+  --fs-accent-700: oklch(0.86 0.110 58);
+  --fs-accent-fg: oklch(0.18 0.008 60);
+
+  /* --- Semantic: gains / losses (dark) --- */
+  --fs-gain-soft: oklch(0.30 0.040 155);
+  --fs-gain: oklch(0.72 0.130 155);
+  --fs-gain-strong: oklch(0.82 0.130 155);
+  --fs-loss-soft: oklch(0.30 0.045 28);
+  --fs-loss: oklch(0.72 0.150 28);
+  --fs-loss-strong: oklch(0.82 0.150 28);
+
+  /* --- Info / Warn (dark) --- */
+  --fs-info-soft: oklch(0.28 0.035 240);
+  --fs-info-strong: oklch(0.72 0.110 240);
+  --fs-warn-soft: oklch(0.28 0.040 75);
+  --fs-warn-strong: oklch(0.78 0.120 65);
+
+  /* --- Asset category colours (dark) --- */
+  --fs-cat-cash: oklch(0.74 0.080 200);
+  --fs-cat-etf: oklch(0.70 0.100 250);
+  --fs-cat-stock: oklch(0.66 0.100 280);
+  --fs-cat-crypto: oklch(0.78 0.110 60);
+  --fs-cat-property: oklch(0.72 0.080 140);
+  --fs-cat-super: oklch(0.70 0.090 320);
+  --fs-cat-mf: oklch(0.68 0.075 180);
+  --fs-cat-other: oklch(0.72 0.020 90);
 }
 
 @layer base {
@@ -123,6 +280,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
   }
   html {
     @apply font-sans;

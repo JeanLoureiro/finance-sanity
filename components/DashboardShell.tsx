@@ -1,52 +1,57 @@
 "use client";
 
 import { useState } from "react";
-import { Menu } from "lucide-react";
 import { Sidebar } from "./Sidebar";
-import { ThemeToggle } from "./ThemeToggle";
+import { Topbar } from "./Topbar";
 
 export function DashboardShell({ children, email }: { children: React.ReactNode; email: string | null }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  function toggleSidebar() {
+    // On mobile: toggle drawer; on desktop: toggle collapsed
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setMobileOpen((open) => !open);
+    } else {
+      setCollapsed((c) => !c);
+    }
+  }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Mobile overlay backdrop */}
-      {sidebarOpen && (
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* Mobile overlay */}
+      {mobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => setMobileOpen(false)}
           aria-hidden
         />
       )}
 
-      {/* Sidebar — fixed overlay on mobile, static on desktop */}
+      {/* Sidebar — drawer on mobile, sticky on desktop */}
       <div
-        className={`
-          fixed inset-y-0 left-0 z-50 transition-transform duration-200
-          md:relative md:translate-x-0 md:z-auto
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
+        className={[
+          "fixed inset-y-0 left-0 z-50 md:relative md:translate-x-0 md:z-auto",
+          "transition-transform duration-200",
+          mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        ].join(" ")}
       >
-        <Sidebar onClose={() => setSidebarOpen(false)} email={email} />
+        <Sidebar
+          collapsed={collapsed}
+          onClose={() => setMobileOpen(false)}
+          email={email}
+        />
       </div>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-muted/30 flex flex-col min-w-0">
-        {/* Mobile topbar */}
-        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b bg-background flex-shrink-0">
-          <button
-            aria-label="Open navigation"
-            className="p-1 rounded-md hover:bg-muted transition-colors"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <span className="font-semibold text-sm flex-1">Financial Sanity</span>
-          <ThemeToggle />
-        </div>
-
-        <div className="p-4 md:p-6 max-w-6xl mx-auto w-full flex-1">{children}</div>
-      </main>
+      {/* Main column */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <Topbar onToggleSidebar={toggleSidebar} />
+        <main className="flex-1 overflow-y-auto">
+          <div className="px-6 py-7 pb-14 max-w-[1480px] mx-auto w-full md:px-8">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
