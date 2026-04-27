@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { formatAUD } from "@/lib/currency";
 
@@ -8,7 +9,7 @@ interface CurrencyAmountProps {
   compact?: boolean;
 }
 
-export function CurrencyAmount({ value, className, showSign, compact }: CurrencyAmountProps) {
+export const CurrencyAmount = memo(function CurrencyAmount({ value, className, showSign, compact }: CurrencyAmountProps) {
   const n = Number(value ?? 0);
   const formatted = compact
     ? new Intl.NumberFormat("en-AU", {
@@ -24,9 +25,9 @@ export function CurrencyAmount({ value, className, showSign, compact }: Currency
       {showSign && n > 0 ? `+${formatted}` : formatted}
     </span>
   );
-}
+});
 
-export function PercentChange({ value, className }: { value: number | null | undefined; className?: string }) {
+export const PercentChange = memo(function PercentChange({ value, className }: { value: number | null | undefined; className?: string }) {
   const n = Number(value ?? 0);
   const pct = (n * 100).toFixed(2);
   return (
@@ -34,4 +35,4 @@ export function PercentChange({ value, className }: { value: number | null | und
       {n >= 0 ? "+" : ""}{pct}%
     </span>
   );
-}
+});

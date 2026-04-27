@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 interface SparklineProps {
   data: number[];
   width?: number;
@@ -13,7 +15,7 @@ interface SparklineProps {
  * Minimal inline sparkline — Apple Health style: thin line, no fill, optional end dot.
  * Colour auto-detects trend (gain green / loss red) unless overridden.
  */
-export function Sparkline({
+export const Sparkline = memo(function Sparkline({
   data,
   width = 120,
   height = 36,
@@ -57,4 +59,4 @@ export function Sparkline({
       )}
     </svg>
   );
-}
+});
