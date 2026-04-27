@@ -18,7 +18,7 @@ export function DashboardShell({ children, email }: { children: React.ReactNode;
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden" style={{ background: "var(--fs-surface-0)" }}>
       {/* Mobile overlay */}
       {mobileOpen && (
         <div

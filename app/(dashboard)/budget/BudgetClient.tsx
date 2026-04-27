@@ -838,7 +838,10 @@ export default function BudgetPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Budget</h1>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Planning</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight" style={{ letterSpacing: "-0.01em" }}>Budget</h1>
+      </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -848,46 +851,46 @@ export default function BudgetPage() {
           { label: "Monthly Savings", value: monthlySavings, highlight: true },
           { label: "Savings Rate", value: null, pct: savingsRate },
         ].map(({ label, value, pct, highlight }) => (
-          <Card key={label} className={highlight && monthlySavings > 0 ? "border-green-500" : ""}>
-            <CardContent className="pt-4">
-              <p className="text-sm text-muted-foreground">{label}</p>
-              <p className={`text-2xl font-bold ${highlight ? (monthlySavings > 0 ? "text-green-600" : "text-red-500") : ""}`}>
+          <Card key={label} className={highlight && monthlySavings > 0 ? "border-[var(--fs-gain)]" : ""}>
+            <CardContent className="flex flex-col gap-1.5 px-5 py-[18px]">
+              <span className="text-[var(--font-size-text-sm)] text-[var(--fs-ink-3)]">{label}</span>
+              <span className={`font-semibold tracking-tight tabular-nums ${highlight ? (monthlySavings > 0 ? "text-[var(--fs-gain)]" : "text-[var(--fs-loss)]") : "text-[var(--fs-ink-1)]"}`} style={{ fontSize: "var(--font-size-text-2xl)", letterSpacing: "-0.01em" }}>
                 {pct !== undefined ? `${(pct * 100).toFixed(1)}%` : <CurrencyAmount value={value} />}
-              </p>
+              </span>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Card><CardContent className="pt-4">
-          <p className="text-sm text-muted-foreground">Annual Expenses</p>
-          <p className="text-xl font-bold"><CurrencyAmount value={totalExpenses * 12} /></p>
+        <Card><CardContent className="flex flex-col gap-1.5 px-5 py-[18px]">
+          <span className="text-[var(--font-size-text-sm)] text-[var(--fs-ink-3)]">Annual Expenses</span>
+          <span className="font-semibold tracking-tight tabular-nums text-[var(--fs-ink-1)]" style={{ fontSize: "var(--font-size-text-xl)", letterSpacing: "-0.01em" }}><CurrencyAmount value={totalExpenses * 12} /></span>
         </CardContent></Card>
-        <Card><CardContent className="pt-4">
-          <p className="text-sm text-muted-foreground">Emergency Fund Target ({settings?.emergencyFundMonths ?? 6} months)</p>
-          <p className="text-xl font-bold"><CurrencyAmount value={emergencyTarget} /></p>
+        <Card><CardContent className="flex flex-col gap-1.5 px-5 py-[18px]">
+          <span className="text-[var(--font-size-text-sm)] text-[var(--fs-ink-3)]">Emergency Fund Target ({settings?.emergencyFundMonths ?? 6} months)</span>
+          <span className="font-semibold tracking-tight tabular-nums text-[var(--fs-ink-1)]" style={{ fontSize: "var(--font-size-text-xl)", letterSpacing: "-0.01em" }}><CurrencyAmount value={emergencyTarget} /></span>
         </CardContent></Card>
       </div>
 
       {/* Per-type breakdown */}
       {typeBreakdown.length > 0 && (
         <div>
-          <p className="text-sm font-medium text-muted-foreground mb-2">Spending Breakdown</p>
+          <p className="text-sm font-semibold text-muted-foreground mb-3">Spending Breakdown</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {typeBreakdown.map(({ type, total, pct }) => (
               <Card
                 key={type}
-                className={`cursor-pointer transition-colors ${filters.types.includes(type) ? "border-primary bg-primary/5" : "hover:border-primary/40"}`}
+                className={`cursor-pointer transition-all duration-200 ${filters.types.includes(type) ? "border-[var(--fs-accent-500)] bg-[var(--fs-accent-50)]" : "hover:border-border/60 hover:shadow-sm hover:-translate-y-0.5"}`}
                 onClick={() => {
                   patchFilters({ types: filters.types.includes(type) ? filters.types.filter((x) => x !== type) : [...filters.types, type] });
                   if (!showFilters) setShowFilters(true);
                 }}
               >
-                <CardContent className="pt-3 pb-3">
-                  <p className="text-xs text-muted-foreground truncate">{type}</p>
-                  <p className="text-base font-bold"><CurrencyAmount value={total} /></p>
-                  <p className="text-xs text-muted-foreground">{(pct * 100).toFixed(1)}% of income</p>
+                <CardContent className="pt-3.5 pb-3.5">
+                  <p className="text-xs text-muted-foreground truncate mb-1">{type}</p>
+                  <p className="text-base font-semibold tracking-tight tabular-nums"><CurrencyAmount value={total} /></p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{(pct * 100).toFixed(1)}% of income</p>
                 </CardContent>
               </Card>
             ))}
