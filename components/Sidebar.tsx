@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -85,6 +86,21 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  // While a transition is in flight use the clicked href; once it settles
+  // fall back to the real pathname so external navigations stay correct.
+  const activeHref = isPending && pendingHref ? pendingHref : pathname;
+
+  function navigate(href: string) {
+    setPendingHref(href);
+    onClose?.();
+    startTransition(() => {
+      router.push(href);
+    });
+  }
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -138,12 +154,12 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
             )}
             <div className="flex flex-col gap-px">
               {group.items.map(({ href, label, icon: Icon }) => {
-                const isActive = pathname === href || pathname.startsWith(href + "/");
+                const isActive = activeHref === href || activeHref.startsWith(href + "/");
                 return (
                   <Link
                     key={href}
                     href={href}
-                    onClick={onClose}
+                    onClick={(event) => { event.preventDefault(); navigate(href); }}
                     title={collapsed ? label : undefined}
                     className={cn(
                       "flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all",
@@ -168,10 +184,10 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
         <div className="border-t border-border px-2 py-2 flex flex-col gap-px">
           <Link
             href="/import"
-            onClick={onClose}
+            onClick={(event) => { event.preventDefault(); navigate("/import"); }}
             className={cn(
               "flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all",
-              pathname === "/import"
+              activeHref === "/import"
                 ? "bg-fs-surface-inv text-fs-ink-on-inv"
                 : "text-muted-foreground hover:text-foreground hover:bg-secondary"
             )}
@@ -181,10 +197,10 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
           </Link>
           <Link
             href="/settings"
-            onClick={onClose}
+            onClick={(event) => { event.preventDefault(); navigate("/settings"); }}
             className={cn(
               "flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all",
-              pathname === "/settings"
+              activeHref === "/settings"
                 ? "bg-fs-surface-inv text-fs-ink-on-inv"
                 : "text-muted-foreground hover:text-foreground hover:bg-secondary"
             )}
