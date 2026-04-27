@@ -2,15 +2,20 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { CurrencyAmount } from "@/components/ui/currency-amount";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Delta } from "@/components/ui/delta";
+import { Sparkline } from "@/components/ui/sparkline";
+import { AllocationBar, type AllocationSegment } from "@/components/ui/allocation-bar";
 import dynamic from "next/dynamic";
+import { Download, Plus } from "lucide-react";
 
 const AllocationChart = dynamic(
   () => import("./Charts").then((module) => ({ default: module.AllocationChart })),
-  { ssr: false, loading: () => <Skeleton className="h-[360px] w-full" /> }
+  { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> }
 );
 
 const HistoryCharts = dynamic(
@@ -33,6 +38,7 @@ type NWData = {
   properties: { id: string; name: string; currentValue: number; currentMortgageBalance: number; mortgageRemainingBalance: number; equityLoanBalance: number; equity: number }[];
   superAccounts: { id: string; name: string; balance: number }[];
 };
+
 
 export default function NetWorthPage() {
   const qc = useQueryClient();
@@ -61,138 +67,348 @@ export default function NetWorthPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-32 w-full" />
-        <div className="grid grid-cols-3 gap-4">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-20" />)}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-36 col-span-1 sm:col-span-2 lg:col-span-2" />
+          <Skeleton className="h-36" />
+          <Skeleton className="h-36" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-72" />
+        </div>
       </div>
     );
   }
 
   if (!data || (data as { error?: string }).error) {
-    return <div className="text-muted-foreground">No data yet. Complete setup in Settings first.</div>;
+    return <p className="text-muted-foreground">No data yet. Complete setup in Settings first.</p>;
   }
 
-  const etfLiveValue = (data.etfHoldings ?? []).reduce((s, h) => {
-    const price = (etfPrices as Record<string, { price: number | null }>)?.[h.ticker]?.price;
-    return s + (price != null ? price * h.unitsHeld : h.costBasis);
+  // ── Computed values ────────────────────────────────────────────────
+  const etfLiveValue = (data.etfHoldings ?? []).reduce((sum, holding) => {
+    const price = (etfPrices as Record<string, { price: number | null }>)?.[holding.ticker]?.price;
+    return sum + (price != null ? price * holding.unitsHeld : holding.costBasis);
   }, 0);
 
-  const stockValue = data.stockHoldings.reduce((s, h) => s + h.costBasis, 0);
-  const cryptoValue = data.cryptoHoldings.reduce((s, h) => s + h.costBasis, 0);
+  const stockValue = data.stockHoldings.reduce((sum, holding) => sum + holding.costBasis, 0);
+  const cryptoValue = data.cryptoHoldings.reduce((sum, holding) => sum + holding.costBasis, 0);
 
   const totalInvestable = etfLiveValue + stockValue + cryptoValue + data.cashTotal;
   const totalAssets = totalInvestable + data.superTotal + data.propertyTotal;
   const netWorth = totalAssets - data.liabilitiesTotal;
+  const propertyEquity = data.properties.reduce((sum, property) => sum + property.equity, 0);
 
+  // Month-over-month delta from history snapshots
+  const latestSnapshot = data.history.at(-1);
+  const previousSnapshot = data.history.at(-2);
+  const monthDelta = latestSnapshot && previousSnapshot
+    ? latestSnapshot.netWorth - previousSnapshot.netWorth
+    : 0;
+  const monthDeltaPercent = previousSnapshot && previousSnapshot.netWorth > 0
+    ? (monthDelta / previousSnapshot.netWorth) * 100
+    : 0;
+
+  // Sparkline data from history (last 12 points)
+  const historyNetWorth = data.history.slice(-12).map((item) => item.netWorth);
+  const historyInvestable = data.history.slice(-12).map(
+    (item) => item.etfTotal + item.stockTotal + item.cryptoTotal + item.cashTotal
+  );
+  const historyLiabilities = data.history.slice(-12).map((item) => item.liabilitiesTotal);
+
+  // Allocation for the bar + donut
   const allocationData = [
-    { name: "ETFs", value: etfLiveValue, target: data.allocationSettings.etf },
-    { name: "Stocks", value: stockValue, target: data.allocationSettings.stock },
-    { name: "Crypto", value: cryptoValue, target: data.allocationSettings.crypto },
-    { name: "Cash", value: data.cashTotal, target: data.allocationSettings.cash },
-  ].filter((d) => d.value > 0);
+    { name: "ETFs",    value: etfLiveValue, target: data.allocationSettings.etf },
+    { name: "Stocks",  value: stockValue,   target: data.allocationSettings.stock },
+    { name: "Crypto",  value: cryptoValue,  target: data.allocationSettings.crypto },
+    { name: "Cash",    value: data.cashTotal, target: data.allocationSettings.cash },
+  ].filter((item) => item.value > 0);
+
+  const allocationSegments: AllocationSegment[] = [
+    { name: "ETFs",     value: etfLiveValue,          color: "var(--fs-cat-etf)" },
+    { name: "Property", value: data.propertyTotal,    color: "var(--fs-cat-property)" },
+    { name: "Super",    value: data.superTotal,        color: "var(--fs-cat-super)" },
+    { name: "Stocks",   value: stockValue,             color: "var(--fs-cat-stock)" },
+    { name: "Cash",     value: data.cashTotal,         color: "var(--fs-cat-cash)" },
+    { name: "Crypto",   value: cryptoValue,            color: "var(--fs-cat-crypto)" },
+  ].filter((segment) => segment.value > 0);
 
   const assetRows = [
-    { label: "ETFs", value: etfLiveValue },
-    { label: "Stocks", value: stockValue },
-    { label: "Crypto", value: cryptoValue },
-    { label: "Cash Savings", value: data.cashTotal },
-    { label: "Super / Retirement", value: data.superTotal },
-    { label: "Property", value: data.propertyTotal },
-    { label: "Liabilities", value: -data.liabilitiesTotal },
+    { label: "ETFs",               value: etfLiveValue,          color: "var(--fs-cat-etf)",      histKey: "etfTotal" },
+    { label: "Stocks",             value: stockValue,             color: "var(--fs-cat-stock)",    histKey: "stockTotal" },
+    { label: "Crypto",             value: cryptoValue,            color: "var(--fs-cat-crypto)",   histKey: "cryptoTotal" },
+    { label: "Cash Savings",       value: data.cashTotal,         color: "var(--fs-cat-cash)",     histKey: "cashTotal" },
+    { label: "Super / Retirement", value: data.superTotal,        color: "var(--fs-cat-super)",    histKey: "superTotal" },
+    { label: "Property",           value: data.propertyTotal,     color: "var(--fs-cat-property)", histKey: "propertyValue" },
+    { label: "Liabilities",        value: -data.liabilitiesTotal, color: "var(--fs-loss)",         histKey: "liabilitiesTotal" },
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Net Worth</h1>
-        <Button
-          onClick={() => recordMutation.mutate()}
-          disabled={recordMutation.isPending}
-          variant="outline"
-        >
-          {recordMutation.isPending ? "Recording…" : "📅 Record Month"}
-        </Button>
+    <div className="flex flex-col gap-6">
+      {/* ── Page header ──────────────────────────────────────────── */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Overview</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Net Worth</h1>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Button variant="outline" size="sm">
+            <Download className="size-3.5" />
+            Export
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => recordMutation.mutate()}
+            disabled={recordMutation.isPending}
+          >
+            <Plus className="size-3.5" />
+            {recordMutation.isPending ? "Recording…" : "Record snapshot"}
+          </Button>
+        </div>
       </div>
 
-      {/* Hero */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="col-span-2 bg-primary text-primary-foreground">
-          <CardContent className="pt-4">
-            <p className="text-sm opacity-80">Total Net Worth</p>
-            <p className="text-4xl font-bold mt-1"><CurrencyAmount value={netWorth} /></p>
+      {/* ── Hero KPI strip ───────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-4 items-stretch">
+        {/* Hero card — inverted */}
+        <div
+          className="rounded-xl p-5 flex flex-col justify-between min-h-[140px]"
+          style={{ background: "var(--fs-surface-inv)", color: "var(--fs-ink-on-inv)" }}
+        >
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.6)" }}>
+              Total Net Worth
+            </span>
+            <span className="text-[28px] font-semibold tracking-tight tabular-nums leading-none">
+              <CurrencyAmount value={netWorth} />
+            </span>
+            <div className="flex items-center gap-2 text-sm" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.7)" }}>
+              {monthDelta !== 0 && (
+                <Delta value={monthDelta} percent={monthDeltaPercent} showIcon />
+              )}
+              {monthDelta !== 0 && <span>this month</span>}
+            </div>
+          </div>
+          {historyNetWorth.length >= 2 && (
+            <div className="mt-3">
+              <Sparkline
+                data={historyNetWorth}
+                width={280}
+                height={32}
+                color="var(--fs-ink-on-inv)"
+                strokeWidth={1.25}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Investable */}
+        <Card className="flex flex-col justify-between">
+          <CardContent className="pt-4 pb-4 flex flex-col gap-1.5">
+            <span className="text-sm text-muted-foreground">Investable assets</span>
+            <span className="text-[22px] font-semibold tracking-tight tabular-nums leading-none">
+              <CurrencyAmount value={totalInvestable} />
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {totalAssets > 0 ? `${((totalInvestable / totalAssets) * 100).toFixed(0)}% of total assets` : "—"}
+            </span>
+            {historyInvestable.length >= 2 && (
+              <div className="mt-2">
+                <Sparkline
+                  data={historyInvestable}
+                  width={200}
+                  height={28}
+                  color="var(--fs-cat-etf)"
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
-        <Card><CardContent className="pt-4">
-          <p className="text-sm text-muted-foreground">Total Assets</p>
-          <p className="text-2xl font-bold"><CurrencyAmount value={totalAssets} /></p>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4">
-          <p className="text-sm text-muted-foreground">Liabilities</p>
-          <p className="text-2xl font-bold text-red-500"><CurrencyAmount value={data.liabilitiesTotal} /></p>
-        </CardContent></Card>
+
+        {/* Property equity */}
+        <Card className="flex flex-col justify-between">
+          <CardContent className="pt-4 pb-4 flex flex-col gap-1.5">
+            <span className="text-sm text-muted-foreground">Property equity</span>
+            <span className="text-[22px] font-semibold tracking-tight tabular-nums leading-none">
+              <CurrencyAmount value={propertyEquity} />
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {data.properties.length} {data.properties.length === 1 ? "property" : "properties"}
+            </span>
+          </CardContent>
+        </Card>
+
+        {/* Liabilities */}
+        <Card className="flex flex-col justify-between">
+          <CardContent className="pt-4 pb-4 flex flex-col gap-1.5">
+            <span className="text-sm text-muted-foreground">Liabilities</span>
+            <span className="text-[22px] font-semibold tracking-tight tabular-nums leading-none text-loss">
+              <CurrencyAmount value={data.liabilitiesTotal} />
+            </span>
+            {historyLiabilities.length >= 2 && (
+              <>
+                <Delta
+                  value={-(historyLiabilities.at(-1)! - historyLiabilities.at(-2)!)}
+                  percent={
+                    historyLiabilities.at(-2)! > 0
+                      ? (-(historyLiabilities.at(-1)! - historyLiabilities.at(-2)!) / historyLiabilities.at(-2)!) * 100
+                      : 0
+                  }
+                  showIcon
+                />
+                <div className="mt-2">
+                  <Sparkline
+                    data={historyLiabilities}
+                    width={200}
+                    height={28}
+                    color="var(--fs-loss)"
+                  />
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Breakdown + allocation */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* ── History chart + Allocation ────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
+        {data.history.length > 1 && (
+          <HistoryCharts history={data.history} />
+        )}
+
+        <div className="flex flex-col gap-4">
+          {/* Allocation bar */}
+          {allocationSegments.length > 0 && (
+            <Card>
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-semibold">Allocation</span>
+                  <Badge variant="outline" className="text-xs tabular-nums">
+                    <CurrencyAmount value={totalAssets} compact />
+                  </Badge>
+                </div>
+                <AllocationBar segments={allocationSegments} height={10} />
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+                  {allocationSegments.map((segment) => (
+                    <div key={segment.name} className="flex items-center gap-1.5 text-xs">
+                      <span className="size-2 rounded-full flex-shrink-0" style={{ background: segment.color }} />
+                      <span className="text-muted-foreground">{segment.name}</span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {totalAssets > 0 ? `${((segment.value / totalAssets) * 100).toFixed(1)}%` : "—"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {allocationData.length > 0 && (
+            <AllocationChart allocationData={allocationData} totalInvestable={totalInvestable} />
+          )}
+        </div>
+      </div>
+
+      {/* ── Asset breakdown table ─────────────────────────────────── */}
+      <Card>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <span className="text-[15px] font-semibold">Asset breakdown</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Category</th>
+                <th className="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Value</th>
+                <th className="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">% of total</th>
+                <th className="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide hidden sm:table-cell">12m trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              {assetRows.filter((row) => row.value !== 0).map((row) => {
+                const sparkData = data.history.slice(-9).map(
+                  (item) => Math.abs(item[row.histKey as keyof typeof item] as number)
+                );
+                return (
+                  <tr key={row.label} className="border-b border-border last:border-0 hover:bg-secondary/40 transition-colors">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="size-2 rounded-full flex-shrink-0" style={{ background: row.color }} />
+                        <span>{row.label}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-right font-medium tabular-nums">
+                      <CurrencyAmount value={row.value} showSign={row.value < 0} />
+                    </td>
+                    <td className="px-5 py-3 text-right text-muted-foreground tabular-nums">
+                      {totalAssets > 0 ? `${((Math.abs(row.value) / totalAssets) * 100).toFixed(1)}%` : "—"}
+                    </td>
+                    <td className="px-5 py-3 text-right hidden sm:table-cell">
+                      {sparkData.length >= 2 && (
+                        <Sparkline
+                          data={sparkData}
+                          width={80}
+                          height={20}
+                          color={row.color}
+                        />
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* ── Properties table ─────────────────────────────────────── */}
+      {data.properties.length > 0 && (
         <Card>
-          <CardHeader><CardTitle className="text-base">Asset Breakdown</CardTitle></CardHeader>
-          <CardContent className="p-0">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <span className="text-[15px] font-semibold">Properties</span>
+          </div>
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-muted/50 border-b">
-                <tr>
-                  <th className="text-left px-4 py-2">Asset</th>
-                  <th className="text-right px-4 py-2">Value</th>
-                  <th className="text-right px-4 py-2">% of Assets</th>
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Property</th>
+                  <th className="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Value</th>
+                  <th className="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Mortgage</th>
+                  <th className="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Equity</th>
                 </tr>
               </thead>
               <tbody>
-                {assetRows.map(({ label, value }) => (
-                  <tr key={label} className={`border-b last:border-0 ${value < 0 ? "text-red-500" : ""}`}>
-                    <td className="px-4 py-2">{label}</td>
-                    <td className="px-4 py-2 text-right font-medium"><CurrencyAmount value={value} /></td>
-                    <td className="px-4 py-2 text-right text-muted-foreground">
-                      {totalAssets > 0 ? `${(Math.abs(value) / totalAssets * 100).toFixed(1)}%` : "—"}
-                    </td>
-                  </tr>
-                ))}
+                {data.properties.map((property) => {
+                  const lvr = property.currentValue > 0
+                    ? (property.currentMortgageBalance / property.currentValue) * 100
+                    : 0;
+                  return (
+                    <tr key={property.id} className="border-b border-border last:border-0 hover:bg-secondary/40 transition-colors">
+                      <td className="px-5 py-3">
+                        <div className="font-medium">{property.name}</div>
+                      </td>
+                      <td className="px-5 py-3 text-right tabular-nums">
+                        <CurrencyAmount value={property.currentValue} />
+                      </td>
+                      <td className="px-5 py-3 text-right tabular-nums text-loss">
+                        <CurrencyAmount value={property.currentMortgageBalance} />
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="font-medium tabular-nums">
+                            <CurrencyAmount value={property.equity} />
+                          </span>
+                          {lvr > 0 && (
+                            <Badge variant={lvr > 70 ? "warn" : "outline"} className="text-xs tabular-nums">
+                              {lvr.toFixed(0)}% LVR
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
-          </CardContent>
-        </Card>
-
-        {allocationData.length > 0 && (
-          <AllocationChart allocationData={allocationData} totalInvestable={totalInvestable} />
-        )}
-      </div>
-
-      {/* History charts */}
-      {data.history.length > 1 && (
-        <HistoryCharts history={data.history} />
-      )}
-
-      {/* Properties */}
-      {data.properties.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="text-base">Properties</CardTitle></CardHeader>
-          <CardContent className="p-0">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 border-b"><tr>
-                <th className="text-left px-4 py-2">Property</th>
-                <th className="text-right px-4 py-2">Value</th>
-                <th className="text-right px-4 py-2">Mortgage</th>
-                <th className="text-right px-4 py-2">Equity</th>
-              </tr></thead>
-              <tbody>
-                {data.properties.map((p) => (
-                  <tr key={p.id} className="border-b last:border-0">
-                    <td className="px-4 py-2">{p.name}</td>
-                    <td className="px-4 py-2 text-right"><CurrencyAmount value={p.currentValue} /></td>
-                    <td className="px-4 py-2 text-right text-red-500"><CurrencyAmount value={p.currentMortgageBalance} /></td>
-                    <td className="px-4 py-2 text-right font-medium"><CurrencyAmount value={p.equity} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
+          </div>
         </Card>
       )}
     </div>

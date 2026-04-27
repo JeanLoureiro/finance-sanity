@@ -19,6 +19,13 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Financial Sanity semantic variants
+        gain: "bg-gain-soft text-gain-strong border-transparent",
+        loss: "bg-loss-soft text-loss-strong border-transparent",
+        accent:
+          "bg-fs-accent-subtle text-fs-accent-strong border-fs-accent-muted",
+        info: "bg-info-soft text-info-strong border-transparent",
+        warn: "bg-warn-soft text-warn-strong border-transparent",
       },
     },
     defaultVariants: {

@@ -20,7 +20,7 @@ export function CurrencyAmount({ value, className, showSign, compact }: Currency
     : formatAUD(n);
 
   return (
-    <span className={cn(showSign && n > 0 && "text-green-600", showSign && n < 0 && "text-red-500", className)}>
+    <span className={cn(showSign && n > 0 && "text-gain", showSign && n < 0 && "text-loss", className)}>
       {showSign && n > 0 ? `+${formatted}` : formatted}
     </span>
   );
@@ -30,7 +30,7 @@ export function PercentChange({ value, className }: { value: number | null | und
   const n = Number(value ?? 0);
   const pct = (n * 100).toFixed(2);
   return (
-    <span className={cn("text-sm font-medium", n >= 0 ? "text-green-600" : "text-red-500", className)}>
+    <span className={cn("text-sm font-medium tabular-nums", n >= 0 ? "text-gain" : "text-loss", className)}>
       {n >= 0 ? "+" : ""}{pct}%
     </span>
   );
