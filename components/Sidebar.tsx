@@ -25,6 +25,7 @@ import {
   Settings,
   LogOut,
   X,
+  BookOpen,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -120,8 +121,10 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
       {/* Brand */}
       <div className={cn(
         "flex items-center gap-3 border-b border-border flex-shrink-0",
-        collapsed ? "px-4 py-4 justify-center" : "px-4 py-[18px]"
-      )}>
+        collapsed ? "px-4 py-4 justify-center" : "px-4"
+      )}
+      style={!collapsed ? { paddingTop: "calc(var(--spacing) * 2.8)", paddingBottom: "calc(var(--spacing) * 2.8)" } : undefined}
+      >
         <div className="size-8 rounded-lg bg-foreground text-background grid place-items-center text-xs font-semibold tracking-wide flex-shrink-0">
           FS
         </div>
@@ -182,6 +185,19 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
       {/* Footer links */}
       {!collapsed && (
         <div className="border-t border-border px-2 py-2 flex flex-col gap-px">
+          <Link
+            href="/glossary"
+            onClick={(event) => { event.preventDefault(); navigate("/glossary"); }}
+            className={cn(
+              "flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all",
+              activeHref === "/glossary"
+                ? "bg-fs-surface-inv text-fs-ink-on-inv"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+            )}
+          >
+            <BookOpen className="size-4 flex-shrink-0 opacity-85" />
+            <span>Glossary</span>
+          </Link>
           <Link
             href="/import"
             onClick={(event) => { event.preventDefault(); navigate("/import"); }}
