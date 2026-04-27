@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', 'recharts', '@tanstack/react-query'],
   },
   compress: true,
+  productionBrowserSourceMaps: false,
 };
 
 export default nextConfig;

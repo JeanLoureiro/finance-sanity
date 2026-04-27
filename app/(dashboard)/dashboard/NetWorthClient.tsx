@@ -14,7 +14,7 @@ import dynamic from "next/dynamic";
 import { Download, Plus } from "lucide-react";
 
 const AllocationChart = dynamic(
-  () => import(/* webpackPrefetch: true */ "./Charts").then((module) => ({ default: module.AllocationChart })),
+  () => import("./Charts").then((module) => ({ default: module.AllocationChart })),
   { 
     ssr: false, 
     loading: () => <Skeleton className="h-64 w-full" />,
@@ -22,7 +22,7 @@ const AllocationChart = dynamic(
 );
 
 const HistoryCharts = dynamic(
-  () => import(/* webpackPrefetch: true */ "./Charts").then((module) => ({ default: module.HistoryCharts })),
+  () => import("./Charts").then((module) => ({ default: module.HistoryCharts })),
   { 
     ssr: false, 
     loading: () => <Skeleton className="h-72 w-full" />,
