@@ -63,7 +63,7 @@ export default function VerifyPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Finance Sanity</CardTitle>
+          <CardTitle>Financial Sanity</CardTitle>
         </CardHeader>
         <CardContent>
           <Suspense fallback={<p className="text-sm text-muted-foreground">Loading…</p>}>
