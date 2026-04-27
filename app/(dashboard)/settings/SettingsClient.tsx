@@ -146,7 +146,7 @@ export default function SettingsPage() {
 
   return (
     <div className="pb-24">
-      <form onSubmit={handleSubmit((values) => mutate(values))} className="space-y-10 max-w-2xl">
+      <form onSubmit={handleSubmit((values) => mutate(values))} className="space-y-10">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Configure</p>
           <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
@@ -156,7 +156,7 @@ export default function SettingsPage() {
         <section>
           <SectionHeader title="Income" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Annual Salary ($)" error={errors.salary?.message}>
+            <Field label="Annual Salary ($)" description="Before tax" error={errors.salary?.message}>
               <Input type="number" {...register("salary")} />
             </Field>
             <Field label="Tax Bracket" description="e.g. 0.35 = 35%" error={errors.taxBracket?.message}>
@@ -178,9 +178,11 @@ export default function SettingsPage() {
             <Field label="Net Monthly Income ($)" error={errors.netIncome?.message}>
               <Input type="number" {...register("netIncome")} />
             </Field>
-            <Field label="Day of Month Paid" error={errors.dayOfMonthPaid?.message}>
-              <Input type="number" min={1} max={31} {...register("dayOfMonthPaid")} />
-            </Field>
+            <div className="sm:col-span-2">
+              <Field label="Day of Month Paid" error={errors.dayOfMonthPaid?.message}>
+                <Input type="number" min={1} max={31} {...register("dayOfMonthPaid")} />
+              </Field>
+            </div>
           </div>
         </section>
 
@@ -248,7 +250,7 @@ export default function SettingsPage() {
         <section>
           <SectionHeader title="Capital Gains Tax" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="CGT Method">
+            <Field label="CGT Method" description="First In First Out">
               <Select
                 defaultValue={data?.cgtMethod}
                 onValueChange={(value) => setValue("cgtMethod", value as SettingsInput["cgtMethod"])}
@@ -339,7 +341,7 @@ export default function SettingsPage() {
       </form>
 
       {data?.role === "OWNER" && (
-        <Card className="mt-10 max-w-2xl">
+        <Card className="mt-10">
           <CardHeader>
             <CardTitle className="text-base">Sharing</CardTitle>
           </CardHeader>
