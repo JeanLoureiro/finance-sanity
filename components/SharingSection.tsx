@@ -48,6 +48,7 @@ export default function SharingSection() {
   const [role, setRole] = useState<"READ" | "WRITE">("READ");
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   const { data: grants = [], isLoading } = useQuery<Grant[]>({
     queryKey: queryKeys.sharing.grants(),
@@ -120,6 +121,22 @@ export default function SharingSection() {
     },
   });
 
+  const resendMutation = useMutation({
+    mutationFn: async (token: string) => {
+      const response = await fetch(`/api/invitations/${token}/resend`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error ?? "Failed to resend invite");
+      }
+    },
+    onSuccess: () => {
+      setResendSuccess(true);
+      setTimeout(() => setResendSuccess(false), 4000);
+    },
+  });
+
   function handleInvite(event: React.FormEvent) {
     event.preventDefault();
     setInviteError(null);
@@ -174,7 +191,14 @@ export default function SharingSection() {
         <p className="text-sm text-destructive">{inviteError}</p>
       )}
       {inviteSuccess && (
-        <p className="text-sm text-green-600">Invitation sent successfully.</p>
+        <p className="text-sm text-green-600">
+          Invitation sent! They&apos;ll get instant access when they click the link in the email.
+        </p>
+      )}
+      {resendSuccess && (
+        <p className="text-sm text-green-600">
+          Invitation email resent successfully.
+        </p>
       )}
 
       {isLoading ? (
@@ -220,6 +244,25 @@ export default function SharingSection() {
                           Restore access
                         </Button>
                       )}
+                    </div>
+                  ) : grant.status === "PENDING" ? (
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={resendMutation.isPending}
+                        onClick={() => resendMutation.mutate(grant.token)}
+                      >
+                        Resend
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={revokeMutation.isPending}
+                        onClick={() => revokeMutation.mutate(grant.token)}
+                      >
+                        Revoke
+                      </Button>
                     </div>
                   ) : (
                     <Button

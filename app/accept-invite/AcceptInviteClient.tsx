@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ type Props = {
 };
 
 export default function AcceptInviteClient({ token, invite }: Props) {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
@@ -26,7 +26,45 @@ export default function AcceptInviteClient({ token, invite }: Props) {
 
   const roleLabel = invite.role === "WRITE" ? "full read & write" : "read-only";
 
-  async function handleAccept() {
+  useEffect(() => {
+    let cancelled = false;
+
+    async function autoAccept() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (cancelled) return;
+
+      if (!user) {
+        router.push(`/login?redirectedFrom=/accept-invite?token=${token}`);
+        return;
+      }
+
+      const response = await fetch(`/api/invitations/${token}/accept`, {
+        method: "POST",
+      });
+
+      if (cancelled) return;
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error ?? "Failed to accept invite");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/net-worth");
+    }
+
+    autoAccept();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, router, supabase]);
+
+  async function handleRetry() {
     setLoading(true);
     setError(null);
 
@@ -35,7 +73,6 @@ export default function AcceptInviteClient({ token, invite }: Props) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      // Redirect to login, then back here after auth
       router.push(`/login?redirectedFrom=/accept-invite?token=${token}`);
       return;
     }
@@ -51,7 +88,6 @@ export default function AcceptInviteClient({ token, invite }: Props) {
       return;
     }
 
-    // The API redirects to /net-worth — follow it
     router.push("/net-worth");
   }
 
@@ -59,7 +95,9 @@ export default function AcceptInviteClient({ token, invite }: Props) {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>You have been invited</CardTitle>
+          <CardTitle>
+            {loading && !error ? "Accepting invitation…" : "You have been invited"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
@@ -69,15 +107,24 @@ export default function AcceptInviteClient({ token, invite }: Props) {
             <strong>{roleLabel}</strong> access.
           </p>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {loading && !error && (
+            <p className="text-sm text-muted-foreground">
+              Please wait while we set up your access...
+            </p>
+          )}
 
-          <Button
-            className="w-full"
-            onClick={handleAccept}
-            disabled={loading}
-          >
-            {loading ? "Accepting…" : "Accept invitation"}
-          </Button>
+          {error && (
+            <>
+              <p className="text-sm text-destructive">{error}</p>
+              <Button
+                className="w-full"
+                onClick={handleRetry}
+                disabled={loading}
+              >
+                Try again
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
