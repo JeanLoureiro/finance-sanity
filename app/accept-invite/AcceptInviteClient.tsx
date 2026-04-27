@@ -54,7 +54,7 @@ export default function AcceptInviteClient({ token, invite }: Props) {
         return;
       }
 
-      router.push("/net-worth");
+      router.push("/dashboard");
     }
 
     autoAccept();
@@ -88,7 +88,7 @@ export default function AcceptInviteClient({ token, invite }: Props) {
       return;
     }
 
-    router.push("/net-worth");
+    router.push("/dashboard");
   }
 
   return (

@@ -44,7 +44,7 @@ export async function POST(
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    return NextResponse.redirect(`${appUrl}/net-worth`);
+    return NextResponse.redirect(`${appUrl}/dashboard`);
   } catch {
     return Response.json({ error: "Failed to accept invite" }, { status: 500 });
   }

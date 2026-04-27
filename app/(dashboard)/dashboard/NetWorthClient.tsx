@@ -44,8 +44,8 @@ export default function NetWorthClient() {
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery<NWData>({
-    queryKey: queryKeys.netWorth(),
-    queryFn: () => fetch("/api/net-worth").then((r) => r.json()),
+    queryKey: queryKeys.dashboard(),
+    queryFn: () => fetch("/api/dashboard").then((r) => r.json()),
   });
 
   const etfTickers = data?.etfHoldings.map((h) => h.ticker) ?? [];
@@ -59,7 +59,7 @@ export default function NetWorthClient() {
   const recordMutation = useMutation({
     mutationFn: () => fetch("/api/history/record", { method: "POST" }).then((r) => r.json()),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.netWorth() });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard() });
       qc.invalidateQueries({ queryKey: queryKeys.history.list() });
     },
   });
@@ -148,7 +148,7 @@ export default function NetWorthClient() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Overview</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Net Worth</h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Dashboard</h1>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button variant="outline" size="sm">

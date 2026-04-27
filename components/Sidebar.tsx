@@ -32,7 +32,7 @@ const NAV_GROUPS = [
   {
     name: "Overview",
     items: [
-      { href: "/net-worth", label: "Net Worth", icon: LayoutDashboard },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     ],
   },
   {

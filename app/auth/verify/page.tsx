@@ -24,7 +24,7 @@ function VerifyContent() {
 
     if (response.ok) {
       const data = await response.json();
-      window.location.href = data.redirectTo || "/net-worth";
+      window.location.href = data.redirectTo || "/dashboard";
       return;
     }
 
