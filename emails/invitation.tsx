@@ -38,12 +38,12 @@ export default function InvitationEmail({
           </Text>
           <Section style={buttonContainer}>
             <Button style={button} href={inviteLink}>
-              Accept Invitation
+              Accept & View Data
             </Button>
           </Section>
           <Text style={text}>
-            Click the button above to create your account and accept the
-            invitation.
+            Click the button above to get instant access. If you don&apos;t have an
+            account yet, you&apos;ll be asked to sign in first.
           </Text>
           <Text style={footer}>
             If you weren&apos;t expecting this invitation, you can safely ignore
