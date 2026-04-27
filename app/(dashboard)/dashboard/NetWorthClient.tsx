@@ -52,6 +52,7 @@ export default function NetWorthClient() {
   const { data, isLoading } = useQuery<NWData>({
     queryKey: queryKeys.dashboard(),
     queryFn: () => fetch("/api/dashboard").then((r) => r.json()),
+    staleTime: 30 * 1000,
   });
 
   const etfTickers = data?.etfHoldings.map((h) => h.ticker) ?? [];
@@ -177,13 +178,16 @@ export default function NetWorthClient() {
         {/* Hero card — inverted */}
         <div
           className="rounded-xl p-5 flex flex-col justify-between min-h-[140px]"
-          style={{ background: "var(--fs-surface-inv)", color: "var(--fs-ink-on-inv)", contentVisibility: "auto" }}
+          style={{ background: "var(--fs-surface-inv)", color: "var(--fs-ink-on-inv)" }}
         >
           <div className="flex flex-col gap-1.5">
             <span className="text-sm" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.6)" }}>
               Total Net Worth
             </span>
-            <span className="text-[28px] font-semibold tracking-tight tabular-nums leading-none" style={{ willChange: "auto" }}>
+            <span 
+              className="text-[28px] font-semibold tracking-tight tabular-nums leading-none"
+              style={{ fontFamily: "var(--font-inter), system-ui, -apple-system, sans-serif" }}
+            >
               <CurrencyAmount value={netWorth} />
             </span>
             <div className="flex items-center gap-2 text-sm" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.7)" }}>
