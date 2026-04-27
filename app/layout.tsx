@@ -9,16 +9,20 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "600"],
   preload: true,
-  adjustFontFallback: true,
+  fallback: ["system-ui", "sans-serif"],
+  adjustFontFallback: false,
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
   display: "swap",
-  preload: true,
-  adjustFontFallback: true,
+  weight: ["400", "600"],
+  preload: false,
+  fallback: ["ui-monospace", "monospace"],
+  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,7 +15,7 @@ import dynamic from "next/dynamic";
 import { Download, Plus } from "lucide-react";
 
 const AllocationChart = dynamic(
-  () => import(/* webpackPrefetch: true */ "./Charts").then((module) => ({ default: module.AllocationChart })),
+  () => import("./Charts").then((module) => ({ default: module.AllocationChart })),
   { 
     ssr: false, 
     loading: () => <Skeleton className="h-64 w-full" />,
@@ -22,7 +23,7 @@ const AllocationChart = dynamic(
 );
 
 const HistoryCharts = dynamic(
-  () => import(/* webpackPrefetch: true */ "./Charts").then((module) => ({ default: module.HistoryCharts })),
+  () => import("./Charts").then((module) => ({ default: module.HistoryCharts })),
   { 
     ssr: false, 
     loading: () => <Skeleton className="h-72 w-full" />,
@@ -52,6 +53,7 @@ export default function NetWorthClient() {
   const { data, isLoading } = useQuery<NWData>({
     queryKey: queryKeys.dashboard(),
     queryFn: () => fetch("/api/dashboard").then((r) => r.json()),
+    staleTime: 30 * 1000,
   });
 
   const etfTickers = data?.etfHoldings.map((h) => h.ticker) ?? [];
@@ -91,54 +93,57 @@ export default function NetWorthClient() {
   }
 
   // ── Computed values ────────────────────────────────────────────────
-  const etfLiveValue = (data.etfHoldings ?? []).reduce((sum, holding) => {
+  const etfLiveValue = useMemo(() => (data.etfHoldings ?? []).reduce((sum, holding) => {
     const price = (etfPrices as Record<string, { price: number | null }>)?.[holding.ticker]?.price;
     return sum + (price != null ? price * holding.unitsHeld : holding.costBasis);
-  }, 0);
+  }, 0), [data.etfHoldings, etfPrices]);
 
-  const stockValue = data.stockHoldings.reduce((sum, holding) => sum + holding.costBasis, 0);
-  const cryptoValue = data.cryptoHoldings.reduce((sum, holding) => sum + holding.costBasis, 0);
+  const stockValue = useMemo(() => data.stockHoldings.reduce((sum, holding) => sum + holding.costBasis, 0), [data.stockHoldings]);
+  const cryptoValue = useMemo(() => data.cryptoHoldings.reduce((sum, holding) => sum + holding.costBasis, 0), [data.cryptoHoldings]);
 
-  const totalInvestable = etfLiveValue + stockValue + cryptoValue + data.cashTotal;
-  const totalAssets = totalInvestable + data.superTotal + data.propertyTotal;
-  const netWorth = totalAssets - data.liabilitiesTotal;
-  const propertyEquity = data.properties.reduce((sum, property) => sum + property.equity, 0);
+  const totalInvestable = useMemo(() => etfLiveValue + stockValue + cryptoValue + data.cashTotal, [etfLiveValue, stockValue, cryptoValue, data.cashTotal]);
+  const totalAssets = useMemo(() => totalInvestable + data.superTotal + data.propertyTotal, [totalInvestable, data.superTotal, data.propertyTotal]);
+  const netWorth = useMemo(() => totalAssets - data.liabilitiesTotal, [totalAssets, data.liabilitiesTotal]);
+  const propertyEquity = useMemo(() => data.properties.reduce((sum, property) => sum + property.equity, 0), [data.properties]);
 
   // Month-over-month delta from history snapshots
-  const latestSnapshot = data.history.at(-1);
-  const previousSnapshot = data.history.at(-2);
-  const monthDelta = latestSnapshot && previousSnapshot
-    ? latestSnapshot.netWorth - previousSnapshot.netWorth
-    : 0;
-  const monthDeltaPercent = previousSnapshot && previousSnapshot.netWorth > 0
-    ? (monthDelta / previousSnapshot.netWorth) * 100
-    : 0;
+  const { monthDelta, monthDeltaPercent } = useMemo(() => {
+    const latestSnapshot = data.history.at(-1);
+    const previousSnapshot = data.history.at(-2);
+    const delta = latestSnapshot && previousSnapshot
+      ? latestSnapshot.netWorth - previousSnapshot.netWorth
+      : 0;
+    const deltaPercent = previousSnapshot && previousSnapshot.netWorth > 0
+      ? (delta / previousSnapshot.netWorth) * 100
+      : 0;
+    return { monthDelta: delta, monthDeltaPercent: deltaPercent };
+  }, [data.history]);
 
   // Sparkline data from history (last 12 points)
-  const historyNetWorth = data.history.slice(-12).map((item) => item.netWorth);
-  const historyInvestable = data.history.slice(-12).map(
+  const historyNetWorth = useMemo(() => data.history.slice(-12).map((item) => item.netWorth), [data.history]);
+  const historyInvestable = useMemo(() => data.history.slice(-12).map(
     (item) => item.etfTotal + item.stockTotal + item.cryptoTotal + item.cashTotal
-  );
-  const historyLiabilities = data.history.slice(-12).map((item) => item.liabilitiesTotal);
+  ), [data.history]);
+  const historyLiabilities = useMemo(() => data.history.slice(-12).map((item) => item.liabilitiesTotal), [data.history]);
 
   // Allocation for the bar + donut
-  const allocationData = [
+  const allocationData = useMemo(() => [
     { name: "ETFs",    value: etfLiveValue, target: data.allocationSettings.etf },
     { name: "Stocks",  value: stockValue,   target: data.allocationSettings.stock },
     { name: "Crypto",  value: cryptoValue,  target: data.allocationSettings.crypto },
     { name: "Cash",    value: data.cashTotal, target: data.allocationSettings.cash },
-  ].filter((item) => item.value > 0);
+  ].filter((item) => item.value > 0), [etfLiveValue, stockValue, cryptoValue, data.cashTotal, data.allocationSettings]);
 
-  const allocationSegments: AllocationSegment[] = [
+  const allocationSegments: AllocationSegment[] = useMemo(() => [
     { name: "ETFs",     value: etfLiveValue,          color: "var(--fs-cat-etf)" },
     { name: "Property", value: data.propertyTotal,    color: "var(--fs-cat-property)" },
     { name: "Super",    value: data.superTotal,        color: "var(--fs-cat-super)" },
     { name: "Stocks",   value: stockValue,             color: "var(--fs-cat-stock)" },
     { name: "Cash",     value: data.cashTotal,         color: "var(--fs-cat-cash)" },
     { name: "Crypto",   value: cryptoValue,            color: "var(--fs-cat-crypto)" },
-  ].filter((segment) => segment.value > 0);
+  ].filter((segment) => segment.value > 0), [etfLiveValue, data.propertyTotal, data.superTotal, stockValue, data.cashTotal, cryptoValue]);
 
-  const assetRows = [
+  const assetRows = useMemo(() => [
     { label: "ETFs",               value: etfLiveValue,          color: "var(--fs-cat-etf)",      histKey: "etfTotal" },
     { label: "Stocks",             value: stockValue,             color: "var(--fs-cat-stock)",    histKey: "stockTotal" },
     { label: "Crypto",             value: cryptoValue,            color: "var(--fs-cat-crypto)",   histKey: "cryptoTotal" },
@@ -146,7 +151,7 @@ export default function NetWorthClient() {
     { label: "Super / Retirement", value: data.superTotal,        color: "var(--fs-cat-super)",    histKey: "superTotal" },
     { label: "Property",           value: data.propertyTotal,     color: "var(--fs-cat-property)", histKey: "propertyValue" },
     { label: "Liabilities",        value: -data.liabilitiesTotal, color: "var(--fs-loss)",         histKey: "liabilitiesTotal" },
-  ];
+  ], [etfLiveValue, stockValue, cryptoValue, data.cashTotal, data.superTotal, data.propertyTotal, data.liabilitiesTotal]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -183,7 +188,10 @@ export default function NetWorthClient() {
             <span className="text-sm" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.6)" }}>
               Total Net Worth
             </span>
-            <span className="text-[28px] font-semibold tracking-tight tabular-nums leading-none" style={{ willChange: "auto" }}>
+            <span 
+              className="text-[28px] font-semibold tracking-tight tabular-nums leading-none"
+              style={{ fontFamily: "var(--font-inter), system-ui, -apple-system, sans-serif" }}
+            >
               <CurrencyAmount value={netWorth} />
             </span>
             <div className="flex items-center gap-2 text-sm" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.7)" }}>

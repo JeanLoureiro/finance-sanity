@@ -1,9 +1,7 @@
 "use client";
 
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend,
-} from "recharts";
+import { memo } from "react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +37,7 @@ function formatDate(dateStr: string) {
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", notation: "compact", maximumFractionDigits: 1 }).format(value);
 
-export function AllocationChart({ allocationData, totalInvestable }: { allocationData: AllocationItem[]; totalInvestable: number }) {
+export const AllocationChart = memo(function AllocationChart({ allocationData, totalInvestable }: { allocationData: AllocationItem[]; totalInvestable: number }) {
   return (
     <Card>
       <CardHeader><CardTitle className="text-base">Asset Allocation</CardTitle></CardHeader>
@@ -118,9 +116,9 @@ export function AllocationChart({ allocationData, totalInvestable }: { allocatio
       </CardContent>
     </Card>
   );
-}
+});
 
-export function HistoryCharts({ history }: { history: HistoryItem[] }) {
+export const HistoryCharts = memo(function HistoryCharts({ history }: { history: HistoryItem[] }) {
   return (
     <>
       <Card>
@@ -195,4 +193,4 @@ export function HistoryCharts({ history }: { history: HistoryItem[] }) {
       )}
     </>
   );
-}
+});
