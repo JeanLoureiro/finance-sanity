@@ -182,7 +182,7 @@ export default function NetWorthClient() {
         {/* Hero card — inverted */}
         <div
           className="rounded-xl p-5 flex flex-col justify-between min-h-[140px]"
-          style={{ background: "var(--fs-surface-inv)", color: "var(--fs-ink-on-inv)" }}
+          style={{ background: "var(--fs-surface-inv)", color: "var(--fs-ink-on-inv)", contentVisibility: "auto" }}
         >
           <div className="flex flex-col gap-1.5">
             <span className="text-sm" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.6)" }}>
