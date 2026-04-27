@@ -8,18 +8,25 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
-  display: "optional",
+  display: "swap",
+  preload: true,
+  adjustFontFallback: true,
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
-  display: "optional",
+  display: "swap",
+  preload: true,
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
   title: "Financial Sanity",
   description: "Personal wealth tracker",
+  other: {
+    'fetchpriority': 'high',
+  },
 };
 
 export default function RootLayout({

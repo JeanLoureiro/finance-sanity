@@ -1,6 +1,6 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -293,6 +293,8 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "cv11", "ss01";
+    font-synthesis: none;
+    text-rendering: optimizeSpeed;
   }
   html {
     @apply font-sans;

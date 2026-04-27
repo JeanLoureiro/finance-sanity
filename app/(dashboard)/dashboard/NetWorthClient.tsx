@@ -14,13 +14,19 @@ import dynamic from "next/dynamic";
 import { Download, Plus } from "lucide-react";
 
 const AllocationChart = dynamic(
-  () => import("./Charts").then((module) => ({ default: module.AllocationChart })),
-  { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> }
+  () => import(/* webpackPrefetch: true */ "./Charts").then((module) => ({ default: module.AllocationChart })),
+  { 
+    ssr: false, 
+    loading: () => <Skeleton className="h-64 w-full" />,
+  }
 );
 
 const HistoryCharts = dynamic(
-  () => import("./Charts").then((module) => ({ default: module.HistoryCharts })),
-  { ssr: false, loading: () => <Skeleton className="h-72 w-full" /> }
+  () => import(/* webpackPrefetch: true */ "./Charts").then((module) => ({ default: module.HistoryCharts })),
+  { 
+    ssr: false, 
+    loading: () => <Skeleton className="h-72 w-full" />,
+  }
 );
 
 type NWData = {
@@ -171,13 +177,13 @@ export default function NetWorthClient() {
         {/* Hero card — inverted */}
         <div
           className="rounded-xl p-5 flex flex-col justify-between min-h-[140px]"
-          style={{ background: "var(--fs-surface-inv)", color: "var(--fs-ink-on-inv)" }}
+          style={{ background: "var(--fs-surface-inv)", color: "var(--fs-ink-on-inv)", contentVisibility: "auto" }}
         >
           <div className="flex flex-col gap-1.5">
             <span className="text-sm" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.6)" }}>
               Total Net Worth
             </span>
-            <span className="text-[28px] font-semibold tracking-tight tabular-nums leading-none">
+            <span className="text-[28px] font-semibold tracking-tight tabular-nums leading-none" style={{ willChange: "auto" }}>
               <CurrencyAmount value={netWorth} />
             </span>
             <div className="flex items-center gap-2 text-sm" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.7)" }}>
