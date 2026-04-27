@@ -3,6 +3,11 @@ import { getAuthorisedSettings } from "@/lib/auth";
 import { computeNetWorth } from "@/lib/netWorth";
 import { queryKeys } from "@/lib/queryKeys";
 import NetWorthClient from "./NetWorthClient";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dashboard - Financial Sanity",
+};
 
 export default async function DashboardPage() {
   const queryClient = new QueryClient();
