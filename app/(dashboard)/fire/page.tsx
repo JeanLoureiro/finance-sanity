@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CurrencyAmount } from "@/components/ui/currency-amount";
 import type { FIREResult, FIRERow } from "@/app/api/fire/route";
@@ -35,17 +36,17 @@ function ProgressBar({ value, max, color = "bg-primary" }: { value: number; max:
 }
 
 function PhaseChip({ phase }: { phase: FIRERow["phase"] }) {
-  const map = {
-    accumulation: "bg-blue-100 text-blue-700",
-    drawdown: "bg-orange-100 text-orange-700",
-    "super-access": "bg-green-100 text-green-700",
+  const variantMap: Record<FIRERow["phase"], "info" | "warn" | "gain"> = {
+    accumulation: "info",
+    drawdown: "warn",
+    "super-access": "gain",
   };
-  const label = { accumulation: "Accumulate", drawdown: "Drawdown", "super-access": "Super Access" };
-  return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${map[phase]}`}>
-      {label[phase]}
-    </span>
-  );
+  const labelMap: Record<FIRERow["phase"], string> = {
+    accumulation: "Accumulate",
+    drawdown: "Drawdown",
+    "super-access": "Super Access",
+  };
+  return <Badge variant={variantMap[phase]}>{labelMap[phase]}</Badge>;
 }
 
 export default function FirePage() {
@@ -99,17 +100,18 @@ export default function FirePage() {
     <div className="space-y-6">
       {/* Hero */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="col-span-2 bg-primary text-primary-foreground">
-          <CardContent className="pt-4">
-            <p className="text-sm opacity-80">FIRE</p>
-            <p className="text-4xl font-bold mt-1">{headline}</p>
-            {!alreadyFIRE && (
-              <p className="text-sm opacity-80 mt-2">
-                Pre-super FIRE {preSuperFIREYear} (age {fireAge}) · Full FIRE {superFIREYear}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        <div
+          className="col-span-2 rounded-xl p-5 flex flex-col justify-between"
+          style={{ background: "var(--fs-surface-inv)", color: "var(--fs-ink-on-inv)" }}
+        >
+          <p className="text-sm" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.6)" }}>FIRE</p>
+          <p className="text-4xl font-bold mt-1 leading-none">{headline}</p>
+          {!alreadyFIRE && (
+            <p className="text-sm mt-2" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.7)" }}>
+              Pre-super FIRE {preSuperFIREYear} (age {fireAge}) · Full FIRE {superFIREYear}
+            </p>
+          )}
+        </div>
         <Card>
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground">Pre-Super FIRE in</p>
@@ -131,7 +133,7 @@ export default function FirePage() {
         <Card>
           <CardHeader><CardTitle className="text-base">Pre-Super NW Progress</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <ProgressBar value={currentNW} max={preSuperFIRETarget} color="bg-blue-500" />
+            <ProgressBar value={currentNW} max={preSuperFIRETarget} color="bg-fs-accent" />
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Current Investable NW</p>
@@ -156,7 +158,7 @@ export default function FirePage() {
         <Card>
           <CardHeader><CardTitle className="text-base">Super Progress</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <ProgressBar value={currentSuper} max={superFIRETarget} color="bg-slate-500" />
+            <ProgressBar value={currentSuper} max={superFIRETarget} color="bg-muted-foreground/60" />
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Current Super</p>
@@ -229,9 +231,9 @@ export default function FirePage() {
                     key={row.year}
                     className={`border-b last:border-0 ${
                       row.year === preSuperFIREYear
-                        ? "bg-green-50 font-semibold"
+                        ? "bg-gain-soft font-semibold"
                         : row.year === superFIREYear
-                        ? "bg-emerald-50 font-semibold"
+                        ? "bg-gain-soft/60 font-semibold"
                         : "hover:bg-muted/30"
                     }`}
                   >
@@ -239,7 +241,7 @@ export default function FirePage() {
                     <td className="px-3 py-1.5 text-right">{row.age}</td>
                     <td className="px-3 py-1.5 text-right">{fmtCompact(row.investNW)}</td>
                     <td className="px-3 py-1.5 text-right text-muted-foreground">{fmtCompact(row.nwTarget)}</td>
-                    <td className={`px-3 py-1.5 text-right ${row.surplus >= 0 ? "text-green-600" : "text-red-500"}`}>
+                    <td className={`px-3 py-1.5 text-right ${row.surplus >= 0 ? "text-gain" : "text-loss"}`}>
                       {row.surplus >= 0 ? "+" : ""}{fmtCompact(row.surplus)}
                     </td>
                     <td className="px-3 py-1.5 text-right">{fmtCompact(row.superBal)}</td>

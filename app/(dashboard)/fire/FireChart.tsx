@@ -35,11 +35,12 @@ export default function FireChart({ chartRows, preSuperFIREYear, yearOfBirth }: 
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             {preSuperFIREYear && (
-              <ReferenceLine x={preSuperFIREYear} stroke="#22c55e" strokeDasharray="4 2" label={{ value: "Pre-FIRE", fontSize: 10, fill: "#22c55e" }} />
+              <ReferenceLine x={preSuperFIREYear} stroke="#3a7a48" strokeDasharray="4 2" label={{ value: "Pre-FIRE", fontSize: 10, fill: "#3a7a48" }} />
             )}
-            <Area type="monotone" dataKey="nwTarget" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.15} strokeWidth={1} name="NW Target" strokeDasharray="4 2" />
-            <Line type="monotone" dataKey="investNW" stroke="#2563eb" strokeWidth={2} dot={false} name="Investable NW" />
-            <Line type="monotone" dataKey="superBal" stroke="#64748b" strokeWidth={2} dot={false} name="Super Balance" />
+            {/* nwTarget: muted/slate  investNW: Sanctum accent (clay amber)  superBal: muted-foreground */}
+            <Area type="monotone" dataKey="nwTarget" stroke="#9a9288" fill="#9a9288" fillOpacity={0.12} strokeWidth={1} name="NW Target" strokeDasharray="4 2" />
+            <Line type="monotone" dataKey="investNW" stroke="#b07020" strokeWidth={2} dot={false} name="Investable NW" />
+            <Line type="monotone" dataKey="superBal" stroke="#7a7068" strokeWidth={2} dot={false} name="Super Balance" />
           </ComposedChart>
         </ResponsiveContainer>
       </CardContent>
