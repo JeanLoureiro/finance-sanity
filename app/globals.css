@@ -91,6 +91,18 @@
   --color-fs-ink-3: var(--fs-ink-3);
   --color-fs-ink-4: var(--fs-ink-4);
   --color-fs-ink-on-inv: var(--fs-ink-on-inv);
+
+  /* Sanctum typography scale */
+  --font-size-text-xs: 11px;
+  --font-size-text-sm: 12px;
+  --font-size-text-base: 13px;
+  --font-size-text-md: 14px;
+  --font-size-text-lg: 16px;
+  --font-size-text-xl: 20px;
+  --font-size-text-2xl: 26px;
+  --font-size-text-3xl: 34px;
+  --font-size-text-4xl: 44px;
+  --font-size-text-5xl: 56px;
 }
 
 /* ============================================================

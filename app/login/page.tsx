@@ -37,10 +37,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Financial Sanity</CardTitle>
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="size-8 rounded-lg bg-foreground text-background grid place-items-center text-xs font-semibold">
+              FS
+            </div>
+            <CardTitle className="tracking-tight" style={{ letterSpacing: "-0.01em" }}>Financial Sanity</CardTitle>
+          </div>
           <CardDescription>Sign in or create your free account</CardDescription>
         </CardHeader>
         <CardContent>

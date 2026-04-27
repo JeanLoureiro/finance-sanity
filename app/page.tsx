@@ -1,5 +1,3 @@
-"use client"
-
 import Link from "next/link"
 import {
   LayoutDashboard,
@@ -76,14 +74,14 @@ const features = [
   },
 ]
 
-export default function LandingPage() {
+export default async function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       <LandingNav />
 
       {/* Hero */}
       <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 text-white"
-        style={{ background: "oklch(0.08 0 0)" }}
+        style={{ background: "var(--fs-surface-inv)" }}
       >
         {/* Glow blobs */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -91,27 +89,27 @@ export default function LandingPage() {
             className="absolute left-1/2 top-[-20%] h-[600px] w-[600px] -translate-x-1/2 rounded-full"
             style={{
               background:
-                "radial-gradient(ellipse at center, oklch(0.5 0.15 270 / 0.25) 0%, transparent 70%)",
+                "radial-gradient(ellipse at center, var(--fs-accent-500) / 0.15 0%, transparent 70%)",
             }}
           />
           <div
             className="absolute bottom-0 left-[-10%] h-[400px] w-[400px] rounded-full"
             style={{
               background:
-                "radial-gradient(ellipse at center, oklch(0.5 0.12 230 / 0.2) 0%, transparent 70%)",
+                "radial-gradient(ellipse at center, var(--fs-accent-300) / 0.12 0%, transparent 70%)",
             }}
           />
         </div>
 
         <div className="relative z-10 flex flex-col items-center text-center">
           {/* Badge */}
-          <span className="mb-6 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
+          <span className="mb-6 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/70">
             <Flame className="size-3" />
             Built for Australian investors
           </span>
 
           {/* Headline */}
-          <h1 className="max-w-4xl text-5xl font-bold tracking-tight md:text-7xl">
+          <h1 className="max-w-4xl text-5xl font-semibold tracking-tight md:text-7xl" style={{ letterSpacing: "-0.02em" }}>
             Your finances,{" "}
             <span className="bg-gradient-to-r from-white via-white/80 to-white/50 bg-clip-text text-transparent">
               finally clear.
@@ -167,10 +165,10 @@ export default function LandingPage() {
       {/* Feature Grid */}
       <section id="features" className="bg-background px-6 py-24">
         <div className="mx-auto max-w-6xl">
-          <h2 className="mb-4 text-center text-3xl font-bold md:text-4xl">
+          <h2 className="mb-4 text-center text-3xl font-semibold md:text-4xl" style={{ letterSpacing: "-0.01em" }}>
             Everything in one place
           </h2>
-          <p className="mx-auto mb-16 max-w-2xl text-center text-muted-foreground">
+          <p className="mx-auto mb-16 max-w-2xl text-center text-muted-foreground" style={{ fontSize: "15px", lineHeight: "1.6" }}>
             From daily cash balances to retirement projections, Financial
             Sanity covers every dimension of your wealth.
           </p>
@@ -183,7 +181,7 @@ export default function LandingPage() {
       </section>
 
       {/* FIRE Highlight */}
-      <section className="px-6 py-24" style={{ background: "oklch(0.1 0 0)" }}>
+      <section className="px-6 py-24" style={{ background: "var(--fs-surface-inv)" }}>
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div>
             <Badge
@@ -193,7 +191,7 @@ export default function LandingPage() {
               <Flame className="mr-1 size-3" />
               FIRE Planning
             </Badge>
-            <h2 className="mb-6 text-3xl font-bold leading-tight text-white md:text-4xl">
+            <h2 className="mb-6 text-3xl font-semibold leading-tight text-white md:text-4xl" style={{ letterSpacing: "-0.01em" }}>
               Know exactly when you can retire
             </h2>
             <p className="mb-8 text-lg leading-relaxed text-white/60">
@@ -231,7 +229,7 @@ export default function LandingPage() {
               <Calculator className="mr-1 size-3" />
               Tax Tools
             </Badge>
-            <h2 className="mb-6 text-3xl font-bold md:text-4xl">
+            <h2 className="mb-6 text-3xl font-semibold md:text-4xl" style={{ letterSpacing: "-0.01em" }}>
               CGT done right for Australia
             </h2>
             <p className="mb-8 text-lg leading-relaxed text-muted-foreground">
@@ -258,9 +256,9 @@ export default function LandingPage() {
       {/* CTA Banner */}
       <section
         className="px-6 py-24 text-center"
-        style={{ background: "oklch(0.08 0 0)" }}
+        style={{ background: "var(--fs-surface-inv)" }}
       >
-        <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">
+        <h2 className="mb-4 text-3xl font-semibold text-white md:text-4xl" style={{ letterSpacing: "-0.01em" }}>
           Ready to take control?
         </h2>
         <p className="mx-auto mb-10 max-w-md text-white/60">
