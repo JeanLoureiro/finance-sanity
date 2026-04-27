@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="16" fill="oklch(0.62 0.115 50)"/>
+  <circle cx="16" cy="16" r="11.5" stroke="oklch(0.985 0.005 80)" stroke-width="2.2" fill="none"/>
+  <text x="16" y="16" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="oklch(0.985 0.005 80)" text-anchor="middle" dominant-baseline="central">FS</text>
+</svg>
