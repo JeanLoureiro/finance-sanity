@@ -18,9 +18,10 @@ type PendingInvite = {
   token: string;
   ownerEmail: string;
   role: "READ" | "WRITE";
+  granteeEmail: string;
 };
 
-export function PendingInviteModal() {
+export function PendingInviteModal({ email }: { email: string | null }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   // dismissed tracks whether the user clicked "Remind me later" this session
@@ -42,8 +43,13 @@ export function PendingInviteModal() {
     },
   });
 
-  // Always show the first pending invite; after accepting it is removed from the list
-  const invite = invites[0];
+  // Filter to only invites addressed to the current user, then show the first one
+  const userInvites = email
+    ? invites.filter(
+        (invite) => invite.granteeEmail.toLowerCase() === email.toLowerCase()
+      )
+    : invites;
+  const invite = userInvites[0];
   const open = !!invite && !dismissed;
 
   if (!invite) return null;
@@ -62,9 +68,9 @@ export function PendingInviteModal() {
           </DialogDescription>
         </DialogHeader>
 
-        {invites.length > 1 && (
+        {userInvites.length > 1 && (
           <p className="text-xs text-muted-foreground">
-            You have {invites.length} pending invitations.
+            You have {userInvites.length} pending invitations.
           </p>
         )}
 
