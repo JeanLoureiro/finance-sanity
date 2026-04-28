@@ -78,9 +78,7 @@ export default async function LandingPage() {
       <LandingNav />
 
       {/* Hero */}
-      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 text-white"
-        style={{ background: "var(--fs-surface-inv)" }}
-      >
+      <section className="dark relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-6 text-white">
         {/* Glow blobs */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           <div
@@ -173,7 +171,7 @@ export default async function LandingPage() {
       </section>
 
       {/* FIRE Highlight */}
-      <section className="px-6 py-24" style={{ background: "var(--fs-surface-inv)" }}>
+      <section className="dark bg-background px-6 py-24">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div>
             <Badge
@@ -246,10 +244,7 @@ export default async function LandingPage() {
       </section>
 
       {/* CTA Banner */}
-      <section
-        className="px-6 py-24 text-center"
-        style={{ background: "var(--fs-surface-inv)" }}
-      >
+      <section className="dark bg-background px-6 py-24 text-center">
         <h2 className="mb-4 text-3xl font-semibold text-white md:text-4xl" style={{ letterSpacing: "-0.01em" }}>
           Ready to take control?
         </h2>
