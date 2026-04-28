@@ -52,7 +52,7 @@ export function DashboardShell({ children, email }: { children: React.ReactNode;
             {children}
           </div>
         </main>
-        <PendingInviteModal />
+        <PendingInviteModal email={email} />
       </div>
     </div>
   );

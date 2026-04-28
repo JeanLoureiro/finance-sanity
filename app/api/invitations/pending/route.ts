@@ -17,6 +17,7 @@ export const GET = withAuth(async () => {
       token: true,
       ownerEmail: true,
       role: true,
+      granteeEmail: true,
     },
   });
 
