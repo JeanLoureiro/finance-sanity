@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { PendingInviteModal } from "./PendingInviteModal";
 
 export function DashboardShell({ children, email }: { children: React.ReactNode; email: string | null }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -51,6 +52,7 @@ export function DashboardShell({ children, email }: { children: React.ReactNode;
             {children}
           </div>
         </main>
+        <PendingInviteModal />
       </div>
     </div>
   );

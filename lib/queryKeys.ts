@@ -69,5 +69,6 @@ export const queryKeys = {
 
   sharing: {
     grants: () => ["sharing", "grants"] as const,
+    pending: () => ["sharing", "pending"] as const,
   },
 };
