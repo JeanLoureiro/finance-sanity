@@ -1,37 +1,28 @@
 import { NextRequest } from "next/server";
 import { settingsBaseSchema } from "@/lib/schemas";
-import { createClient } from "@/lib/supabase/server";
-import { getAuthorisedSettings, withAuth } from "@/lib/auth";
+import { getAuthUser, getAuthorisedSettings, withAuth } from "@/lib/auth";
 import { getOrCreateSettingsForUser } from "@/lib/userSettings";
 import { prisma } from "@/lib/prisma";
 
 export const GET = withAuth(async () => {
-  const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await getAuthUser();
 
   if (!user) {
     return Response.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Grantees (shared access): return the owner's settings without creating rows.
-  const authorisedSettings = await getAuthorisedSettings("READ").catch(
-    () => null
-  );
+  // Ensure the user's own UserSettings row exists (idempotent).
+  // This runs before getAuthorisedSettings so the cache entry is populated
+  // with the freshly-created row when the active context is the user's own.
+  await getOrCreateSettingsForUser(user.id, user.email ?? "");
 
-  if (authorisedSettings && authorisedSettings.role !== "OWNER") {
-    const settings = await prisma.userSettings.findUnique({
-      where: { id: authorisedSettings.settingsId },
-    });
-    if (!settings) {
-      return Response.json({ error: "Settings not found" }, { status: 404 });
-    }
-    return Response.json(settings);
+  const { settingsId } = await getAuthorisedSettings("READ");
+  const settings = await prisma.userSettings.findUnique({ where: { id: settingsId } });
+  if (!settings) {
+    return Response.json({ error: "Settings not found" }, { status: 404 });
   }
-
-  // Owner path: get-or-create.
-  const settings = await getOrCreateSettingsForUser(user.id, user.email ?? "");
   return Response.json(settings);
 });
 

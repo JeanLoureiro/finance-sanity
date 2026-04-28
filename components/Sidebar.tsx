@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { ContextSwitcher } from "./ContextSwitcher";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -104,8 +104,7 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
   }
 
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await fetch("/api/auth/signout", { method: "POST" });
     window.location.href = "/login";
   }
 
@@ -226,6 +225,14 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
           </Link>
         </div>
       )}
+
+      {/* Context switcher */}
+      <div className={cn(
+        "flex-shrink-0",
+        collapsed ? "px-2 pb-1 flex justify-center" : "px-2 pb-1"
+      )}>
+        <ContextSwitcher collapsed={collapsed} />
+      </div>
 
       {/* User footer */}
       <div className={cn(

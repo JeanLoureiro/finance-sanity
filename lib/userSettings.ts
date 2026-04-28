@@ -29,7 +29,7 @@ export async function getOrCreateSettingsForUser(userId: string, email: string) 
     });
   }
 
-  return prisma.userSettings.create({
+  await prisma.userSettings.create({
     data: {
       userId,
       ownerEmail: email,

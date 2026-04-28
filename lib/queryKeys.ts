@@ -71,4 +71,8 @@ export const queryKeys = {
     grants: () => ["sharing", "grants"] as const,
     pending: () => ["sharing", "pending"] as const,
   },
+
+  contexts: {
+    all: () => ["contexts"] as const,
+  },
 };

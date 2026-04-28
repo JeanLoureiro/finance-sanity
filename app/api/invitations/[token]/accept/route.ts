@@ -1,27 +1,21 @@
 import { NextRequest } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { getAuthUser, withAuth } from "@/lib/auth";
 
-export async function POST(
+export const POST = withAuth(async (
   _req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
-) {
+) => {
   try {
     const { token } = await params;
-
-    const supabase = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return Response.json({ error: "Not authenticated" }, { status: 401 });
-    }
+    } = await getAuthUser();
 
     const grant = await prisma.sharedAccess.findUnique({
       where: { token },
-      select: { id: true, granteeEmail: true, status: true },
+      select: { id: true, granteeEmail: true, status: true, ownerSettingsId: true },
     });
 
     if (!grant || grant.status !== "PENDING") {
@@ -31,7 +25,7 @@ export async function POST(
       );
     }
 
-    if (grant.granteeEmail.toLowerCase() !== user.email?.toLowerCase()) {
+    if (grant.granteeEmail.toLowerCase() !== user!.email?.toLowerCase()) {
       return Response.json(
         { error: "This invite was sent to a different email address" },
         { status: 403 }
@@ -40,12 +34,21 @@ export async function POST(
 
     await prisma.sharedAccess.update({
       where: { id: grant.id },
-      data: { status: "ACCEPTED", granteeUserId: user.id },
+      data: { status: "ACCEPTED", granteeUserId: user!.id },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    return NextResponse.redirect(`${appUrl}/dashboard`);
+    // Auto-switch the active context to the newly accepted shared settings.
+    const cookieStore = await cookies();
+    cookieStore.set("fs-active-context", grant.ownerSettingsId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+    });
+
+    return Response.json({ ownerSettingsId: grant.ownerSettingsId });
   } catch {
     return Response.json({ error: "Failed to accept invite" }, { status: 500 });
   }
-}
+});

@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -48,8 +48,11 @@ const roleHierarchy: Record<string, number> = { READ: 1, WRITE: 2, OWNER: 3 };
  * enforcing the required minimum role.
  *
  * Resolution order:
- *   1. User owns a UserSettings row (userId matches) → role = OWNER
- *   2. User has an ACCEPTED SharedAccess grant → role = grant.role
+ *   1. Cookie `fs-active-context` (settingsId) — validated against ownership
+ *      or an ACCEPTED SharedAccess grant before being used. Silently ignored
+ *      when stale (e.g. access was revoked).
+ *   2. User owns a UserSettings row (userId matches) → role = OWNER
+ *   3. User has an ACCEPTED SharedAccess grant → role = grant.role
  *
  * Throws AuthError(401) if not authenticated.
  * Throws AuthError(403) if authenticated but not authorised.
@@ -68,7 +71,48 @@ export const getAuthorisedSettings = cache(async (
 
   const userId = user.id;
 
-  // Check 1: Is this user the owner?
+  // Check the active-context cookie first.
+  const cookieStore = await cookies();
+  const activeContextId = cookieStore.get("fs-active-context")?.value;
+
+  if (activeContextId) {
+    // Validate: does this user own the requested settings row?
+    const ownedByUser = await prisma.userSettings.findUnique({
+      where: { id: activeContextId, userId },
+      select: { id: true },
+    });
+
+    if (ownedByUser) {
+      // OWNER role satisfies any required role.
+      return { settingsId: ownedByUser.id, role: "OWNER" };
+    }
+
+    // Validate: is this user an accepted grantee for the requested settings?
+    const grantForContext = await prisma.sharedAccess.findFirst({
+      where: {
+        ownerSettingsId: activeContextId,
+        granteeUserId: userId,
+        status: "ACCEPTED",
+      },
+      select: { ownerSettingsId: true, role: true },
+    });
+
+    if (grantForContext) {
+      const grantedLevel = roleHierarchy[grantForContext.role] ?? 0;
+      const requiredLevel = roleHierarchy[requiredRole] ?? 0;
+      if (grantedLevel < requiredLevel) {
+        throw new AuthError(403, "Insufficient permissions — write access required");
+      }
+      return {
+        settingsId: grantForContext.ownerSettingsId,
+        role: grantForContext.role as "READ" | "WRITE",
+      };
+    }
+
+    // Cookie is stale or revoked — fall through to default resolution.
+  }
+
+  // Default resolution: own settings first, then any accepted grant.
   const ownedSettings = await prisma.userSettings.findUnique({
     where: { userId },
     select: { id: true },
@@ -78,7 +122,6 @@ export const getAuthorisedSettings = cache(async (
     return { settingsId: ownedSettings.id, role: "OWNER" };
   }
 
-  // Check 2: Does this user have an accepted SharedAccess grant?
   const grant = await prisma.sharedAccess.findFirst({
     where: {
       granteeUserId: userId,
