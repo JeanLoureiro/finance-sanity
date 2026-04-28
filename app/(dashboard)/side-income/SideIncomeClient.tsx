@@ -14,8 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash2, PlusCircle, Pencil } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
-
-type SideIncomeEntry = { id: string; date: string; sideIncome: string | number; rentalIncome: string | number; notes: string | null };
+import type { SideIncomeEntry } from "./exportSideIncome";
+import { ImportExportModal } from "./ImportExportModal";
+import type { SideIncomeImportRow } from "./importSideIncome";
 
 export default function SideIncomePage() {
   const qc = useQueryClient();
@@ -102,6 +103,21 @@ export default function SideIncomePage() {
             <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
             <SelectContent>{allFYs.map((fy) => <SelectItem key={fy} value={String(fy)}>{getFYLabel(fy)}</SelectItem>)}</SelectContent>
           </Select>
+          <ImportExportModal
+            fyEntries={fyEntries}
+            allEntries={entries}
+            fyLabel={getFYLabel(selectedFY)}
+            onImport={async (rows: SideIncomeImportRow[]) => {
+              for (const row of rows) {
+                await fetch("/api/side-income", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(row),
+                });
+              }
+              qc.invalidateQueries({ queryKey: queryKeys.sideIncome.all() });
+            }}
+          />
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger render={<Button size="sm" />}><PlusCircle className="h-4 w-4 mr-1" /> Add Entry</DialogTrigger>
             <DialogContent>

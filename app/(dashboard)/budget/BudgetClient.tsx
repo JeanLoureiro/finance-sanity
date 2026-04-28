@@ -14,16 +14,10 @@ import { Trash2, PlusCircle, ChevronDown, ChevronUp, SlidersHorizontal, X, Searc
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { BudgetItemInput } from "@/lib/schemas";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
+import { type BudgetItem, toMonthly, fromMonthly, safeToFixed } from "./exportBudget";
+import { ImportExportModal } from "./ImportExportModal";
+import type { BudgetImportRow } from "./importBudget";
 
-type BudgetItem = {
-  id: string;
-  name: string;
-  monthlyAmount: number;
-  frequency: string;
-  budgetType: string;
-  category: string;
-  bankAccount: string | null;
-};
 type LabelRow = { id: string; name: string; sortOrder: number };
 type BankAccount = { id: string; name: string; bsb: string | null; accountNumber: string | null };
 
@@ -31,32 +25,6 @@ type BankAccount = { id: string; name: string; bsb: string | null; accountNumber
 // Frequency helpers
 // ---------------------------------------------------------------------------
 const FREQ_LIST = [...BUDGET_FREQUENCIES];
-
-function toMonthly(amount: number, freq: string): number {
-  switch (freq) {
-    case "Weekly":      return amount * 52 / 12;
-    case "Fortnightly": return amount * 26 / 12;
-    case "Quarterly":   return amount / 3;
-    case "Annually":    return amount / 12;
-    default:            return amount;
-  }
-}
-
-function fromMonthly(monthly: number, freq: string): number {
-  const validMonthly = Number(monthly) || 0;
-  switch (freq) {
-    case "Weekly":      return validMonthly * 12 / 52;
-    case "Fortnightly": return validMonthly * 12 / 26;
-    case "Quarterly":   return validMonthly * 3;
-    case "Annually":    return validMonthly * 12;
-    default:            return validMonthly;
-  }
-}
-
-function safeToFixed(value: unknown, decimals: number = 2): string {
-  const num = Number(value);
-  return (isNaN(num) || !isFinite(num)) ? "0" : num.toFixed(decimals);
-}
 
 function computeMonthlyIncome(netIncome: number, frequency: string): number {
   switch (frequency) {
@@ -907,22 +875,41 @@ export default function BudgetPage() {
           </TabsList>
         </Tabs>
 
-        <button
-          onClick={() => setShowFilters((v) => !v)}
-          className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border transition-colors ${
-            showFilters || activeFilterCount > 0
-              ? "bg-primary text-primary-foreground border-primary"
-              : "border-border text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
-          Filters
-          {activeFilterCount > 0 && (
-            <Badge className="h-5 min-w-5 px-1.5 bg-primary-foreground text-primary text-xs rounded-full">
-              {activeFilterCount}
-            </Badge>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-md border transition-colors ${
+              showFilters || activeFilterCount > 0
+                ? "bg-primary text-primary-foreground border-primary"
+                : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filters
+            {activeFilterCount > 0 && (
+              <Badge className="h-5 min-w-5 px-1.5 bg-primary-foreground text-primary text-xs rounded-full">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </button>
+
+          <ImportExportModal
+            displayItems={displayItems}
+            allItems={items}
+            monthlyIncome={monthlyIncome}
+            isFiltered={isFiltered}
+            onImport={async (rows: BudgetImportRow[]) => {
+              for (const row of rows) {
+                await fetch("/api/budget", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(row),
+                });
+              }
+              qc.invalidateQueries({ queryKey: queryKeys.budget.items() });
+            }}
+          />
+        </div>
       </div>
 
       {/* Filter panel */}
