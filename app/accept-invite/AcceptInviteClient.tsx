@@ -26,6 +26,23 @@ export default function AcceptInviteClient({ token, invite }: Props) {
 
   const roleLabel = invite.role === "WRITE" ? "full read & write" : "read-only";
 
+  async function acceptInvite() {
+    const response = await fetch(`/api/invitations/${token}/accept`, {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setError(data.error ?? "Failed to accept invite");
+      setLoading(false);
+      return;
+    }
+
+    // The accept endpoint sets the fs-active-context cookie server-side.
+    // Navigate to the dashboard where the shared context will be active.
+    router.push("/dashboard");
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -41,20 +58,7 @@ export default function AcceptInviteClient({ token, invite }: Props) {
         return;
       }
 
-      const response = await fetch(`/api/invitations/${token}/accept`, {
-        method: "POST",
-      });
-
-      if (cancelled) return;
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        setError(data.error ?? "Failed to accept invite");
-        setLoading(false);
-        return;
-      }
-
-      router.push("/dashboard");
+      await acceptInvite();
     }
 
     autoAccept();
@@ -62,6 +66,7 @@ export default function AcceptInviteClient({ token, invite }: Props) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, router, supabase]);
 
   async function handleRetry() {
@@ -77,18 +82,7 @@ export default function AcceptInviteClient({ token, invite }: Props) {
       return;
     }
 
-    const response = await fetch(`/api/invitations/${token}/accept`, {
-      method: "POST",
-    });
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      setError(data.error ?? "Failed to accept invite");
-      setLoading(false);
-      return;
-    }
-
-    router.push("/dashboard");
+    await acceptInvite();
   }
 
   return (

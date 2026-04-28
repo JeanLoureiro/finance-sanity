@@ -35,10 +35,22 @@ export function PendingInviteModal({ email }: { email: string | null }) {
 
   const acceptMutation = useMutation({
     mutationFn: (token: string) =>
-      fetch(`/api/invitations/${token}/accept`, { method: "POST", redirect: "manual" }),
+      fetch(`/api/invitations/${token}/accept`, { method: "POST" }).then(
+        (response) => {
+          if (!response.ok) {
+            return response
+              .json()
+              .then((data) =>
+                Promise.reject(new Error(data.error ?? "Failed to accept invitation"))
+              );
+          }
+          return response.json();
+        }
+      ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.sharing.pending() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.settings() });
+      // Context switched server-side — invalidate all cached queries so the
+      // new context's data loads on the next render.
+      queryClient.invalidateQueries();
       router.refresh();
     },
   });
