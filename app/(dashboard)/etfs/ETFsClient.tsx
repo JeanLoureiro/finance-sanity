@@ -222,36 +222,17 @@ export default function ETFsPage() {
           {enriched.map((h) => (
             <Card key={h.id}>
               <CardContent className="pt-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="font-bold">{h.ticker}</span>
                       {h.name && <span className="text-sm text-muted-foreground">{h.name}</span>}
                       {prices?.[h.ticker]?.price == null && tickers.length > 0 && (
                         <Badge variant="outline" className="text-xs">No price</Badge>
                       )}
                     </div>
-                    <div className="grid grid-cols-4 gap-4 mt-3 text-sm">
-                      <div><p className="text-muted-foreground">Units held</p><p className="font-medium">{h.heldUnits.toFixed(4)}</p></div>
-                      <div><p className="text-muted-foreground">Live price</p><p className="font-medium">{h.livePrice ? <CurrencyAmount value={h.livePrice} /> : "—"}</p></div>
-                      <div><p className="text-muted-foreground">Live value</p><p className="font-medium">{h.liveValue ? <CurrencyAmount value={h.liveValue} /> : <CurrencyAmount value={h.costBasis} />}</p></div>
-                      <div><p className="text-muted-foreground">Total return</p>
-                        <p className="font-medium">
-                          {h.totalReturn !== null ? (
-                            <><CurrencyAmount value={h.totalReturn} showSign /> {" "}<PercentChange value={h.totalReturnPct} /></>
-                          ) : "—"}
-                        </p>
-                      </div>
-                    </div>
-                    {/* Allocation bar */}
-                    {portfolioValue > 0 && (
-                      <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>Alloc: {((h.liveValue ?? h.costBasis) / portfolioValue * 100).toFixed(1)}%</span>
-                        <span>Target: {(h.targetAllocation * 100).toFixed(0)}%</span>
-                      </div>
-                    )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1 shrink-0">
                     <Dialog>
                       <DialogTrigger render={<Button size="sm" variant="outline" />}>
                         <History className="h-4 w-4" />
@@ -293,6 +274,24 @@ export default function ETFsPage() {
                     </Button>
                   </div>
                 </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                  <div><p className="text-muted-foreground">Units held</p><p className="font-medium">{h.heldUnits.toFixed(4)}</p></div>
+                  <div><p className="text-muted-foreground">Live price</p><p className="font-medium">{h.livePrice ? <CurrencyAmount value={h.livePrice} /> : "—"}</p></div>
+                  <div><p className="text-muted-foreground">Live value</p><p className="font-medium">{h.liveValue ? <CurrencyAmount value={h.liveValue} /> : <CurrencyAmount value={h.costBasis} />}</p></div>
+                  <div><p className="text-muted-foreground">Total return</p>
+                    <p className="font-medium">
+                      {h.totalReturn !== null ? (
+                        <><CurrencyAmount value={h.totalReturn} showSign /> {" "}<PercentChange value={h.totalReturnPct} /></>
+                      ) : "—"}
+                    </p>
+                  </div>
+                </div>
+                {portfolioValue > 0 && (
+                  <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>Alloc: {((h.liveValue ?? h.costBasis) / portfolioValue * 100).toFixed(1)}%</span>
+                    <span>Target: {(h.targetAllocation * 100).toFixed(0)}%</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

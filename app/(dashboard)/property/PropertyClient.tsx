@@ -671,7 +671,7 @@ export default function PropertyPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-3 gap-4 text-sm mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm mb-4">
                     <div><p className="text-muted-foreground">Current value</p><p className="font-bold text-lg"><CurrencyAmount value={stats.currentValue} /></p></div>
                     <div><p className="text-muted-foreground">Equity</p><p className="font-bold text-lg"><CurrencyAmount value={stats.equity} /></p></div>
                     <div>
