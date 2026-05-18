@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { queryKeys } from "@/lib/queryKeys";
 import { ContextSwitcher } from "./ContextSwitcher";
 import {
   LayoutDashboard,
@@ -28,7 +30,14 @@ import {
   BookOpen,
 } from "lucide-react";
 
-const NAV_GROUPS = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  settingsKey?: string;
+};
+
+const NAV_GROUPS: { name: string; items: NavItem[] }[] = [
   {
     name: "Overview",
     items: [
@@ -38,35 +47,35 @@ const NAV_GROUPS = [
   {
     name: "Investments",
     items: [
-      { href: "/etfs",          label: "ETFs",          icon: TrendingUp },
-      { href: "/stocks",        label: "Stocks",        icon: BarChart3 },
-      { href: "/crypto",        label: "Crypto",        icon: Bitcoin },
-      { href: "/managed-funds", label: "Managed Funds", icon: Globe },
-      { href: "/super",         label: "Super",         icon: Landmark },
-      { href: "/dividends",     label: "Dividends",     icon: DollarSign },
+      { href: "/etfs",          label: "ETFs",          icon: TrendingUp,  settingsKey: "useETFs" },
+      { href: "/stocks",        label: "Stocks",        icon: BarChart3,   settingsKey: "useStocks" },
+      { href: "/crypto",        label: "Crypto",        icon: Bitcoin,     settingsKey: "useCrypto" },
+      { href: "/managed-funds", label: "Managed Funds", icon: Globe,       settingsKey: "useManagedFunds" },
+      { href: "/super",         label: "Super",         icon: Landmark,    settingsKey: "useSuper" },
+      { href: "/dividends",     label: "Dividends",     icon: DollarSign,  settingsKey: "useDividends" },
     ],
   },
   {
     name: "Real assets & cash",
     items: [
-      { href: "/property",     label: "Property",      icon: Home },
-      { href: "/cash",         label: "Cash & Savings", icon: Banknote },
-      { href: "/other-assets", label: "Other Assets",  icon: Package },
+      { href: "/property",     label: "Property",      icon: Home,    settingsKey: "useProperty" },
+      { href: "/cash",         label: "Cash & Savings", icon: Banknote, settingsKey: "useCash" },
+      { href: "/other-assets", label: "Other Assets",  icon: Package, settingsKey: "useOtherAssets" },
     ],
   },
   {
     name: "Liabilities",
     items: [
-      { href: "/loans", label: "Loans & Debt", icon: CreditCard },
+      { href: "/loans", label: "Loans & Debt", icon: CreditCard, settingsKey: "useLiabilities" },
     ],
   },
   {
     name: "Planning",
     items: [
-      { href: "/budget",        label: "Budget",         icon: Wallet },
-      { href: "/side-income",   label: "Side Income",    icon: Clock },
-      { href: "/fire",          label: "FIRE Projection", icon: Flame },
-      { href: "/capital-gains", label: "Capital Gains",  icon: Receipt },
+      { href: "/budget",        label: "Budget",          icon: Wallet,  settingsKey: "useBudget" },
+      { href: "/side-income",   label: "Side Income",     icon: Clock,   settingsKey: "useSideIncome" },
+      { href: "/fire",          label: "FIRE Projection", icon: Flame,   settingsKey: "useFIRE" },
+      { href: "/capital-gains", label: "Capital Gains",   icon: Receipt, settingsKey: "useCapitalGains" },
     ],
   },
 ];
@@ -90,6 +99,12 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  const { data: settings } = useQuery<Record<string, boolean>>({
+    queryKey: queryKeys.settings(),
+    queryFn: () => fetch("/api/settings").then((response) => response.json()),
+    staleTime: 5 * 60 * 1000,
+  });
 
   // While a transition is in flight use the clicked href; once it settles
   // fall back to the real pathname so external navigations stay correct.
@@ -124,9 +139,6 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
       )}
       style={!collapsed ? { paddingTop: "calc(var(--spacing) * 2.8)", paddingBottom: "calc(var(--spacing) * 2.8)" } : undefined}
       >
-        <div className="size-8 rounded-lg bg-foreground text-background grid place-items-center text-xs font-semibold tracking-wide flex-shrink-0">
-          FS
-        </div>
         {!collapsed && (
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold tracking-tight leading-none">Financial Sanity</div>
@@ -147,38 +159,44 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
 
       {/* Navigation */}
       <nav className={cn("flex-1 overflow-y-auto py-3", collapsed ? "px-1.5" : "px-2")} aria-label="Main navigation">
-        {NAV_GROUPS.map((group) => (
-          <div key={group.name} className="mb-4">
-            {!collapsed && (
-              <div className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
-                {group.name}
+        {NAV_GROUPS.map((group) => {
+          const visibleItems = group.items.filter(
+            (item) => !item.settingsKey || settings?.[item.settingsKey] !== false
+          );
+          if (visibleItems.length === 0) return null;
+          return (
+            <div key={group.name} className="mb-4">
+              {!collapsed && (
+                <div className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
+                  {group.name}
+                </div>
+              )}
+              <div className="flex flex-col gap-px">
+                {visibleItems.map(({ href, label, icon: Icon }) => {
+                  const isActive = activeHref === href || activeHref.startsWith(href + "/");
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={(event) => { event.preventDefault(); navigate(href); }}
+                      title={collapsed ? label : undefined}
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all",
+                        collapsed ? "px-2 py-2 justify-center" : "px-2.5 py-[7px]",
+                        isActive
+                          ? "bg-fs-surface-inv text-fs-ink-on-inv"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      )}
+                    >
+                      <Icon className={cn("flex-shrink-0", collapsed ? "size-[18px]" : "size-4 opacity-85")} />
+                      {!collapsed && <span className="truncate">{label}</span>}
+                    </Link>
+                  );
+                })}
               </div>
-            )}
-            <div className="flex flex-col gap-px">
-              {group.items.map(({ href, label, icon: Icon }) => {
-                const isActive = activeHref === href || activeHref.startsWith(href + "/");
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={(event) => { event.preventDefault(); navigate(href); }}
-                    title={collapsed ? label : undefined}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all",
-                      collapsed ? "px-2 py-2 justify-center" : "px-2.5 py-[7px]",
-                      isActive
-                        ? "bg-fs-surface-inv text-fs-ink-on-inv"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                    )}
-                  >
-                    <Icon className={cn("flex-shrink-0", collapsed ? "size-[18px]" : "size-4 opacity-85")} />
-                    {!collapsed && <span className="truncate">{label}</span>}
-                  </Link>
-                );
-              })}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* Footer links */}
