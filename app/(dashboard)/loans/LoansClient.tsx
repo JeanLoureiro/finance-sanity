@@ -526,7 +526,7 @@ export default function LoansPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-4 gap-4 text-sm mb-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-3">
                     <div><p className="text-muted-foreground">Remaining</p><p className="font-bold"><CurrencyAmount value={stats.currentBalance} /></p></div>
                     <div><p className="text-muted-foreground">Rate</p><p className="font-bold">{(Number(loan.annualRate) * 100).toFixed(2)}% p.a.</p></div>
                     <div><p className="text-muted-foreground">Payment</p><p className="font-bold"><CurrencyAmount value={Number(loan.regularPayment)} /></p></div>

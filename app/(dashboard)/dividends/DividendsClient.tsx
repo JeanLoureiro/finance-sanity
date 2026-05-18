@@ -65,7 +65,7 @@ export default function DividendsPage() {
             <Skeleton className="h-9 w-36" />
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[...Array(3)].map((_, index) => <Skeleton key={index} className="h-20" />)}
         </div>
         <Skeleton className="h-64 w-full" />
@@ -116,7 +116,7 @@ export default function DividendsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">{getFYLabel(selectedFY)} Total</p><p className="text-2xl font-bold"><CurrencyAmount value={fyTotal} /></p></CardContent></Card>
         <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Reinvested (DRP)</p><p className="text-2xl font-bold"><CurrencyAmount value={fyReinvested} /></p></CardContent></Card>
         <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Cash received</p><p className="text-2xl font-bold"><CurrencyAmount value={fyTotal - fyReinvested} /></p></CardContent></Card>

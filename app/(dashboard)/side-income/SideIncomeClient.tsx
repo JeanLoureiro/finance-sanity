@@ -86,7 +86,7 @@ export default function SideIncomePage() {
             <Skeleton className="h-9 w-28" />
           </div>
         </div>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[...Array(4)].map((_, index) => <Skeleton key={index} className="h-20" />)}
         </div>
         <Skeleton className="h-64 w-full" />
@@ -136,7 +136,7 @@ export default function SideIncomePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">{getFYLabel(selectedFY)} Total</p><p className="text-2xl font-bold"><CurrencyAmount value={fyTotal} /></p></CardContent></Card>
         <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Side income</p><p className="text-2xl font-bold"><CurrencyAmount value={fySideIncome} /></p></CardContent></Card>
         <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Rental income</p><p className="text-2xl font-bold"><CurrencyAmount value={fyRentalIncome} /></p></CardContent></Card>
