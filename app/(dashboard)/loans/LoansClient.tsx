@@ -170,6 +170,8 @@ function LoanForm({
   );
 }
 
+type EditingPayment = { date: string; amount: string; note: string };
+
 function ExtraPaymentsPanel({ loan }: { loan: Loan }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -177,6 +179,8 @@ function ExtraPaymentsPanel({ loan }: { loan: Loan }) {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingValues, setEditingValues] = useState<EditingPayment>({ date: "", amount: "", note: "" });
 
   const { data: payments = [] } = useQuery<ExtraPayment[]>({
     queryKey: queryKeys.loans.payments(loan.id),
@@ -201,6 +205,20 @@ function ExtraPaymentsPanel({ loan }: { loan: Loan }) {
     },
   });
 
+  const editPayment = useMutation({
+    mutationFn: ({ paymentId, data }: { paymentId: string; data: object }) =>
+      fetch(`/api/loans/${loan.id}/payments/${paymentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.loans.payments(loan.id) });
+      qc.invalidateQueries({ queryKey: queryKeys.loans.allPayments() });
+      setEditingId(null);
+    },
+  });
+
   const delPayment = useMutation({
     mutationFn: (paymentId: string) =>
       fetch(`/api/loans/${loan.id}/payments/${paymentId}`, { method: "DELETE" }).then((r) => r.json()),
@@ -209,6 +227,27 @@ function ExtraPaymentsPanel({ loan }: { loan: Loan }) {
       qc.invalidateQueries({ queryKey: queryKeys.loans.allPayments() });
     },
   });
+
+  function startEditing(payment: ExtraPayment) {
+    setEditingId(payment.id);
+    setEditingValues({
+      date: toDateInput(payment.date),
+      amount: String(payment.amount),
+      note: payment.note ?? "",
+    });
+  }
+
+  function saveEdit() {
+    if (!editingId || !editingValues.date || !editingValues.amount) return;
+    editPayment.mutate({
+      paymentId: editingId,
+      data: {
+        date: editingValues.date,
+        amount: parseFloat(editingValues.amount),
+        note: editingValues.note || null,
+      },
+    });
+  }
 
   const totalExtra = payments.reduce((s, p) => s + p.amount, 0);
 
@@ -237,22 +276,73 @@ function ExtraPaymentsPanel({ loan }: { loan: Loan }) {
                   <th className="text-left py-1">Date</th>
                   <th className="text-right py-1">Amount</th>
                   <th className="text-left py-1 pl-3">Note</th>
-                  <th className="w-8" />
+                  <th className="w-16" />
                 </tr>
               </thead>
               <tbody>
-                {payments.map((p) => (
-                  <tr key={p.id} className="border-b last:border-0">
-                    <td className="py-1.5">{formatDateDisplay(p.date)}</td>
-                    <td className="py-1.5 text-right font-medium"><CurrencyAmount value={p.amount} /></td>
-                    <td className="py-1.5 pl-3 text-muted-foreground">{p.note || "—"}</td>
-                    <td className="py-1.5 text-right">
-                      <Button size="sm" variant="ghost" onClick={() => setDeletePaymentId(p.id)}>
-                        <Trash2 className="h-3 w-3 text-muted-foreground" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {payments.map((p) =>
+                  editingId === p.id ? (
+                    <tr key={p.id} className="border-b last:border-0">
+                      <td className="py-1.5 pr-1">
+                        <Input
+                          type="date"
+                          className="h-7 w-34 text-xs"
+                          value={editingValues.date}
+                          onChange={(e) => setEditingValues((v) => ({ ...v, date: e.target.value }))}
+                        />
+                      </td>
+                      <td className="py-1.5 px-1">
+                        <Input
+                          type="number"
+                          className="h-7 w-24 text-xs text-right"
+                          value={editingValues.amount}
+                          onChange={(e) => setEditingValues((v) => ({ ...v, amount: e.target.value }))}
+                        />
+                      </td>
+                      <td className="py-1.5 pl-3">
+                        <Input
+                          className="h-7 text-xs"
+                          placeholder="Note (optional)"
+                          value={editingValues.note}
+                          onChange={(e) => setEditingValues((v) => ({ ...v, note: e.target.value }))}
+                        />
+                      </td>
+                      <td className="py-1.5 text-right whitespace-nowrap">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs"
+                          disabled={!editingValues.date || !editingValues.amount || editPayment.isPending}
+                          onClick={saveEdit}
+                        >
+                          {editPayment.isPending ? "…" : "Save"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => setEditingId(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={p.id} className="border-b last:border-0">
+                      <td className="py-1.5">{formatDateDisplay(p.date)}</td>
+                      <td className="py-1.5 text-right font-medium"><CurrencyAmount value={p.amount} /></td>
+                      <td className="py-1.5 pl-3 text-muted-foreground">{p.note || "—"}</td>
+                      <td className="py-1.5 text-right whitespace-nowrap">
+                        <Button size="sm" variant="ghost" onClick={() => startEditing(p)}>
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setDeletePaymentId(p.id)}>
+                          <Trash2 className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      </td>
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
           )}
