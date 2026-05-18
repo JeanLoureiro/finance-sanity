@@ -110,6 +110,7 @@ model UserSettings {
   useCapitalGains Boolean @default(true)
   useFIRE         Boolean @default(true)
   useSuper        Boolean @default(true)
+  useDividends    Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

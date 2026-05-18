@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import type { SettingsInput } from "@/lib/schemas";
 import { queryKeys } from "@/lib/queryKeys";
 import { useEffect, useState } from "react";
@@ -129,6 +129,23 @@ export default function SettingsPage() {
     );
   }
 
+  const NAV_SECTIONS = [
+    { key: "useETFs",         label: "ETFs" },
+    { key: "useStocks",       label: "Stocks" },
+    { key: "useCrypto",       label: "Crypto" },
+    { key: "useManagedFunds", label: "Managed Funds" },
+    { key: "useSuper",        label: "Super" },
+    { key: "useDividends",    label: "Dividends" },
+    { key: "useProperty",     label: "Property" },
+    { key: "useCash",         label: "Cash & Savings" },
+    { key: "useOtherAssets",  label: "Other Assets" },
+    { key: "useLiabilities",  label: "Loans & Debt" },
+    { key: "useBudget",       label: "Budget" },
+    { key: "useSideIncome",   label: "Side Income" },
+    { key: "useFIRE",         label: "FIRE Projection" },
+    { key: "useCapitalGains", label: "Capital Gains" },
+  ] as const;
+
   const EMAIL_SECTIONS = [
     { key: "snapshotEmailCash",         label: "Cash" },
     { key: "snapshotEmailETFs",         label: "ETFs" },
@@ -144,16 +161,39 @@ export default function SettingsPage() {
     { key: "snapshotEmailDividends",    label: "Dividends" },
   ] as const;
 
+  const ANCHOR_SECTIONS = [
+    { id: "income",          label: "Income" },
+    { id: "automations",     label: "Automations" },
+    { id: "investments",     label: "Investments" },
+    { id: "goals",           label: "Goals" },
+    { id: "capital-gains",   label: "Capital Gains" },
+    { id: "fire-settings",   label: "FIRE" },
+    { id: "navigation",      label: "Navigation" },
+    { id: "snapshot-email",  label: "Email" },
+    ...(data?.role === "OWNER" ? [{ id: "sharing", label: "Sharing" }] : []),
+  ];
+
   return (
     <div className="pb-24">
       <form onSubmit={handleSubmit((values) => mutate(values))} className="space-y-10">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Configure</p>
           <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+          <nav className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
+            {ANCHOR_SECTIONS.map(({ id, label }) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
         </div>
 
         {/* Income */}
-        <section>
+        <section id="income">
           <SectionHeader title="Income" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Annual Salary ($)" description="Before tax" error={errors.salary?.message}>
@@ -187,7 +227,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Automations */}
-        <section>
+        <section id="automations">
           <SectionHeader title="Automations" />
           <div className="divide-y divide-border">
             <SwitchRow
@@ -200,7 +240,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Investments */}
-        <section>
+        <section id="investments">
           <SectionHeader title="Investments" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Bank Interest Rate" description="e.g. 0.06 = 6%" error={errors.bankInterestRate?.message}>
@@ -231,7 +271,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Goals */}
-        <section>
+        <section id="goals">
           <SectionHeader title="Goals" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Cash Savings Target ($)" error={errors.cashSavingsTarget?.message}>
@@ -247,7 +287,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Capital Gains Tax */}
-        <section>
+        <section id="capital-gains">
           <SectionHeader title="Capital Gains Tax" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="CGT Method" description="First In First Out">
@@ -272,7 +312,7 @@ export default function SettingsPage() {
         </section>
 
         {/* FIRE Settings */}
-        <section>
+        <section id="fire-settings">
           <SectionHeader title="FIRE Settings" description="Used to generate your Financial Independence projections" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Year of Birth" error={errors.yearOfBirth?.message}>
@@ -293,8 +333,39 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* Navigation */}
+        <section id="navigation">
+          <SectionHeader
+            title="Navigation"
+            description="Show or hide pages in the sidebar. Turn off sections you don't use to keep the menu clean."
+          />
+          <div className="divide-y divide-border">
+            {NAV_SECTIONS.map(({ key, label }) => (
+              <Controller
+                key={key}
+                control={control}
+                name={key}
+                render={({ field }) => (
+                  <SwitchRow
+                    label={label}
+                    checked={!!field.value}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+                      queryClient.setQueryData(
+                        queryKeys.settings(),
+                        (previous: Record<string, unknown> | undefined) =>
+                          previous ? { ...previous, [key]: checked } : undefined
+                      );
+                    }}
+                  />
+                )}
+              />
+            ))}
+          </div>
+        </section>
+
         {/* Snapshot Email */}
-        <section>
+        <section id="snapshot-email">
           <SectionHeader
             title="Snapshot Email"
             description="Choose which sections appear in the automatic snapshot email. Sections with no data are omitted regardless."
@@ -341,7 +412,7 @@ export default function SettingsPage() {
       </form>
 
       {data?.role === "OWNER" && (
-        <Card className="mt-10">
+        <Card id="sharing" className="mt-10">
           <CardHeader>
             <CardTitle className="text-base">Sharing</CardTitle>
           </CardHeader>
