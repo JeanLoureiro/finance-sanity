@@ -10,7 +10,7 @@ export default function BrandLogoMark({ size = "md" }: { size?: Size }) {
   const { container, rounded, icon } = sizeConfig[size]
   return (
     <div
-      className={`grid ${container} shrink-0 place-items-center ${rounded} bg-gradient-to-br from-[var(--fs-accent-500)] to-[var(--fs-accent-700)]`}
+      className={`grid ${container} shrink-0 place-items-center ${rounded} bg-gradient-to-br from-[oklch(0.60_0.095_185)] to-[oklch(0.40_0.085_185)]`}
     >
       <svg className={icon} viewBox="0 0 20 20" fill="none" aria-hidden="true">
         <polyline

@@ -180,7 +180,7 @@ export default async function LandingPage() {
       <section className="bg-fs-surface-inv px-6 py-24">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div>
-            <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--fs-accent-300)]">
+            <span className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-fs-accent-subtle px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-fs-accent-strong">
               <Flame className="size-3" />
               FIRE Planning
             </span>
@@ -206,7 +206,7 @@ export default async function LandingPage() {
               ))}
             </ul>
           </div>
-          <div className="flex h-64 items-center justify-center rounded-2xl border border-white/10 bg-white/5 font-mono text-sm text-white/20">
+          <div className="flex h-64 items-center justify-center rounded-2xl border border-[var(--fs-line-2)] bg-[var(--fs-surface-1)] font-mono text-sm text-[var(--fs-ink-4)]">
             [ FIRE projection chart ]
           </div>
         </div>
