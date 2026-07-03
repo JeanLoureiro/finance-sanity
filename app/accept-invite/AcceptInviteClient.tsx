@@ -86,8 +86,11 @@ export default function AcceptInviteClient({ token, invite }: Props) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: "linear-gradient(180deg, var(--fs-accent-50) 0%, var(--fs-surface-0) 45%)" }}
+    >
+      <Card className="w-full max-w-sm rounded-xl border-[var(--fs-line-1)] shadow-none">
         <CardHeader>
           <CardTitle>
             {loading && !error ? "Accepting invitation…" : "You have been invited"}
