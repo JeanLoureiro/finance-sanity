@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch, Controller } from "react-hook-form";
 import type { SettingsInput } from "@/lib/schemas";
 import { queryKeys } from "@/lib/queryKeys";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -83,13 +83,28 @@ export default function SettingsPage() {
   });
 
   const { mutate, isPending } = useMutation({
+    mutationFn: async (values: Partial<SettingsInput>) => {
+      const response = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error ?? "Failed to save settings");
+      return json;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.settings() }),
+  });
+
+  // Separate auto-save for nav toggles: persists each toggle immediately without
+  // invalidating the full query (which would reset other unsaved form fields).
+  const { mutate: autoSaveNav } = useMutation({
     mutationFn: (values: Partial<SettingsInput>) =>
       fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       }).then((response) => response.json()),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.settings() }),
   });
 
   const {
@@ -102,9 +117,18 @@ export default function SettingsPage() {
   } = useForm<SettingsInput>();
 
   const watchedValues = useWatch({ control });
+  // Prevent reset(data) from firing when data changes come from a local setQueryData
+  // call (nav toggle immediate hide). Only reset from server-fetched data.
+  const skipNextReset = useRef(false);
 
   useEffect(() => {
-    if (data && !data.error) reset(data);
+    if (data && !data.error) {
+      if (skipNextReset.current) {
+        skipNextReset.current = false;
+        return;
+      }
+      reset(data);
+    }
   }, [data, reset]);
 
   if (isLoading) {
@@ -351,11 +375,13 @@ export default function SettingsPage() {
                     checked={!!field.value}
                     onCheckedChange={(checked) => {
                       field.onChange(checked);
+                      skipNextReset.current = true;
                       queryClient.setQueryData(
                         queryKeys.settings(),
                         (previous: Record<string, unknown> | undefined) =>
                           previous ? { ...previous, [key]: checked } : undefined
                       );
+                      autoSaveNav({ [key]: checked });
                     }}
                   />
                 )}

@@ -11,7 +11,7 @@ import { CurrencyAmount, PercentChange } from "@/components/ui/currency-amount";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, PlusCircle, History } from "lucide-react";
+import { Trash2, PlusCircle, History, X } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
@@ -153,11 +153,11 @@ export default function StocksPage() {
           <Skeleton className="h-8 w-20" />
           <Skeleton className="h-9 w-28" />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-6">
           <Skeleton className="h-20" />
           <Skeleton className="h-20" />
         </div>
-        <div className="space-y-4">
+        <div className="space-y-5">
           {[...Array(3)].map((_, index) => <Skeleton key={index} className="h-28 w-full" />)}
         </div>
       </div>
@@ -167,41 +167,27 @@ export default function StocksPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Stocks</h1>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger render={<Button size="sm" />}>
-            <PlusCircle className="h-4 w-4 mr-1" /> Add Stock
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Add Stock Holding</DialogTitle></DialogHeader>
-            <form onSubmit={handleH((d) => addHolding.mutate(d))} className="space-y-3">
-              <Input placeholder="Ticker (e.g. CBA.AX or AAPL)" {...regH("ticker")} />
-              <Input placeholder="Name (optional)" {...regH("name")} />
-              <div className="flex gap-2">
-                <Input type="number" placeholder="Target alloc. (0–1)" {...regH("targetAllocation")} />
-                <Input placeholder="Sector (optional)" {...regH("sector")} />
-              </div>
-              <Button type="submit" className="w-full" disabled={addHolding.isPending}>Add Stock</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <h1 className="text-2xl font-bold tracking-tight">Stocks</h1>
+        <Button size="sm" onClick={() => setAddOpen(true)} disabled={addOpen}>
+          <PlusCircle className="h-4 w-4 mr-1" /> Add Stock
+        </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Card><CardContent className="pt-4">
+      <div className="grid grid-cols-2 gap-6">
+        <Card><CardContent className="pt-5">
           <p className="text-sm text-muted-foreground">Portfolio Value</p>
           <p className="text-2xl font-bold"><CurrencyAmount value={portfolioValue} /></p>
         </CardContent></Card>
-        <Card><CardContent className="pt-4">
+        <Card><CardContent className="pt-5">
           <p className="text-sm text-muted-foreground">Holdings</p>
           <p className="text-2xl font-bold">{holdings.length}</p>
         </CardContent></Card>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
           {enriched.map((h) => (
             <Card key={h.id}>
-              <CardContent className="pt-4">
+              <CardContent className="pt-5">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -246,8 +232,37 @@ export default function StocksPage() {
               </CardContent>
             </Card>
           ))}
-          {holdings.length === 0 && (
+          {holdings.length === 0 && !addOpen && (
             <Card><CardContent className="py-10 text-center text-muted-foreground">No stock holdings yet. Add one above.</CardContent></Card>
+          )}
+          {addOpen && (
+            <Card className="border-dashed border-fs-accent-300 bg-fs-accent-50">
+              <CardContent className="pt-5">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-fs-accent-700">New Stock Holding</p>
+                  <Button size="sm" variant="ghost" onClick={() => { setAddOpen(false); resetH(); }}><X className="h-3 w-3" /></Button>
+                </div>
+                <form onSubmit={handleH((d) => addHolding.mutate(d))} className="flex flex-wrap gap-2 items-end">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground">Ticker</label>
+                    <Input placeholder="e.g. CBA.AX or AAPL" className="w-40 h-8 text-sm" {...regH("ticker")} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground">Name (optional)</label>
+                    <Input placeholder="Commonwealth Bank..." className="w-48 h-8 text-sm" {...regH("name")} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground">Target alloc. (0–1)</label>
+                    <Input type="number" placeholder="0.05" className="w-28 h-8 text-sm" {...regH("targetAllocation")} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground">Sector (optional)</label>
+                    <Input placeholder="Financials" className="w-32 h-8 text-sm" {...regH("sector")} />
+                  </div>
+                  <Button type="submit" size="sm" disabled={addHolding.isPending}>Add Stock</Button>
+                </form>
+              </CardContent>
+            </Card>
           )}
         </div>
       <ConfirmDeleteDialog

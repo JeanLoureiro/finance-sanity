@@ -136,12 +136,12 @@ export default function NetWorthClient() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <Skeleton className="h-36 col-span-1 sm:col-span-2 lg:col-span-2" />
           <Skeleton className="h-36" />
           <Skeleton className="h-36" />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Skeleton className="h-72" />
           <Skeleton className="h-72" />
         </div>
@@ -178,14 +178,14 @@ export default function NetWorthClient() {
       </div>
 
       {/* ── Hero KPI strip ───────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-4 items-stretch">
-        {/* Hero card — inverted */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-6 items-stretch">
+        {/* Hero card — teal gradient */}
         <div
-          className="rounded-xl p-5 flex flex-col justify-between min-h-[140px]"
-          style={{ background: "var(--fs-surface-inv)", color: "var(--fs-ink-on-inv)", contentVisibility: "auto" }}
+          className="rounded-xl p-5 flex flex-col justify-between min-h-[140px] text-white"
+          style={{ background: "linear-gradient(135deg, var(--fs-surface-hero-from), var(--fs-surface-hero-to))", contentVisibility: "auto" }}
         >
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.6)" }}>
+            <span className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
               Total Net Worth
             </span>
             <span 
@@ -194,7 +194,7 @@ export default function NetWorthClient() {
             >
               <CurrencyAmount value={netWorth} />
             </span>
-            <div className="flex items-center gap-2 text-sm" style={{ color: "oklch(from var(--fs-ink-on-inv) l c h / 0.7)" }}>
+            <div className="flex items-center gap-2 text-sm" style={{ color: "rgba(255,255,255,0.75)" }}>
               {monthDelta !== 0 && (
                 <Delta value={monthDelta} percent={monthDeltaPercent} showIcon />
               )}
@@ -207,7 +207,7 @@ export default function NetWorthClient() {
                 data={historyNetWorth}
                 width={280}
                 height={32}
-                color="var(--fs-ink-on-inv)"
+                color="rgba(255,255,255,0.6)"
                 strokeWidth={1.25}
               />
             </div>
@@ -216,7 +216,7 @@ export default function NetWorthClient() {
 
         {/* Investable */}
         <Card className="flex flex-col justify-between">
-          <CardContent className="pt-4 pb-4 flex flex-col gap-1.5">
+          <CardContent className="pt-5 pb-5 flex flex-col gap-1.5">
             <span className="text-sm text-muted-foreground">Investable assets</span>
             <span className="text-[22px] font-semibold tracking-tight tabular-nums leading-none">
               <CurrencyAmount value={totalInvestable} />
@@ -239,7 +239,7 @@ export default function NetWorthClient() {
 
         {/* Property equity */}
         <Card className="flex flex-col justify-between">
-          <CardContent className="pt-4 pb-4 flex flex-col gap-1.5">
+          <CardContent className="pt-5 pb-5 flex flex-col gap-1.5">
             <span className="text-sm text-muted-foreground">Property equity</span>
             <span className="text-[22px] font-semibold tracking-tight tabular-nums leading-none">
               <CurrencyAmount value={propertyEquity} />
@@ -252,7 +252,7 @@ export default function NetWorthClient() {
 
         {/* Liabilities */}
         <Card className="flex flex-col justify-between">
-          <CardContent className="pt-4 pb-4 flex flex-col gap-1.5">
+          <CardContent className="pt-5 pb-5 flex flex-col gap-1.5">
             <span className="text-sm text-muted-foreground">Liabilities</span>
             <span className="text-[22px] font-semibold tracking-tight tabular-nums leading-none text-loss">
               <CurrencyAmount value={data.liabilitiesTotal} />
@@ -283,12 +283,12 @@ export default function NetWorthClient() {
       </div>
 
       {/* ── History chart + Allocation ────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6">
         {data.history.length > 1 && (
           <HistoryCharts history={data.history} />
         )}
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           {/* Allocation bar */}
           {allocationSegments.length > 0 && (
             <Card>
@@ -342,7 +342,7 @@ export default function NetWorthClient() {
                   (item) => Math.abs(item[row.histKey as keyof typeof item] as number)
                 );
                 return (
-                  <tr key={row.label} className="border-b border-border last:border-0 hover:bg-secondary/40 transition-colors">
+                  <tr key={row.label} className="border-b border-border last:border-0 hover:bg-fs-accent-subtle transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2.5">
                         <span className="size-2 rounded-full flex-shrink-0" style={{ background: row.color }} />
@@ -395,7 +395,7 @@ export default function NetWorthClient() {
                     ? (property.currentMortgageBalance / property.currentValue) * 100
                     : 0;
                   return (
-                    <tr key={property.id} className="border-b border-border last:border-0 hover:bg-secondary/40 transition-colors">
+                    <tr key={property.id} className="border-b border-border last:border-0 hover:bg-fs-accent-subtle transition-colors">
                       <td className="px-5 py-3">
                         <div className="font-medium">{property.name}</div>
                       </td>

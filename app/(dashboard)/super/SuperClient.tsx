@@ -8,8 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CurrencyAmount } from "@/components/ui/currency-amount";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, PlusCircle } from "lucide-react";
+import { Trash2, PlusCircle, X } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import dynamic from "next/dynamic";
@@ -79,29 +78,14 @@ export default function SuperPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Superannuation</h1>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger
-            render={
-              <Button size="sm">
-                <PlusCircle className="h-4 w-4 mr-1" /> Add Account
-              </Button>
-            }
-          />
-          <DialogContent>
-            <DialogHeader><DialogTitle>Add Super Account</DialogTitle></DialogHeader>
-            <form onSubmit={handleAdd((d) => add.mutate(d))} className="space-y-3">
-              <Input placeholder="Account name (e.g. Australian Super)" {...regAdd("name")} />
-              <Input placeholder="Provider (optional)" {...regAdd("provider")} />
-              <div><label className="text-sm font-medium">Current balance ($)</label><Input type="number" {...regAdd("balance")} /></div>
-              <Button type="submit" className="w-full" disabled={add.isPending}>Add Account</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <h1 className="text-2xl font-bold tracking-tight">Superannuation</h1>
+        <Button size="sm" onClick={() => setAddOpen(true)} disabled={addOpen}>
+          <PlusCircle className="h-4 w-4 mr-1" /> Add Account
+        </Button>
       </div>
 
       <Card>
-        <CardContent className="pt-4">
+        <CardContent className="pt-5">
           <p className="text-sm text-muted-foreground">Total Superannuation</p>
           <p className="text-3xl font-bold"><CurrencyAmount value={totalSuper} /></p>
           <p className="text-xs text-muted-foreground mt-1">Updated manually — update balance after each statement</p>
@@ -111,7 +95,7 @@ export default function SuperPage() {
       <div className="space-y-3">
           {accounts.map((a) => (
             <Card key={a.id}>
-              <CardContent className="pt-4">
+              <CardContent className="pt-5">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex-1">
                     <p className="font-semibold">{a.name}</p>
@@ -133,7 +117,32 @@ export default function SuperPage() {
               </CardContent>
             </Card>
           ))}
-          {accounts.length === 0 && <Card><CardContent className="py-10 text-center text-muted-foreground">No super accounts. Add one above.</CardContent></Card>}
+          {accounts.length === 0 && !addOpen && <Card><CardContent className="py-10 text-center text-muted-foreground">No super accounts. Add one above.</CardContent></Card>}
+          {addOpen && (
+            <Card className="border-dashed border-fs-accent-300 bg-fs-accent-50">
+              <CardContent className="pt-5">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-fs-accent-700">New Super Account</p>
+                  <Button size="sm" variant="ghost" onClick={() => { setAddOpen(false); resetAdd(); }}><X className="h-3 w-3" /></Button>
+                </div>
+                <form onSubmit={handleAdd((d) => add.mutate(d))} className="flex flex-wrap gap-2 items-end">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground">Account name</label>
+                    <Input placeholder="e.g. Australian Super" className="w-52 h-8 text-sm" {...regAdd("name")} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground">Provider (optional)</label>
+                    <Input placeholder="AustralianSuper..." className="w-44 h-8 text-sm" {...regAdd("provider")} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground">Current balance ($)</label>
+                    <Input type="number" placeholder="0" className="w-36 h-8 text-sm" {...regAdd("balance")} />
+                  </div>
+                  <Button type="submit" size="sm" disabled={add.isPending}>Add Account</Button>
+                </form>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
       <ConfirmDeleteDialog

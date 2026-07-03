@@ -92,15 +92,19 @@
   --color-fs-ink-4: var(--fs-ink-4);
   --color-fs-ink-on-inv: var(--fs-ink-on-inv);
 
+  /* Sanctum surface hero utilities */
+  --color-fs-surface-hero-from: var(--fs-surface-hero-from);
+  --color-fs-surface-hero-to: var(--fs-surface-hero-to);
+
   /* Sanctum typography scale */
   --font-size-text-xs: 11px;
   --font-size-text-sm: 12px;
-  --font-size-text-base: 13px;
-  --font-size-text-md: 14px;
+  --font-size-text-base: 14px;
+  --font-size-text-md: 15px;
   --font-size-text-lg: 16px;
   --font-size-text-xl: 20px;
-  --font-size-text-2xl: 26px;
-  --font-size-text-3xl: 34px;
+  --font-size-text-2xl: 22px;
+  --font-size-text-3xl: 28px;
   --font-size-text-4xl: 44px;
   --font-size-text-5xl: 56px;
 }
@@ -116,32 +120,32 @@
   --card-foreground: oklch(0.18 0.008 60);
   --popover: oklch(0.985 0.005 80);
   --popover-foreground: oklch(0.18 0.008 60);
-  --primary: oklch(0.18 0.008 60);           /* ink-coloured buttons */
+  --primary: oklch(0.50 0.095 185);          /* teal-600 */
   --primary-foreground: oklch(0.985 0.005 80);
   --secondary: oklch(0.965 0.008 80);        /* fs-surface-2 */
   --secondary-foreground: oklch(0.18 0.008 60);
   --muted: oklch(0.965 0.008 80);
   --muted-foreground: oklch(0.55 0.012 65);  /* fs-ink-3 */
-  --accent: oklch(0.62 0.115 50);            /* fs-accent-500 clay/amber */
+  --accent: oklch(0.60 0.095 185);           /* fs-accent-500 teal */
   --accent-foreground: oklch(0.985 0.005 80);
   --destructive: oklch(0.58 0.155 28);       /* fs-loss */
   --border: oklch(0.92 0.008 75);            /* fs-line-1 */
   --input: oklch(0.88 0.010 75);             /* fs-line-2 */
-  --ring: oklch(0.36 0.010 60);              /* fs-ink-2 */
+  --ring: oklch(0.50 0.095 185);             /* teal focus ring */
   --chart-1: oklch(0.55 0.080 250);          /* cat-etf */
   --chart-2: oklch(0.50 0.080 280);          /* cat-stock */
   --chart-3: oklch(0.65 0.090 60);           /* cat-crypto */
   --chart-4: oklch(0.55 0.060 140);          /* cat-property */
   --chart-5: oklch(0.62 0.060 200);          /* cat-cash */
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0.005 80);
   --sidebar-foreground: oklch(0.18 0.008 60);
-  --sidebar-primary: oklch(0.18 0.008 60);
+  --sidebar-primary: oklch(0.50 0.095 185);
   --sidebar-primary-foreground: oklch(0.985 0.005 80);
-  --sidebar-accent: oklch(0.965 0.008 80);
-  --sidebar-accent-foreground: oklch(0.18 0.008 60);
+  --sidebar-accent: oklch(0.97 0.020 185);
+  --sidebar-accent-foreground: oklch(0.40 0.085 185);
   --sidebar-border: oklch(0.92 0.008 75);
-  --sidebar-ring: oklch(0.36 0.010 60);
+  --sidebar-ring: oklch(0.50 0.095 185);
 
   /* --- Sanctum surface layers --- */
   --fs-surface-0: oklch(0.992 0.004 80);
@@ -162,14 +166,18 @@
   --fs-line-2: oklch(0.88 0.010 75);
   --fs-line-3: oklch(0.82 0.012 75);
 
-  /* --- Sanctum accent (clay / amber) --- */
-  --fs-accent-50: oklch(0.97 0.020 55);
-  --fs-accent-100: oklch(0.93 0.045 55);
-  --fs-accent-300: oklch(0.78 0.090 55);
-  --fs-accent-500: oklch(0.62 0.115 50);
-  --fs-accent-600: oklch(0.54 0.115 48);
-  --fs-accent-700: oklch(0.45 0.100 48);
+  /* --- Sanctum accent (teal / mint) --- */
+  --fs-accent-50: oklch(0.97 0.020 185);
+  --fs-accent-100: oklch(0.93 0.045 185);
+  --fs-accent-300: oklch(0.78 0.090 185);
+  --fs-accent-500: oklch(0.60 0.095 185);
+  --fs-accent-600: oklch(0.50 0.095 185);
+  --fs-accent-700: oklch(0.40 0.085 185);
   --fs-accent-fg: oklch(0.985 0.005 80);
+
+  /* --- Hero KPI gradient --- */
+  --fs-surface-hero-from: oklch(0.50 0.095 185);
+  --fs-surface-hero-to: oklch(0.35 0.085 185);
 
   /* --- Semantic: gains / losses --- */
   --fs-gain-soft: oklch(0.94 0.040 155);
@@ -207,18 +215,18 @@
   --card-foreground: oklch(0.97 0.005 80);
   --popover: oklch(0.185 0.008 60);
   --popover-foreground: oklch(0.97 0.005 80);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.65 0.095 185);
+  --primary-foreground: oklch(0.985 0.005 80);
   --secondary: oklch(0.215 0.010 60);
   --secondary-foreground: oklch(0.97 0.005 80);
   --muted: oklch(0.215 0.010 60);
   --muted-foreground: oklch(0.62 0.012 70);
-  --accent: oklch(0.72 0.115 55);
-  --accent-foreground: oklch(0.18 0.008 60);
+  --accent: oklch(0.65 0.095 185);
+  --accent-foreground: oklch(0.985 0.005 80);
   --destructive: oklch(0.72 0.150 28);
   --border: oklch(0.28 0.010 65);
   --input: oklch(0.34 0.010 65);
-  --ring: oklch(0.78 0.010 75);
+  --ring: oklch(0.65 0.095 185);
   --chart-1: oklch(0.70 0.100 250);
   --chart-2: oklch(0.66 0.100 280);
   --chart-3: oklch(0.78 0.110 60);
@@ -226,12 +234,12 @@
   --chart-5: oklch(0.74 0.080 200);
   --sidebar: oklch(0.185 0.008 60);
   --sidebar-foreground: oklch(0.97 0.005 80);
-  --sidebar-primary: oklch(0.922 0 0);
-  --sidebar-primary-foreground: oklch(0.205 0 0);
-  --sidebar-accent: oklch(0.250 0.010 60);
-  --sidebar-accent-foreground: oklch(0.97 0.005 80);
+  --sidebar-primary: oklch(0.65 0.095 185);
+  --sidebar-primary-foreground: oklch(0.985 0.005 80);
+  --sidebar-accent: oklch(0.22 0.030 185);
+  --sidebar-accent-foreground: oklch(0.75 0.095 185);
   --sidebar-border: oklch(0.28 0.010 65);
-  --sidebar-ring: oklch(0.78 0.010 75);
+  --sidebar-ring: oklch(0.65 0.095 185);
 
   /* --- Sanctum surface layers (dark) --- */
   --fs-surface-0: oklch(0.155 0.008 60);
@@ -252,14 +260,18 @@
   --fs-line-2: oklch(0.34 0.010 65);
   --fs-line-3: oklch(0.40 0.012 65);
 
-  /* --- Sanctum accent (dark) --- */
-  --fs-accent-50: oklch(0.30 0.030 55);
-  --fs-accent-100: oklch(0.36 0.060 55);
-  --fs-accent-300: oklch(0.55 0.100 55);
-  --fs-accent-500: oklch(0.72 0.115 55);
-  --fs-accent-600: oklch(0.78 0.120 55);
-  --fs-accent-700: oklch(0.86 0.110 58);
-  --fs-accent-fg: oklch(0.18 0.008 60);
+  /* --- Sanctum accent (dark — teal) --- */
+  --fs-accent-50: oklch(0.22 0.030 185);
+  --fs-accent-100: oklch(0.28 0.050 185);
+  --fs-accent-300: oklch(0.50 0.085 185);
+  --fs-accent-500: oklch(0.65 0.095 185);
+  --fs-accent-600: oklch(0.72 0.095 185);
+  --fs-accent-700: oklch(0.80 0.090 185);
+  --fs-accent-fg: oklch(0.985 0.005 80);
+
+  /* --- Hero KPI gradient (dark) --- */
+  --fs-surface-hero-from: oklch(0.45 0.095 185);
+  --fs-surface-hero-to: oklch(0.30 0.080 185);
 
   /* --- Semantic: gains / losses (dark) --- */
   --fs-gain-soft: oklch(0.30 0.040 155);
@@ -298,4 +310,30 @@
   html {
     @apply font-sans;
   }
+}
+
+/* ============================================================
+   TABLE — Sanctum zebra + teal header design system pattern
+   Apply the .fs-table class to any <table> element to opt in.
+   ============================================================ */
+.fs-table thead tr {
+  background-color: color-mix(in oklch, var(--fs-accent-500) 10%, transparent);
+}
+.fs-table thead th {
+  color: var(--fs-accent-700);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.fs-table tbody tr:nth-child(even) {
+  background-color: var(--fs-surface-2);
+}
+.fs-table tbody tr:hover {
+  background-color: var(--fs-accent-50);
+}
+.fs-table tbody tr {
+  transition: background-color 0.1s ease;
 }

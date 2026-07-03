@@ -10,9 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CurrencyAmount } from "@/components/ui/currency-amount";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, PlusCircle } from "lucide-react";
+import { Trash2, PlusCircle, X } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
@@ -76,7 +75,7 @@ export default function DividendsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dividends</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Dividends</h1>
         <div className="flex gap-2">
           <Select value={String(selectedFY)} onValueChange={(v) => setSelectedFY(Number(v))}>
             <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
@@ -84,42 +83,16 @@ export default function DividendsPage() {
               {allFYs.map((fy) => <SelectItem key={fy} value={String(fy)}>{getFYLabel(fy)}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Dialog open={addOpen} onOpenChange={setAddOpen}>
-            <DialogTrigger render={<Button size="sm" />}>
-              <PlusCircle className="h-4 w-4 mr-1" /> Add Dividend
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Add Dividend</DialogTitle></DialogHeader>
-              <form onSubmit={handleSubmit((d) => add.mutate(d))} className="space-y-3">
-                <div className="flex gap-2">
-                  <div className="flex-1"><label className="text-sm font-medium">Payment date</label><Input type="date" {...register("paymentDate")} /></div>
-                  <div className="flex-1"><label className="text-sm font-medium">Ticker</label><Input placeholder="e.g. A200.AX" {...register("ticker")} /></div>
-                </div>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <label className="text-sm font-medium">Holding type</label>
-                    <Select defaultValue="ETF" onValueChange={(v) => v && setValue("holdingType", v)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{HOLDING_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex-1"><label className="text-sm font-medium">Net amount ($)</label><Input type="number" {...register("netAmount")} /></div>
-                </div>
-                <div className="flex gap-2">
-                  <div className="flex-1"><label className="text-sm font-medium">Price at div. (optional)</label><Input type="number" {...register("priceAtDividend")} /></div>
-                  <div className="flex items-end gap-2 pb-1"><label className="text-sm font-medium">DRP</label><input type="checkbox" className="h-4 w-4" {...register("reinvested")} /></div>
-                </div>
-                <Button type="submit" className="w-full" disabled={add.isPending}>Add Dividend</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button size="sm" onClick={() => setAddOpen(true)} disabled={addOpen}>
+            <PlusCircle className="h-4 w-4 mr-1" /> Add Dividend
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">{getFYLabel(selectedFY)} Total</p><p className="text-2xl font-bold"><CurrencyAmount value={fyTotal} /></p></CardContent></Card>
-        <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Reinvested (DRP)</p><p className="text-2xl font-bold"><CurrencyAmount value={fyReinvested} /></p></CardContent></Card>
-        <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Cash received</p><p className="text-2xl font-bold"><CurrencyAmount value={fyTotal - fyReinvested} /></p></CardContent></Card>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">{getFYLabel(selectedFY)} Total</p><p className="text-2xl font-bold"><CurrencyAmount value={fyTotal} /></p></CardContent></Card>
+        <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Reinvested (DRP)</p><p className="text-2xl font-bold"><CurrencyAmount value={fyReinvested} /></p></CardContent></Card>
+        <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Cash received</p><p className="text-2xl font-bold"><CurrencyAmount value={fyTotal - fyReinvested} /></p></CardContent></Card>
       </div>
 
       {(
@@ -148,7 +121,46 @@ export default function DividendsPage() {
                     <td className="py-2"><Button size="sm" variant="ghost" onClick={() => setDeleteId(d.id)}><Trash2 className="h-3 w-3" /></Button></td>
                   </tr>
                 ))}
-                {fyDividends.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No dividends for {getFYLabel(selectedFY)}</td></tr>}
+                {addOpen && (
+                  <tr className="border-t bg-fs-accent-50">
+                    <td colSpan={6} className="px-4 py-3">
+                      <form onSubmit={handleSubmit((d) => add.mutate(d))} className="flex flex-wrap gap-2 items-end">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-muted-foreground">Payment date</label>
+                          <Input type="date" className="w-36 h-8 text-sm" {...register("paymentDate")} />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-muted-foreground">Ticker</label>
+                          <Input placeholder="e.g. A200.AX" className="w-28 h-8 text-sm" {...register("ticker")} />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-muted-foreground">Type</label>
+                          <Select defaultValue="ETF" onValueChange={(v) => v && setValue("holdingType", v)}>
+                            <SelectTrigger className="w-32 h-8 text-sm"><SelectValue /></SelectTrigger>
+                            <SelectContent>{HOLDING_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-muted-foreground">Net amount ($)</label>
+                          <Input type="number" placeholder="0" className="w-28 h-8 text-sm" {...register("netAmount")} />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-muted-foreground">Price at div.</label>
+                          <Input type="number" placeholder="0" className="w-28 h-8 text-sm" {...register("priceAtDividend")} />
+                        </div>
+                        <div className="flex flex-col gap-1 items-center">
+                          <label className="text-xs text-muted-foreground">DRP</label>
+                          <input type="checkbox" className="h-4 w-4 mt-2" {...register("reinvested")} />
+                        </div>
+                        <div className="flex gap-2 items-end">
+                          <Button type="submit" size="sm" disabled={add.isPending}>Add</Button>
+                          <Button type="button" size="sm" variant="ghost" onClick={() => { setAddOpen(false); reset(); }}><X className="h-3 w-3" /></Button>
+                        </div>
+                      </form>
+                    </td>
+                  </tr>
+                )}
+                {fyDividends.length === 0 && !addOpen && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No dividends for {getFYLabel(selectedFY)}</td></tr>}
               </tbody>
               {fyDividends.length > 0 && (
                 <tfoot>

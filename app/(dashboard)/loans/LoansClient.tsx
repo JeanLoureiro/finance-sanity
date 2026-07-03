@@ -463,7 +463,7 @@ export default function LoansPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Loans & Liabilities</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Loans & Liabilities</h1>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger render={<Button size="sm" />}>
             <PlusCircle className="h-4 w-4 mr-1" /> Add Loan
@@ -481,13 +481,13 @@ export default function LoansPage() {
       </div>
 
       <Card>
-        <CardContent className="pt-4">
+        <CardContent className="pt-5">
           <p className="text-sm text-muted-foreground">Total Outstanding Debt</p>
           <p className="text-2xl font-bold text-red-600"><CurrencyAmount value={totalDebt} /></p>
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
           {loans.map((loan) => {
             const extras = allPayments.data?.[loan.id] ?? [];
             const stats = computeLoanStats(loan, extras);

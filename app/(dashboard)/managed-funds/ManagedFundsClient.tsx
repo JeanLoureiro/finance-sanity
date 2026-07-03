@@ -11,7 +11,7 @@ import { CurrencyAmount, PercentChange } from "@/components/ui/currency-amount";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, PlusCircle, History } from "lucide-react";
+import { Trash2, PlusCircle, History, X } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
@@ -167,41 +167,27 @@ export default function ManagedFundsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Managed Funds</h1>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger render={<Button size="sm" />}>
-            <PlusCircle className="h-4 w-4 mr-1" /> Add Fund
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Add Managed Fund</DialogTitle></DialogHeader>
-            <form onSubmit={handleH((d) => addHolding.mutate(d))} className="space-y-3">
-              <Input placeholder="Ticker or code" {...regH("ticker")} />
-              <Input placeholder="Name (optional)" {...regH("name")} />
-              <div className="flex gap-2">
-                <Input type="number" placeholder="Target alloc. (0–1)" {...regH("targetAllocation")} />
-                <Input type="number" placeholder="Mgmt fee (0–1)" {...regH("managementFee")} />
-              </div>
-              <Button type="submit" className="w-full" disabled={addHolding.isPending}>Add Fund</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <h1 className="text-2xl font-bold tracking-tight">Managed Funds</h1>
+        <Button size="sm" onClick={() => setAddOpen(true)} disabled={addOpen}>
+          <PlusCircle className="h-4 w-4 mr-1" /> Add Fund
+        </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Card><CardContent className="pt-4">
+      <div className="grid grid-cols-2 gap-6">
+        <Card><CardContent className="pt-5">
           <p className="text-sm text-muted-foreground">Portfolio Value</p>
           <p className="text-2xl font-bold"><CurrencyAmount value={portfolioValue} /></p>
         </CardContent></Card>
-        <Card><CardContent className="pt-4">
+        <Card><CardContent className="pt-5">
           <p className="text-sm text-muted-foreground">Holdings</p>
           <p className="text-2xl font-bold">{holdings.length}</p>
         </CardContent></Card>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
           {enriched.map((h) => (
             <Card key={h.id}>
-              <CardContent className="pt-4">
+              <CardContent className="pt-5">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -241,8 +227,37 @@ export default function ManagedFundsPage() {
               </CardContent>
             </Card>
           ))}
-          {holdings.length === 0 && (
+          {holdings.length === 0 && !addOpen && (
             <Card><CardContent className="py-10 text-center text-muted-foreground">No managed fund holdings yet. Add one above.</CardContent></Card>
+          )}
+          {addOpen && (
+            <Card className="border-dashed border-fs-accent-300 bg-fs-accent-50">
+              <CardContent className="pt-5">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-fs-accent-700">New Managed Fund</p>
+                  <Button size="sm" variant="ghost" onClick={() => { setAddOpen(false); resetH(); }}><X className="h-3 w-3" /></Button>
+                </div>
+                <form onSubmit={handleH((d) => addHolding.mutate(d))} className="flex flex-wrap gap-2 items-end">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground">Ticker / code</label>
+                    <Input placeholder="e.g. MGE0001AU" className="w-36 h-8 text-sm" {...regH("ticker")} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground">Name (optional)</label>
+                    <Input placeholder="Magellan..." className="w-48 h-8 text-sm" {...regH("name")} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground">Target alloc. (0–1)</label>
+                    <Input type="number" placeholder="0.10" className="w-28 h-8 text-sm" {...regH("targetAllocation")} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground">Mgmt fee (0–1)</label>
+                    <Input type="number" placeholder="0.015" className="w-28 h-8 text-sm" {...regH("managementFee")} />
+                  </div>
+                  <Button type="submit" size="sm" disabled={addHolding.isPending}>Add Fund</Button>
+                </form>
+              </CardContent>
+            </Card>
           )}
         </div>
       <ConfirmDeleteDialog

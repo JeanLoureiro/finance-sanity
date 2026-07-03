@@ -587,7 +587,7 @@ export default function PropertyPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Property</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Property</h1>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger
             render={
@@ -608,12 +608,12 @@ export default function PropertyPage() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Total Property Value</p><p className="text-2xl font-bold"><CurrencyAmount value={totalPropertyValue} /></p></CardContent></Card>
-        <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Total Equity</p><p className="text-2xl font-bold"><CurrencyAmount value={totalEquity} /></p></CardContent></Card>
+      <div className="grid grid-cols-2 gap-6">
+        <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Total Property Value</p><p className="text-2xl font-bold"><CurrencyAmount value={totalPropertyValue} /></p></CardContent></Card>
+        <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Total Equity</p><p className="text-2xl font-bold"><CurrencyAmount value={totalEquity} /></p></CardContent></Card>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
           {properties.map((p) => {
             const stats = computePropertyStats(p);
             return (
