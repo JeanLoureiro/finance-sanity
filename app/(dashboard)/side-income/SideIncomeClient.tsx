@@ -11,7 +11,7 @@ import { CurrencyAmount } from "@/components/ui/currency-amount";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, PlusCircle, Pencil } from "lucide-react";
+import { Trash2, PlusCircle, Pencil, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import type { SideIncomeEntry } from "./exportSideIncome";
@@ -97,7 +97,7 @@ export default function SideIncomePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Side Income</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Side Income</h1>
         <div className="flex gap-2">
           <Select value={String(selectedFY)} onValueChange={(v) => setSelectedFY(Number(v))}>
             <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
@@ -118,29 +118,17 @@ export default function SideIncomePage() {
               qc.invalidateQueries({ queryKey: queryKeys.sideIncome.all() });
             }}
           />
-          <Dialog open={addOpen} onOpenChange={setAddOpen}>
-            <DialogTrigger render={<Button size="sm" />}><PlusCircle className="h-4 w-4 mr-1" /> Add Entry</DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Add Side Income Entry</DialogTitle></DialogHeader>
-              <form onSubmit={handleSubmit((d) => add.mutate(d))} className="space-y-3">
-                <div><label className="text-sm font-medium">Date</label><Input type="date" {...register("date")} /></div>
-                <div className="flex gap-2">
-                  <div className="flex-1"><label className="text-sm font-medium">Side income ($)</label><Input type="number" {...register("sideIncome")} /></div>
-                  <div className="flex-1"><label className="text-sm font-medium">Rental income ($)</label><Input type="number" {...register("rentalIncome")} /></div>
-                </div>
-                <div><label className="text-sm font-medium">Notes (optional)</label><Input placeholder="e.g. Freelance project" {...register("notes")} /></div>
-                <Button type="submit" className="w-full" disabled={add.isPending}>Add Entry</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button size="sm" onClick={() => setAddOpen(true)} disabled={addOpen}>
+            <PlusCircle className="h-4 w-4 mr-1" /> Add Entry
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">{getFYLabel(selectedFY)} Total</p><p className="text-2xl font-bold"><CurrencyAmount value={fyTotal} /></p></CardContent></Card>
-        <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Side income</p><p className="text-2xl font-bold"><CurrencyAmount value={fySideIncome} /></p></CardContent></Card>
-        <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">Rental income</p><p className="text-2xl font-bold"><CurrencyAmount value={fyRentalIncome} /></p></CardContent></Card>
-        <Card><CardContent className="pt-4"><p className="text-sm text-muted-foreground">12-month avg/month</p><p className="text-2xl font-bold"><CurrencyAmount value={rolling12Avg} /></p></CardContent></Card>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+        <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">{getFYLabel(selectedFY)} Total</p><p className="text-2xl font-bold"><CurrencyAmount value={fyTotal} /></p></CardContent></Card>
+        <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Side income</p><p className="text-2xl font-bold"><CurrencyAmount value={fySideIncome} /></p></CardContent></Card>
+        <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Rental income</p><p className="text-2xl font-bold"><CurrencyAmount value={fyRentalIncome} /></p></CardContent></Card>
+        <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">12-month avg/month</p><p className="text-2xl font-bold"><CurrencyAmount value={rolling12Avg} /></p></CardContent></Card>
       </div>
 
       {(
@@ -188,7 +176,35 @@ export default function SideIncomePage() {
                   </td>
                 </tr>
               ))}
-              {fyEntries.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No entries for {getFYLabel(selectedFY)}</td></tr>}
+              {addOpen && (
+                <tr className="border-t bg-fs-accent-50">
+                  <td colSpan={6} className="px-4 py-3">
+                    <form onSubmit={handleSubmit((d) => add.mutate(d))} className="flex flex-wrap gap-2 items-end">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs text-muted-foreground">Date</label>
+                        <Input type="date" className="w-36 h-8 text-sm" {...register("date")} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs text-muted-foreground">Side income ($)</label>
+                        <Input type="number" placeholder="0" className="w-28 h-8 text-sm" {...register("sideIncome")} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs text-muted-foreground">Rental income ($)</label>
+                        <Input type="number" placeholder="0" className="w-28 h-8 text-sm" {...register("rentalIncome")} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs text-muted-foreground">Notes (optional)</label>
+                        <Input placeholder="e.g. Freelance project" className="w-48 h-8 text-sm" {...register("notes")} />
+                      </div>
+                      <div className="flex gap-2 items-end">
+                        <Button type="submit" size="sm" disabled={add.isPending}>Add</Button>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => { setAddOpen(false); reset(); }}><X className="h-3 w-3" /></Button>
+                      </div>
+                    </form>
+                  </td>
+                </tr>
+              )}
+              {fyEntries.length === 0 && !addOpen && <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No entries for {getFYLabel(selectedFY)}</td></tr>}
             </tbody>
           </table>
         </div>

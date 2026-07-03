@@ -812,7 +812,7 @@ export default function BudgetPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { label: "Monthly Income", value: monthlyIncome },
           { label: "Total Expenses", value: totalExpenses },
@@ -830,7 +830,7 @@ export default function BudgetPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-6">
         <Card><CardContent className="flex flex-col gap-1.5 px-5 py-[18px]">
           <span className="text-[var(--font-size-text-sm)] text-[var(--fs-ink-3)]">Annual Expenses</span>
           <span className="font-semibold tracking-tight tabular-nums text-[var(--fs-ink-1)]" style={{ fontSize: "var(--font-size-text-xl)", letterSpacing: "-0.01em" }}><CurrencyAmount value={totalExpenses * 12} /></span>

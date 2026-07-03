@@ -28,6 +28,7 @@ import {
   LogOut,
   X,
   BookOpen,
+  Palette,
 } from "lucide-react";
 
 type NavItem = {
@@ -167,7 +168,7 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
           return (
             <div key={group.name} className="mb-4">
               {!collapsed && (
-                <div className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
+                <div className="px-2.5 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-fs-ink-4">
                   {group.name}
                 </div>
               )}
@@ -175,22 +176,30 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
                 {visibleItems.map(({ href, label, icon: Icon }) => {
                   const isActive = activeHref === href || activeHref.startsWith(href + "/");
                   return (
-                    <Link
-                      key={href}
-                      href={href}
-                      onClick={(event) => { event.preventDefault(); navigate(href); }}
-                      title={collapsed ? label : undefined}
-                      className={cn(
-                        "flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all",
-                        collapsed ? "px-2 py-2 justify-center" : "px-2.5 py-[7px]",
-                        isActive
-                          ? "bg-fs-surface-inv text-fs-ink-on-inv"
-                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    <div key={href} className="relative">
+                      {isActive && !collapsed && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-r-full bg-fs-accent-500" />
                       )}
-                    >
-                      <Icon className={cn("flex-shrink-0", collapsed ? "size-[18px]" : "size-4 opacity-85")} />
-                      {!collapsed && <span className="truncate">{label}</span>}
-                    </Link>
+                      <Link
+                        href={href}
+                        onClick={(event) => { event.preventDefault(); navigate(href); }}
+                        title={collapsed ? label : undefined}
+                        className={cn(
+                          "flex items-center gap-2.5 rounded-lg text-[13px] transition-all",
+                          collapsed ? "px-2 py-2 justify-center" : "px-2.5 py-[7px]",
+                          isActive
+                            ? "bg-fs-accent-subtle text-fs-accent-strong font-semibold"
+                            : "font-medium text-muted-foreground hover:text-foreground hover:bg-fs-accent-subtle/50"
+                        )}
+                      >
+                        <Icon className={cn(
+                          "flex-shrink-0",
+                          collapsed ? "size-[18px]" : "size-4",
+                          isActive ? "opacity-100" : "opacity-70"
+                        )} />
+                        {!collapsed && <span className="truncate">{label}</span>}
+                      </Link>
+                    </div>
                   );
                 })}
               </div>
@@ -202,45 +211,34 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
       {/* Footer links */}
       {!collapsed && (
         <div className="border-t border-border px-2 py-2 flex flex-col gap-px">
-          <Link
-            href="/glossary"
-            onClick={(event) => { event.preventDefault(); navigate("/glossary"); }}
-            className={cn(
-              "flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all",
-              activeHref === "/glossary"
-                ? "bg-fs-surface-inv text-fs-ink-on-inv"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-            )}
-          >
-            <BookOpen className="size-4 flex-shrink-0 opacity-85" />
-            <span>Glossary</span>
-          </Link>
-          <Link
-            href="/import"
-            onClick={(event) => { event.preventDefault(); navigate("/import"); }}
-            className={cn(
-              "flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all",
-              activeHref === "/import"
-                ? "bg-fs-surface-inv text-fs-ink-on-inv"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-            )}
-          >
-            <Upload className="size-4 flex-shrink-0 opacity-85" />
-            <span>Import CSV</span>
-          </Link>
-          <Link
-            href="/settings"
-            onClick={(event) => { event.preventDefault(); navigate("/settings"); }}
-            className={cn(
-              "flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] font-medium transition-all",
-              activeHref === "/settings"
-                ? "bg-fs-surface-inv text-fs-ink-on-inv"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-            )}
-          >
-            <Settings className="size-4 flex-shrink-0 opacity-85" />
-            <span>Settings</span>
-          </Link>
+          {[
+            { href: "/glossary", label: "Glossary", Icon: BookOpen },
+            { href: "/design-system", label: "Design System", Icon: Palette },
+            { href: "/import", label: "Import CSV", Icon: Upload },
+            { href: "/settings", label: "Settings", Icon: Settings },
+          ].map(({ href, label, Icon }) => {
+            const isActive = activeHref === href;
+            return (
+              <div key={href} className="relative">
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-r-full bg-fs-accent-500" />
+                )}
+                <Link
+                  href={href}
+                  onClick={(event) => { event.preventDefault(); navigate(href); }}
+                  className={cn(
+                    "flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] transition-all",
+                    isActive
+                      ? "bg-fs-accent-subtle text-fs-accent-strong font-semibold"
+                      : "font-medium text-muted-foreground hover:text-foreground hover:bg-fs-accent-subtle/50"
+                  )}
+                >
+                  <Icon className={cn("size-4 flex-shrink-0", isActive ? "opacity-100" : "opacity-70")} />
+                  <span>{label}</span>
+                </Link>
+              </div>
+            );
+          })}
         </div>
       )}
 

@@ -39,7 +39,7 @@ type EditState = {
 function StatCard({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
     <Card>
-      <CardContent className="pt-4">
+      <CardContent className="pt-5">
         <p className="text-sm text-muted-foreground">{label}</p>
         <p className="text-2xl font-bold mt-1">{value}</p>
         {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
@@ -131,10 +131,10 @@ export default function CashPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Cash</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Cash</h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard label="Total Balance" value={<CurrencyAmount value={totalBalance} />} />
         <StatCard label="Savings Target" value={<CurrencyAmount value={target} />} sub={`${(pctOfTarget * 100).toFixed(1)}% reached`} />
         <StatCard label="Net Monthly Income" value={<CurrencyAmount value={settings?.netIncome ?? 0} />} />
