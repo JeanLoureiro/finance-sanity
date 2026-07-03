@@ -13,6 +13,7 @@ import {
   Calculator,
 } from "lucide-react"
 import LandingNav from "@/components/landing/LandingNav"
+import BrandLogoMark from "@/components/landing/BrandLogoMark"
 import FeatureCard from "@/components/landing/FeatureCard"
 
 const features = [
@@ -250,7 +251,7 @@ export default async function LandingPage() {
       {/* CTA Banner */}
       <section
         className="relative overflow-hidden px-6 py-24 text-center"
-        style={{ background: "linear-gradient(135deg, var(--fs-accent-600) 0%, var(--fs-accent-700) 100%)" }}
+        style={{ background: "linear-gradient(135deg, oklch(0.50 0.095 185) 0%, oklch(0.40 0.085 185) 100%)" }}
       >
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
@@ -269,7 +270,7 @@ export default async function LandingPage() {
         </p>
         <Link
           href="/login"
-          className="relative inline-flex h-10 items-center justify-center rounded-lg bg-white px-10 text-sm font-semibold text-[var(--fs-accent-700)] transition-all hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+          className="relative inline-flex h-10 items-center justify-center rounded-lg bg-white px-10 text-sm font-semibold text-[oklch(0.40_0.085_185)] transition-all hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
         >
           Get started
         </Link>
@@ -279,12 +280,7 @@ export default async function LandingPage() {
       <footer className="border-t border-[var(--fs-line-1)] bg-fs-surface-2 px-6 py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 md:flex-row">
           <div className="flex items-center gap-2">
-            <div className="grid size-6 shrink-0 place-items-center rounded-md bg-gradient-to-br from-[var(--fs-accent-500)] to-[var(--fs-accent-700)]">
-              <svg className="size-3" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <polyline points="2.5,15.5 7,9.5 11,12.5 16,4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
-                <circle cx="16" cy="4.5" r="2.2" fill="white" />
-              </svg>
-            </div>
+            <BrandLogoMark size="xs" />
             <span className="text-sm font-semibold text-[var(--fs-ink-2)]" style={{ letterSpacing: "-0.01em" }}>
               Financial Sanity
             </span>

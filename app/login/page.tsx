@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import BrandLogoMark from "@/components/landing/BrandLogoMark";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -44,12 +45,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm rounded-xl border-[var(--fs-line-1)] shadow-none">
         <CardHeader>
           <div className="flex items-center gap-2.5 mb-2">
-            <div className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-gradient-to-br from-[var(--fs-accent-500)] to-[var(--fs-accent-700)]">
-              <svg className="size-[18px]" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <polyline points="2.5,15.5 7,9.5 11,12.5 16,4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
-                <circle cx="16" cy="4.5" r="2.2" fill="white" />
-              </svg>
-            </div>
+            <BrandLogoMark size="md" />
             <CardTitle className="tracking-tight" style={{ letterSpacing: "-0.01em" }}>Financial Sanity</CardTitle>
           </div>
           <CardDescription>Sign in or create your free account</CardDescription>

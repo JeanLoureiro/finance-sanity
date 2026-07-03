@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import BrandLogoMark from "@/components/landing/BrandLogoMark"
 
 export default function LandingNav() {
   const [scrolled, setScrolled] = useState(false)
@@ -24,12 +25,7 @@ export default function LandingNav() {
       )}
     >
       <div className="flex items-center gap-2.5">
-        <div className="grid size-[30px] shrink-0 place-items-center rounded-lg bg-gradient-to-br from-[var(--fs-accent-500)] to-[var(--fs-accent-700)]">
-          <svg className="size-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <polyline points="2.5,15.5 7,9.5 11,12.5 16,4.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
-            <circle cx="16" cy="4.5" r="2.2" fill="white" />
-          </svg>
-        </div>
+        <BrandLogoMark size="sm" />
         <span
           className={cn(
             "text-sm font-semibold tracking-tight transition-colors duration-200",

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import BrandLogoMark from "@/components/landing/BrandLogoMark";
 
 type InviteMetadata = {
   granteeEmail: string;
@@ -92,9 +93,13 @@ export default function AcceptInviteClient({ token, invite }: Props) {
     >
       <Card className="w-full max-w-sm rounded-xl border-[var(--fs-line-1)] shadow-none">
         <CardHeader>
-          <CardTitle>
+          <div className="flex items-center gap-2.5 mb-2">
+            <BrandLogoMark size="md" />
+            <CardTitle style={{ letterSpacing: "-0.01em" }}>Financial Sanity</CardTitle>
+          </div>
+          <p className="text-sm text-muted-foreground">
             {loading && !error ? "Accepting invitation…" : "You have been invited"}
-          </CardTitle>
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
