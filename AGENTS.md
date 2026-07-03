@@ -31,7 +31,8 @@ webapp/                        # All commands run from here
 │   │   ├── capital-gains/     # FIFO CGT engine output by AU financial year
 │   │   ├── fire/              # FIRE projection planner
 │   │   ├── import/            # CSV bulk-import
-│   │   └── settings/          # User + account settings
+│   │   ├── settings/          # User + account settings
+│   │   └── design-system/     # Sanctum design system showcase (tokens, components, patterns)
 │   ├── api/                   # ~53 route handlers, one folder per domain
 │   ├── layout.tsx             # Root layout — mounts <Providers>
 │   └── page.tsx               # Public landing page

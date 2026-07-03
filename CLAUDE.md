@@ -65,6 +65,7 @@ app/
     cash/ stocks/ etfs/ crypto/ managed-funds/
     dividends/ budget/ loans/ property/ super/
     side-income/ other-assets/ capital-gains/ fire/ import/ settings/
+    design-system/         # Sanctum design system showcase (tokens, components, patterns)
   api/                 # 53 route handlers — one folder per domain
   layout.tsx           # Root layout — mounts <Providers> (QueryClient, ThemeProvider)
   page.tsx             # Landing page

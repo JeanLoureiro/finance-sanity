@@ -7,12 +7,12 @@ The Sanctum design system uses a precise typography scale defined in CSS variabl
 ```css
 --font-size-text-xs: 11px;    /* Tiny labels, metadata */
 --font-size-text-sm: 12px;    /* Small labels, captions */
---font-size-text-base: 13px;  /* Base body text */
---font-size-text-md: 14px;    /* Medium body text */
+--font-size-text-base: 14px;  /* Base body text */
+--font-size-text-md: 15px;    /* Medium body text */
 --font-size-text-lg: 16px;    /* Large body, section titles */
 --font-size-text-xl: 20px;    /* Secondary KPI values */
---font-size-text-2xl: 26px;   /* Primary KPI values */
---font-size-text-3xl: 34px;   /* Large headings */
+--font-size-text-2xl: 22px;   /* Page titles */
+--font-size-text-3xl: 28px;   /* Hero KPI values */
 --font-size-text-4xl: 44px;   /* Hero card values */
 --font-size-text-5xl: 56px;   /* Display headings */
 ```
@@ -37,22 +37,24 @@ The Sanctum design system uses a precise typography scale defined in CSS variabl
 ```
 
 ### Hero Cards (Inverted)
+
+Use the `<Kpi inverted>` component, which applies the teal gradient (`--fs-surface-hero-from` → `--fs-surface-hero-to`) automatically:
+
+```tsx
+<Kpi inverted label="Net Worth" value="$1,247,892" sub={<Badge variant="gain">…</Badge>} />
+```
+
+If building a custom hero surface, apply the gradient manually:
 ```tsx
 <div 
-  className="rounded-xl flex flex-col justify-between min-h-[140px]"
-  style={{ background: "var(--fs-surface-inv)", color: "var(--fs-ink-on-inv)", padding: "24px 28px" }}
+  className="rounded-xl text-white"
+  style={{
+    background: "linear-gradient(135deg, var(--fs-surface-hero-from), var(--fs-surface-hero-to))",
+    padding: "24px 28px"
+  }}
 >
-  <div className="flex flex-col gap-1.5">
-    <span style={{ fontSize: "var(--font-size-text-sm)", color: "oklch(from var(--fs-ink-on-inv) l c h / 0.6)" }}>
-      Net Worth · April 2026
-    </span>
-    <span 
-      className="font-semibold tracking-tight tabular-nums"
-      style={{ fontSize: "var(--font-size-text-4xl)", letterSpacing: "-0.01em" }}
-    >
-      $1,247,892
-    </span>
-  </div>
+  <span className="text-sm text-white/60">Net Worth · April 2026</span>
+  <span className="text-[26px] font-semibold tracking-tight tabular-nums text-white">$1,247,892</span>
 </div>
 ```
 
@@ -133,24 +135,24 @@ font-variant-numeric: tabular-nums;
 - **Muted text**: `var(--fs-ink-3)` - oklch(0.62 0.012 70)
 - **Placeholder**: `var(--fs-ink-4)` - oklch(0.45 0.012 65)
 
-### On Inverted Surfaces
-- **Text on dark**: `var(--fs-ink-on-inv)` - oklch(0.985 0.005 80) in light mode
-- **Text on light**: `var(--fs-ink-on-inv)` - oklch(0.18 0.008 60) in dark mode
+### On Hero (Teal Gradient) Surfaces
+- Use plain `text-white`, `text-white/60`, `text-white/70` — the teal gradient provides sufficient contrast in both modes.
 
 ## Examples
 
-### Budget Page KPIs
+### Budget Page KPIs (via `<Kpi>`)
 - **Label**: 12px (text-sm), ink-3
-- **Value**: 26px (text-2xl), semibold, -0.01em tracking
+- **Value**: 26px (hard-coded in Kpi component), semibold, tracking-tight
 - **Padding**: 18px vertical, 20px horizontal
 
-### Net Worth Hero Card
-- **Label**: 12px (text-sm), ink-on-inv @ 60% opacity
-- **Value**: 44px (text-4xl), semibold, -0.01em tracking
-- **Sub-text**: 12px (text-sm), ink-on-inv @ 70% opacity
-- **Padding**: 24px vertical, 28px horizontal
+### Net Worth Hero Card (via `<Kpi inverted>`)
+- **Background**: teal gradient (`--fs-surface-hero-from` → `--fs-surface-hero-to`)
+- **Label**: 12px (text-sm), white @ 60% opacity
+- **Value**: 26px hard-coded, semibold, white
+- **Sub-text**: 12px (text-sm), white @ 70% opacity
+- **Padding**: 18px vertical, 20px horizontal
 
 ### Breakdown Cards
 - **Label**: 11px (text-xs), ink-3
-- **Value**: 14px (text-md), semibold
+- **Value**: 15px (text-md), semibold
 - **Percentage**: 11px (text-xs), ink-3

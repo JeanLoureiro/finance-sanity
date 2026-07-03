@@ -23,11 +23,15 @@ All design tokens are defined in `app/globals.css` and include:
 - `--fs-ink-3`: Tertiary/muted text
 - `--fs-ink-4`: Placeholder/disabled text
 
-**Accent** (warm clay/amber, customizable):
-- `--fs-accent-500`: Primary accent
+**Accent** (teal/mint):
+- `--fs-accent-500`: Primary accent (teal-500)
 - `--fs-accent-fg`: Foreground on accent
-- `--fs-accent-subtle`: Soft background
-- Variants: olive (default), ink, rust, indigo
+- `--fs-accent-subtle`: Soft teal background (maps to `--fs-accent-50`)
+
+**Hero KPI Gradient**:
+- `--fs-surface-hero-from`: Gradient start (teal-600)
+- `--fs-surface-hero-to`: Gradient end (teal-700)
+- Applied via `linear-gradient(135deg, var(--fs-surface-hero-from), var(--fs-surface-hero-to))`
 
 **Semantic Colors**:
 - `--fs-gain`, `--fs-gain-soft`, `--fs-gain-strong`: Positive changes
@@ -137,25 +141,38 @@ All design tokens are defined in `app/globals.css` and include:
   - Tabular numbers for all financial values
 
 **Already Using Sanctum:**
-- Sidebar: Uses `bg-fs-surface-inv` for active states
+- Sidebar: Active items use `bg-fs-accent-subtle text-fs-accent-strong` with a teal left-border indicator (`bg-fs-accent-500`)
 - Topbar: Breadcrumbs and search with Sanctum colors
 - Net Worth page: Hero KPI cards with inverted styling
 - KPI component: Supports inverted mode for hero cards
 
-## Demo Page
+## Design System Page
 
-View all components in action:
+View all components and tokens in action:
 ```
-/design-demo
+/design-system
 ```
 
 This page showcases:
-- Hero KPI cards (inverted and regular)
-- LineChart with multiple series
-- Donut allocation chart
-- Segmented controls
-- Badge variants
-- Typography examples
+- Teal palette + semantic + asset category color swatches
+- Typography scale (14px base)
+- Buttons, badges, KPI tiles, cards, table, form elements
+
+## Utility Classes
+
+### `.fs-table`
+
+Add this class to any `<table>` element to apply the standard Sanctum table style:
+- Teal-tinted header background with uppercase `fs-accent-700` column labels
+- Alternating zebra rows using `--fs-surface-2`
+- Teal hover highlight (`--fs-accent-50`) with a 100ms transition
+
+```tsx
+<table className="w-full fs-table">
+  <thead><tr><th className="text-left px-4">Asset</th>…</tr></thead>
+  <tbody>…</tbody>
+</table>
+```
 
 ## Design Principles
 
@@ -200,4 +217,4 @@ Potential additions to the design system:
 - Design prototype: `/Users/jeanloureiro/Projects/compiledSanity/financial-sanity-html/`
 - Tokens reference: `app/globals.css`
 - Component library: `components/ui/`
-- Demo page: `app/(dashboard)/design-demo/page.tsx`
+- Design system page: `app/(dashboard)/design-system/page.tsx`
