@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import BrandLogoMark from "@/components/landing/BrandLogoMark";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -37,13 +38,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-sm">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: "linear-gradient(180deg, var(--fs-accent-50) 0%, var(--fs-surface-0) 45%)" }}
+    >
+      <Card className="w-full max-w-sm rounded-xl border-[var(--fs-line-1)] shadow-none">
         <CardHeader>
           <div className="flex items-center gap-2.5 mb-2">
-            <div className="size-8 rounded-lg bg-foreground text-background grid place-items-center text-xs font-semibold">
-              FS
-            </div>
+            <BrandLogoMark size="md" />
             <CardTitle className="tracking-tight" style={{ letterSpacing: "-0.01em" }}>Financial Sanity</CardTitle>
           </div>
           <CardDescription>Sign in or create your free account</CardDescription>
@@ -51,7 +53,7 @@ export default function LoginPage() {
         <CardContent>
           {sent ? (
             <p className="text-sm text-muted-foreground">
-              Check your email — we sent a magic link to{" "}
+              Check your email - we sent a magic link to{" "}
               <strong>{email}</strong>.
             </p>
           ) : (
@@ -71,7 +73,7 @@ export default function LoginPage() {
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Sending…" : "Send magic link"}
+                {loading ? "Sending..." : "Send magic link"}
               </Button>
             </form>
           )}

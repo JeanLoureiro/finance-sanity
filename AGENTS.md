@@ -39,7 +39,11 @@ webapp/                        # All commands run from here
 ├── components/
 │   ├── DashboardShell.tsx     # Sidebar + mobile nav wrapper
 │   ├── Providers.tsx          # Client boundary (React Query + next-themes)
-│   └── ui/                    # Shadcn UI primitives
+│   ├── ui/                    # Shadcn UI primitives
+│   └── landing/               # Public landing page components
+│       ├── BrandLogoMark.tsx  # SVG logo mark used across public + auth pages (xs/sm/md sizes)
+│       ├── FeatureCard.tsx    # Feature grid card with teal accent icon
+│       └── LandingNav.tsx     # Fixed nav with scroll-aware teal/surface styling
 ├── lib/
 │   ├── prisma.ts              # Prisma client singleton
 │   ├── supabase/              # client.ts (browser) + server.ts (SSR)
