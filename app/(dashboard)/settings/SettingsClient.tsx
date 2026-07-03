@@ -99,12 +99,17 @@ export default function SettingsPage() {
   // Separate auto-save for nav toggles: persists each toggle immediately without
   // invalidating the full query (which would reset other unsaved form fields).
   const { mutate: autoSaveNav } = useMutation({
-    mutationFn: (values: Partial<SettingsInput>) =>
-      fetch("/api/settings", {
+    mutationFn: async (values: Partial<SettingsInput>) => {
+      const response = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
-      }).then((response) => response.json()),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error ?? "Failed to save settings");
+      return json;
+    },
+    onError: () => queryClient.invalidateQueries({ queryKey: queryKeys.settings() }),
   });
 
   const {
