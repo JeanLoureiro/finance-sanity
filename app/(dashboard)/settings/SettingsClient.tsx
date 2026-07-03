@@ -72,6 +72,162 @@ function SwitchRow({
   );
 }
 
+type MfaFactorsResponse = { enrolled: boolean; factorId: string | null };
+type MfaEnrollData = { factorId: string; qrCode: string; secret: string };
+
+function SecuritySection() {
+  const queryClient = useQueryClient();
+  const [enrollData, setEnrollData] = useState<MfaEnrollData | null>(null);
+  const [enrollError, setEnrollError] = useState<string | null>(null);
+  const [confirmCode, setConfirmCode] = useState("");
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [isChanging, setIsChanging] = useState(false);
+
+  const { data: mfaData, isLoading } = useQuery<MfaFactorsResponse>({
+    queryKey: queryKeys.mfa.factors(),
+    queryFn: () => fetch("/api/auth/mfa/factors").then((response) => response.json()),
+  });
+
+  async function handleStartEnroll() {
+    setEnrollError(null);
+    const response = await fetch("/api/auth/mfa/enroll", { method: "POST" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setEnrollError(data.error ?? "Failed to start setup");
+      return;
+    }
+    setEnrollData(data);
+    setConfirmCode("");
+  }
+
+  async function handleChangeAuthenticator() {
+    if (!mfaData?.factorId) return;
+    setEnrollError(null);
+    setIsChanging(true);
+    // Unenroll existing factor first, then immediately enroll a new one.
+    const unenrollResponse = await fetch("/api/auth/mfa/unenroll", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ factorId: mfaData.factorId }),
+    });
+    if (!unenrollResponse.ok) {
+      const data = await unenrollResponse.json().catch(() => ({}));
+      setEnrollError(data.error ?? "Failed to remove existing factor");
+      setIsChanging(false);
+      return;
+    }
+    await handleStartEnroll();
+    setIsChanging(false);
+  }
+
+  async function handleConfirmEnroll() {
+    if (!enrollData) return;
+    setConfirmError(null);
+    const response = await fetch("/api/auth/mfa/enroll/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ factorId: enrollData.factorId, code: confirmCode }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setConfirmError(data.error ?? "Invalid code");
+      return;
+    }
+    setEnrollData(null);
+    setConfirmCode("");
+    queryClient.invalidateQueries({ queryKey: queryKeys.mfa.factors() });
+  }
+
+  if (isLoading) {
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
+  }
+
+  if (enrollData) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Scan this QR code with your authenticator app, then enter the 6-digit
+          code to confirm.
+        </p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={enrollData.qrCode}
+          alt="MFA QR code"
+          className="w-36 h-36 rounded-lg border border-border"
+        />
+        <details className="text-xs">
+          <summary className="cursor-pointer text-muted-foreground">
+            Can&apos;t scan? Enter manually
+          </summary>
+          <code className="block mt-2 break-all p-2 rounded bg-muted text-muted-foreground select-all">
+            {enrollData.secret}
+          </code>
+        </details>
+        <div className="space-y-1">
+          <Label htmlFor="confirm-mfa-code">6-digit code</Label>
+          <Input
+            id="confirm-mfa-code"
+            type="text"
+            inputMode="numeric"
+            pattern="\d{6}"
+            maxLength={6}
+            placeholder="000000"
+            autoComplete="one-time-code"
+            value={confirmCode}
+            onChange={(event) => setConfirmCode(event.target.value)}
+          />
+          {confirmError && <p className="text-xs text-destructive">{confirmError}</p>}
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleConfirmEnroll} size="sm">
+            Confirm
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { setEnrollData(null); setEnrollError(null); }}
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium">Authenticator app</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {mfaData?.enrolled ? "Active — required at every sign in" : "Not configured"}
+          </p>
+        </div>
+        {mfaData?.enrolled ? (
+          <span className="text-xs font-medium text-gain">Active</span>
+        ) : (
+          <span className="text-xs font-medium text-muted-foreground">Inactive</span>
+        )}
+      </div>
+      {enrollError && <p className="text-xs text-destructive">{enrollError}</p>}
+      {mfaData?.enrolled ? (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isChanging}
+          onClick={handleChangeAuthenticator}
+        >
+          {isChanging ? "Working…" : "Change authenticator app"}
+        </Button>
+      ) : (
+        <Button size="sm" onClick={handleStartEnroll}>
+          Set up authenticator
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const queryClient = useQueryClient();
   const [testEmailStatus, setTestEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -199,6 +355,7 @@ export default function SettingsPage() {
     { id: "fire-settings",   label: "FIRE" },
     { id: "navigation",      label: "Navigation" },
     { id: "snapshot-email",  label: "Email" },
+    { id: "security",        label: "Security" },
     ...(data?.role === "OWNER" ? [{ id: "sharing", label: "Sharing" }] : []),
   ];
 
@@ -452,6 +609,15 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card id="security" className="mt-10">
+        <CardHeader>
+          <CardTitle className="text-base">Security</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SecuritySection />
+        </CardContent>
+      </Card>
 
       {/* Sticky save bar */}
       <div className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-end gap-3 border-t border-border bg-background/90 px-6 py-3 backdrop-blur-md md:left-16">

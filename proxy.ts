@@ -86,6 +86,18 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  // Mandatory MFA enforcement: every authenticated user must reach aal2 before
+  // accessing protected routes. The /auth/mfa page handles both initial enrollment
+  // (new users with no factor) and TOTP verification (returning users).
+  if (user && isProtected(pathname) && !isPublic(pathname)) {
+    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (!aalData || aalData.currentLevel !== "aal2") {
+      const mfaUrl = request.nextUrl.clone();
+      mfaUrl.pathname = "/auth/mfa";
+      return NextResponse.redirect(mfaUrl);
+    }
+  }
+
   // Forward the verified user identity to server components via internal request
   // headers so they never need to call getUser() themselves (saves one Supabase
   // network round-trip per page render). Strip the headers first to prevent

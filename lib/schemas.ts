@@ -324,23 +324,71 @@ export const loanPaymentSchema = z.object({
 export type LoanPaymentInput = z.infer<typeof loanPaymentSchema>;
 
 // ---------------------------------------------------------------------------
-// Auth — OTP request
+// Auth — Email + password login
 // ---------------------------------------------------------------------------
-export const otpSchema = z.object({
+export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
-  redirectTo: z.string().url().optional(),
+  password: z.string().min(1, "Password is required"),
 });
 
-export type OtpInput = z.infer<typeof otpSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
 
 // ---------------------------------------------------------------------------
-// Auth — OTP verify
+// Auth — Sign up
 // ---------------------------------------------------------------------------
-export const verifySchema = z.object({
-  token: z.string().min(1),
+export const signupSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
-export type VerifyInput = z.infer<typeof verifySchema>;
+export type SignupInput = z.infer<typeof signupSchema>;
+
+// ---------------------------------------------------------------------------
+// Auth — MFA TOTP verification (login step)
+// ---------------------------------------------------------------------------
+export const mfaVerifySchema = z.object({
+  factorId: z.string().min(1),
+  code: z.string().length(6).regex(/^\d{6}$/, "Code must be 6 digits"),
+});
+
+export type MfaVerifyInput = z.infer<typeof mfaVerifySchema>;
+
+// ---------------------------------------------------------------------------
+// Auth — MFA enroll verify (completing initial enrollment)
+// ---------------------------------------------------------------------------
+export const mfaEnrollVerifySchema = z.object({
+  factorId: z.string().min(1),
+  code: z.string().length(6).regex(/^\d{6}$/, "Code must be 6 digits"),
+});
+
+export type MfaEnrollVerifyInput = z.infer<typeof mfaEnrollVerifySchema>;
+
+// ---------------------------------------------------------------------------
+// Auth — MFA unenroll (change authenticator app)
+// ---------------------------------------------------------------------------
+export const mfaUnenrollSchema = z.object({
+  factorId: z.string().min(1),
+});
+
+export type MfaUnenrollInput = z.infer<typeof mfaUnenrollSchema>;
+
+// ---------------------------------------------------------------------------
+// Auth — Forgot password request
+// ---------------------------------------------------------------------------
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+// ---------------------------------------------------------------------------
+// Auth — Reset password (set new password)
+// ---------------------------------------------------------------------------
+export const resetPasswordSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 // ---------------------------------------------------------------------------
 // Invitation — create invite
