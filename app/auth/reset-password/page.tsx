@@ -23,7 +23,10 @@ type ExchangeState = "exchanging" | "ready" | "error";
 function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [exchangeState, setExchangeState] = useState<ExchangeState>("exchanging");
+  const code = searchParams.get("code");
+  const [exchangeState, setExchangeState] = useState<ExchangeState>(
+    code ? "exchanging" : "error"
+  );
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm<ResetPasswordFormInput>({
@@ -31,12 +34,7 @@ function ResetPasswordContent() {
   });
 
   useEffect(() => {
-    const code = searchParams.get("code");
-
-    if (!code) {
-      setExchangeState("error");
-      return;
-    }
+    if (!code) return;
 
     const supabase = createClient();
     supabase.auth
@@ -51,7 +49,7 @@ function ResetPasswordContent() {
         }
       })
       .catch(() => setExchangeState("error"));
-  }, [searchParams]);
+  }, [code]);
 
   async function handleSubmit(values: ResetPasswordFormInput) {
     setServerError(null);
