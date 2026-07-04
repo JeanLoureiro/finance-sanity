@@ -41,7 +41,7 @@ export default function LandingNav() {
         className={cn(
           scrolled
             ? buttonVariants({ size: "sm" })
-            : "inline-flex h-[34px] items-center justify-center rounded-lg bg-white px-5 text-sm font-semibold text-[var(--fs-ink-1)] transition-all hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            : "inline-flex h-[34px] items-center justify-center rounded-lg bg-white px-5 text-sm font-semibold text-[oklch(0.40_0.085_185)] transition-all hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
         )}
       >
         Get started
