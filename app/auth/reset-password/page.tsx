@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { resetPasswordSchema, type ResetPasswordInput } from "@/lib/schemas";
+import { resetPasswordFormSchema, type ResetPasswordFormInput } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/client";
 
 type ExchangeState = "exchanging" | "ready" | "error";
@@ -24,11 +24,9 @@ function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const [exchangeState, setExchangeState] = useState<ExchangeState>("exchanging");
   const [serverError, setServerError] = useState<string | null>(null);
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [confirmError, setConfirmError] = useState<string | null>(null);
 
-  const form = useForm<ResetPasswordInput>({
-    resolver: zodResolver(resetPasswordSchema),
+  const form = useForm<ResetPasswordFormInput>({
+    resolver: zodResolver(resetPasswordFormSchema),
   });
 
   useEffect(() => {
@@ -54,19 +52,13 @@ function ResetPasswordContent() {
       .catch(() => setExchangeState("error"));
   }, [searchParams]);
 
-  async function handleSubmit(values: ResetPasswordInput) {
+  async function handleSubmit(values: ResetPasswordFormInput) {
     setServerError(null);
-    setConfirmError(null);
-
-    if (values.password !== confirmPassword) {
-      setConfirmError("Passwords do not match");
-      return;
-    }
 
     const response = await fetch("/api/auth/reset-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
+      body: JSON.stringify({ password: values.password }),
     });
 
     const data = await response.json().catch(() => ({}));
@@ -123,11 +115,12 @@ function ResetPasswordContent() {
           id="confirm-password"
           type="password"
           autoComplete="new-password"
-          value={confirmPassword}
-          onChange={(event) => setConfirmPassword(event.target.value)}
+          {...form.register("confirmPassword")}
         />
-        {confirmError && (
-          <p className="text-xs text-destructive">{confirmError}</p>
+        {form.formState.errors.confirmPassword && (
+          <p className="text-xs text-destructive">
+            {form.formState.errors.confirmPassword.message}
+          </p>
         )}
       </div>
       {serverError && (

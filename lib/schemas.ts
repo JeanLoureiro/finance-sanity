@@ -356,12 +356,9 @@ export type MfaVerifyInput = z.infer<typeof mfaVerifySchema>;
 // ---------------------------------------------------------------------------
 // Auth — MFA enroll verify (completing initial enrollment)
 // ---------------------------------------------------------------------------
-export const mfaEnrollVerifySchema = z.object({
-  factorId: z.string().min(1),
-  code: z.string().length(6).regex(/^\d{6}$/, "Code must be 6 digits"),
-});
+export const mfaEnrollVerifySchema = mfaVerifySchema;
 
-export type MfaEnrollVerifyInput = z.infer<typeof mfaEnrollVerifySchema>;
+export type MfaEnrollVerifyInput = MfaVerifyInput;
 
 // ---------------------------------------------------------------------------
 // Auth — MFA unenroll (change authenticator app)
@@ -389,6 +386,15 @@ export const resetPasswordSchema = z.object({
 });
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+export const resetPasswordFormSchema = resetPasswordSchema
+  .extend({ confirmPassword: z.string() })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+export type ResetPasswordFormInput = z.infer<typeof resetPasswordFormSchema>;
 
 // ---------------------------------------------------------------------------
 // Invitation — create invite
