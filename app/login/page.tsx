@@ -16,11 +16,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setNotice(null);
 
     const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/signup";
     const response = await fetch(endpoint, {
@@ -38,6 +40,11 @@ export default function LoginPage() {
     }
 
     const data = await response.json().catch(() => ({}));
+    if (data.message) {
+      setNotice(data.message);
+      setMode("login");
+      return;
+    }
     router.push(data.redirectTo ?? "/auth/mfa");
   }
 
@@ -86,6 +93,7 @@ export default function LoginPage() {
                 required
               />
             </div>
+            {notice && <p className="text-sm text-muted-foreground">{notice}</p>}
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading

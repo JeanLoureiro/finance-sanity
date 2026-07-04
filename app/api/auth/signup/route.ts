@@ -34,5 +34,12 @@ export async function POST(request: NextRequest) {
     // ignored — retried on first login
   }
 
+  if (!data.session) {
+    return Response.json(
+      { redirectTo: "/login", message: "Check your email to confirm your account" },
+      { status: 201 }
+    );
+  }
+
   return Response.json({ redirectTo: "/auth/mfa" }, { status: 201 });
 }
