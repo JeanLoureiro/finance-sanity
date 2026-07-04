@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { forgotPasswordSchema, type ForgotPasswordInput } from "@/lib/schemas";
+import BrandLogoMark from "@/components/landing/BrandLogoMark";
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
@@ -31,9 +32,7 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <div className="flex items-center gap-2.5 mb-2">
-            <div className="size-8 rounded-lg bg-foreground text-background grid place-items-center text-xs font-semibold">
-              FS
-            </div>
+            <BrandLogoMark size="md" />
             <CardTitle className="tracking-tight" style={{ letterSpacing: "-0.01em" }}>
               Financial Sanity
             </CardTitle>

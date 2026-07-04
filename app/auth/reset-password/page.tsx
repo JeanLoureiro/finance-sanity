@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { resetPasswordFormSchema, type ResetPasswordFormInput } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/client";
+import BrandLogoMark from "@/components/landing/BrandLogoMark";
 
 type ExchangeState = "exchanging" | "ready" | "error";
 
@@ -143,9 +144,7 @@ export default function ResetPasswordPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <div className="flex items-center gap-2.5 mb-2">
-            <div className="size-8 rounded-lg bg-foreground text-background grid place-items-center text-xs font-semibold">
-              FS
-            </div>
+            <BrandLogoMark size="md" />
             <CardTitle
               className="tracking-tight"
               style={{ letterSpacing: "-0.01em" }}
