@@ -154,18 +154,6 @@ model SharedAccess {
 }
 
 // ---------------------------------------------------------------------------
-// OTP TOKENS (for magic link authentication)
-// ---------------------------------------------------------------------------
-model OTPToken {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  token     String    @unique
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-}
-
-// ---------------------------------------------------------------------------
 // CASH
 // ---------------------------------------------------------------------------
 model BankAccount {

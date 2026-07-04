@@ -16,9 +16,6 @@ RESEND_API_KEY=re_xxxxxxxxxxxxx
 # For production, use your verified domain: noreply@yourdomain.com
 EMAIL_FROM="Financial Sanity <noreply@financialsanity.app"
 
-# App URL (required for magic links)
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
 # Mock emails in development (optional)
 # Set to "true" to log emails to console instead of sending
 # Useful for testing invitations to multiple emails without domain verification
@@ -49,8 +46,6 @@ MOCK_EMAILS=true
 
 ### 3. Run Database Migration
 
-The OTPToken table has already been created if you ran the migration. If not:
-
 ```bash
 npx prisma migrate dev
 ```
@@ -70,36 +65,34 @@ npx prisma migrate dev
    npm run dev
    ```
 
-3. Test invitations to any email - they'll be logged to console instead of sent
-4. Check server logs for magic links and invitation links
-5. Copy the links from console to test the flow
+3. Test invitations to any email — they'll be logged to console instead of sent
+4. Check server logs for invitation links and password-reset links
 
 **Option B: Real Emails (Limited to Verified Addresses)**
 
 1. Remove or set `MOCK_EMAILS=false` in `.env.local`
 2. Add test email addresses in Resend dashboard
-3. Navigate to `/login` and test with verified email
-4. Check your inbox for the magic link email
+3. Navigate to `/login`, register, and test the forgot-password flow
+4. Check your inbox for the password-reset email
 
 ## Email Templates
 
 Email templates are located in the `emails/` directory:
 
-- **`emails/magic-link.tsx`** - Magic link authentication email
 - **`emails/invitation.tsx`** - User invitation email
 
 These are React components that you can customize with your branding.
 
 ## How It Works
 
-### Magic Link Authentication
+### Email + Password Authentication
 
-1. User enters email on `/login`
-2. System generates OTP token and stores in database
-3. Email sent via Resend with magic link containing token
-4. User clicks link → redirected to `/auth/callback?token=xxx`
-5. Token verified and exchanged for Supabase session
-6. User logged in
+1. User registers at `/login` with email and password (Supabase `signUp`)
+2. Supabase sends a confirmation email; after confirmation the user can sign in
+3. On sign-in (`signInWithPassword`), the session is established server-side via the SSR client
+4. Every authenticated page route enforces `aal2` — the user must complete TOTP MFA before accessing the app
+5. New users are redirected to `/auth/mfa` to enroll an authenticator app; returning users verify their TOTP code there
+6. Forgot-password flow: user submits email → Supabase sends a reset link → `/auth/reset-password` lets them set a new password → redirected back through MFA
 
 ### Invitations
 

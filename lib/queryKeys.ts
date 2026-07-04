@@ -75,4 +75,8 @@ export const queryKeys = {
   contexts: {
     all: () => ["contexts"] as const,
   },
+
+  mfa: {
+    factors: () => ["mfa", "factors"] as const,
+  },
 };
