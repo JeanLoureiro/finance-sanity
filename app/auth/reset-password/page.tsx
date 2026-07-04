@@ -24,8 +24,10 @@ function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const linkError = searchParams.get("error");
+  const typeParam = searchParams.get("type");
+  const isRecoveryFlow = typeParam === "recovery";
   const [exchangeState, setExchangeState] = useState<ExchangeState>(
-    linkError ? "error" : "exchanging"
+    linkError || !isRecoveryFlow ? "error" : "exchanging"
   );
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -34,7 +36,7 @@ function ResetPasswordContent() {
   });
 
   useEffect(() => {
-    if (linkError) return;
+    if (linkError || !isRecoveryFlow) return;
 
     const supabase = createClient();
     supabase.auth
@@ -47,7 +49,7 @@ function ResetPasswordContent() {
         }
       })
       .catch(() => setExchangeState("error"));
-  }, [linkError]);
+  }, [linkError, isRecoveryFlow]);
 
   async function handleSubmit(values: ResetPasswordFormInput) {
     setServerError(null);
