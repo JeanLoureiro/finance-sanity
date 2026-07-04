@@ -92,7 +92,7 @@ These are React components that you can customize with your branding.
 3. On sign-in (`signInWithPassword`), the session is established server-side via the SSR client
 4. Every authenticated page route enforces `aal2` — the user must complete TOTP MFA before accessing the app
 5. New users are redirected to `/auth/mfa` to enroll an authenticator app; returning users verify their TOTP code there
-6. Forgot-password flow: user submits email → Supabase sends a reset link → `/auth/reset-password` lets them set a new password → redirected back through MFA
+6. Forgot-password flow: user submits email → Supabase sends a reset link → `/api/auth/callback` exchanges the PKCE code for a session server-side → `/auth/reset-password` verifies the session and lets them set a new password → redirected back through MFA
 
 ### Invitations
 

@@ -23,9 +23,11 @@ type ExchangeState = "exchanging" | "ready" | "error";
 function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const code = searchParams.get("code");
+  const linkError = searchParams.get("error");
+  const typeParam = searchParams.get("type");
+  const isRecoveryFlow = typeParam === "recovery";
   const [exchangeState, setExchangeState] = useState<ExchangeState>(
-    code ? "exchanging" : "error"
+    linkError || !isRecoveryFlow ? "error" : "exchanging"
   );
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -34,22 +36,20 @@ function ResetPasswordContent() {
   });
 
   useEffect(() => {
-    if (!code) return;
+    if (linkError || !isRecoveryFlow) return;
 
     const supabase = createClient();
     supabase.auth
-      .exchangeCodeForSession(code)
-      .then(({ error }) => {
-        if (error) {
-          setExchangeState("error");
-        } else {
-          // Remove the code from the URL so it cannot be replayed.
-          window.history.replaceState(null, "", "/auth/reset-password");
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (session) {
           setExchangeState("ready");
+        } else {
+          setExchangeState("error");
         }
       })
       .catch(() => setExchangeState("error"));
-  }, [code]);
+  }, [linkError, isRecoveryFlow]);
 
   async function handleSubmit(values: ResetPasswordFormInput) {
     setServerError(null);
