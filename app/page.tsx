@@ -120,7 +120,7 @@ export default async function LandingPage() {
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/login"
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-white px-8 text-sm font-semibold text-[var(--fs-ink-1)] transition-all hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-white px-8 text-sm font-semibold text-[oklch(0.40_0.085_185)] transition-all hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
             >
               Get started
             </Link>
