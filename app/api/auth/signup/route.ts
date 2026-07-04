@@ -28,7 +28,11 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Signup failed" }, { status: 500 });
   }
 
-  await getOrCreateSettingsForUser(data.user.id, data.user.email ?? "");
+  try {
+    await getOrCreateSettingsForUser(data.user.id, data.user.email ?? "");
+  } catch {
+    // ignored — retried on first login
+  }
 
   return Response.json({ redirectTo: "/auth/mfa" }, { status: 201 });
 }
