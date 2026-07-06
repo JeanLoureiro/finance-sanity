@@ -94,7 +94,7 @@ function OtpInput({
   }
 
   return (
-    <div className="flex gap-2 justify-center">
+    <div role="group" aria-label="One-time code" className="flex gap-2 justify-center">
       {slots.map((digit, index) => (
         <input
           key={index}
@@ -103,6 +103,7 @@ function OtpInput({
           inputMode="numeric"
           maxLength={6}
           value={digit}
+          aria-label={`Digit ${index + 1} of 6`}
           autoFocus={autoFocus && index === 0}
           autoComplete={index === 0 ? "one-time-code" : "off"}
           disabled={disabled}
