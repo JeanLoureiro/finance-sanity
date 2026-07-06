@@ -360,26 +360,27 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="pb-24">
+    <div>
       <form onSubmit={handleSubmit((values) => mutate(values))} className="space-y-10">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">Configure</p>
           <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-          <nav className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
-            {ANCHOR_SECTIONS.map(({ id, label }) => (
-              <a
-                key={id}
-                href={`#${id}`}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
         </div>
 
+        <nav className="flex flex-wrap gap-x-6 gap-y-2 sticky top-0 z-10 bg-background/90 backdrop-blur-md py-3 -mx-6 px-6 border-b border-border">
+          {ANCHOR_SECTIONS.map(({ id, label }) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+
         {/* Income */}
-        <section id="income">
+        <section className="scroll-mt-14" id="income">
           <SectionHeader title="Income" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Annual Salary ($)" description="Before tax" error={errors.salary?.message}>
@@ -413,7 +414,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Automations */}
-        <section id="automations">
+        <section className="scroll-mt-14" id="automations">
           <SectionHeader title="Automations" />
           <div className="divide-y divide-border">
             <SwitchRow
@@ -426,7 +427,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Investments */}
-        <section id="investments">
+        <section className="scroll-mt-14" id="investments">
           <SectionHeader title="Investments" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Bank Interest Rate" description="e.g. 0.06 = 6%" error={errors.bankInterestRate?.message}>
@@ -457,7 +458,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Goals */}
-        <section id="goals">
+        <section className="scroll-mt-14" id="goals">
           <SectionHeader title="Goals" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Cash Savings Target ($)" error={errors.cashSavingsTarget?.message}>
@@ -473,7 +474,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Capital Gains Tax */}
-        <section id="capital-gains">
+        <section className="scroll-mt-14" id="capital-gains">
           <SectionHeader title="Capital Gains Tax" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="CGT Method" description="First In First Out">
@@ -498,7 +499,7 @@ export default function SettingsPage() {
         </section>
 
         {/* FIRE Settings */}
-        <section id="fire-settings">
+        <section className="scroll-mt-14" id="fire-settings">
           <SectionHeader title="FIRE Settings" description="Used to generate your Financial Independence projections" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Year of Birth" error={errors.yearOfBirth?.message}>
@@ -520,7 +521,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Navigation */}
-        <section id="navigation">
+        <section className="scroll-mt-14" id="navigation">
           <SectionHeader
             title="Navigation"
             description="Show or hide pages in the sidebar. Turn off sections you don't use to keep the menu clean."
@@ -553,7 +554,7 @@ export default function SettingsPage() {
         </section>
 
         {/* Snapshot Email */}
-        <section id="snapshot-email">
+        <section className="scroll-mt-14" id="snapshot-email">
           <SectionHeader
             title="Snapshot Email"
             description="Choose which sections appear in the automatic snapshot email. Sections with no data are omitted regardless."
@@ -600,7 +601,7 @@ export default function SettingsPage() {
       </form>
 
       {data?.role === "OWNER" && (
-        <Card id="sharing" className="mt-10">
+        <Card id="sharing" className="mt-10 scroll-mt-14">
           <CardHeader>
             <CardTitle className="text-base">Sharing</CardTitle>
           </CardHeader>
@@ -610,7 +611,7 @@ export default function SettingsPage() {
         </Card>
       )}
 
-      <Card id="security" className="mt-10">
+      <Card id="security" className="mt-10 scroll-mt-14">
         <CardHeader>
           <CardTitle className="text-base">Security</CardTitle>
         </CardHeader>
@@ -620,7 +621,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* Sticky save bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-end gap-3 border-t border-border bg-background/90 px-6 py-3 backdrop-blur-md md:left-16">
+      <div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 border-t border-border bg-background/90 px-6 py-3 backdrop-blur-md -mx-6">
         <Button
           type="submit"
           disabled={isPending}
