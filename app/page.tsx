@@ -15,6 +15,8 @@ import {
 import LandingNav from "@/components/landing/LandingNav"
 import BrandLogoMark from "@/components/landing/BrandLogoMark"
 import FeatureCard from "@/components/landing/FeatureCard"
+import FireProjectionChart from "@/components/landing/FireProjectionChart"
+import CgtReportChart from "@/components/landing/CgtReportChart"
 
 const features = [
   {
@@ -206,8 +208,8 @@ export default async function LandingPage() {
               ))}
             </ul>
           </div>
-          <div className="flex h-64 items-center justify-center rounded-2xl border border-[var(--fs-line-2)] bg-[var(--fs-surface-1)] font-mono text-sm text-[var(--fs-ink-4)]">
-            [ FIRE projection chart ]
+          <div className="flex h-64 items-center justify-center overflow-hidden rounded-2xl border border-[var(--fs-line-2)] bg-[var(--fs-surface-1)] p-2">
+            <FireProjectionChart />
           </div>
         </div>
       </section>
@@ -215,8 +217,8 @@ export default async function LandingPage() {
       {/* CGT Section */}
       <section className="bg-fs-surface-3 px-6 py-24">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
-          <div className="order-2 flex h-64 items-center justify-center rounded-2xl border border-[var(--fs-line-2)] bg-[var(--fs-surface-1)] font-mono text-sm text-[var(--fs-ink-4)] lg:order-1">
-            [ CGT report by financial year ]
+          <div className="order-2 flex h-64 items-center justify-center overflow-hidden rounded-2xl border border-[var(--fs-line-2)] bg-[var(--fs-surface-1)] p-2 lg:order-1">
+            <CgtReportChart />
           </div>
           <div className="order-1 lg:order-2">
             <span className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-fs-accent-subtle px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-fs-accent-strong">
