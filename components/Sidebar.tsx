@@ -46,6 +46,15 @@ const NAV_GROUPS: { name: string; items: NavItem[] }[] = [
     ],
   },
   {
+    name: "Planning",
+    items: [
+      { href: "/budget",        label: "Budget",          icon: Wallet,  settingsKey: "useBudget" },
+      { href: "/side-income",   label: "Side Income",     icon: Clock,   settingsKey: "useSideIncome" },
+      { href: "/fire",          label: "FIRE Projection", icon: Flame,   settingsKey: "useFIRE" },
+      { href: "/capital-gains", label: "Capital Gains",   icon: Receipt, settingsKey: "useCapitalGains" },
+    ],
+  },
+  {
     name: "Investments",
     items: [
       { href: "/etfs",          label: "ETFs",          icon: TrendingUp,  settingsKey: "useETFs" },
@@ -70,15 +79,6 @@ const NAV_GROUPS: { name: string; items: NavItem[] }[] = [
       { href: "/loans", label: "Loans & Debt", icon: CreditCard, settingsKey: "useLiabilities" },
     ],
   },
-  {
-    name: "Planning",
-    items: [
-      { href: "/budget",        label: "Budget",          icon: Wallet,  settingsKey: "useBudget" },
-      { href: "/side-income",   label: "Side Income",     icon: Clock,   settingsKey: "useSideIncome" },
-      { href: "/fire",          label: "FIRE Projection", icon: Flame,   settingsKey: "useFIRE" },
-      { href: "/capital-gains", label: "Capital Gains",   icon: Receipt, settingsKey: "useCapitalGains" },
-    ],
-  },
 ];
 
 function getInitials(email: string | null): string {
@@ -100,6 +100,7 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { data: settings } = useQuery<Record<string, boolean>>({
     queryKey: queryKeys.settings(),
@@ -208,39 +209,6 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
         })}
       </nav>
 
-      {/* Footer links */}
-      {!collapsed && (
-        <div className="border-t border-border px-2 py-2 flex flex-col gap-px">
-          {[
-            { href: "/glossary", label: "Glossary", Icon: BookOpen },
-            { href: "/design-system", label: "Design System", Icon: Palette },
-            { href: "/import", label: "Import CSV", Icon: Upload },
-            { href: "/settings", label: "Settings", Icon: Settings },
-          ].map(({ href, label, Icon }) => {
-            const isActive = activeHref === href;
-            return (
-              <div key={href} className="relative">
-                {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-r-full bg-fs-accent-500" />
-                )}
-                <Link
-                  href={href}
-                  onClick={(event) => { event.preventDefault(); navigate(href); }}
-                  className={cn(
-                    "flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] transition-all",
-                    isActive
-                      ? "bg-fs-accent-subtle text-fs-accent-strong font-semibold"
-                      : "font-medium text-muted-foreground hover:text-foreground hover:bg-fs-accent-subtle/50"
-                  )}
-                >
-                  <Icon className={cn("size-4 flex-shrink-0", isActive ? "opacity-100" : "opacity-70")} />
-                  <span>{label}</span>
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {/* Context switcher */}
       <div className={cn(
@@ -252,7 +220,7 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
 
       {/* User footer */}
       <div className={cn(
-        "border-t border-border flex-shrink-0",
+        "border-t border-border flex-shrink-0 relative",
         collapsed ? "px-2 py-3 flex justify-center" : "px-3 py-3"
       )}>
         {collapsed ? (
@@ -264,25 +232,67 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
             {initials}
           </div>
         ) : (
-          <div className="flex items-center gap-2.5">
-            <div
-              className="size-8 rounded-full grid place-items-center text-xs font-semibold flex-shrink-0"
-              style={{ background: "var(--fs-accent-100)", color: "var(--fs-accent-700)" }}
-            >
-              {initials}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[13px] font-medium truncate leading-none">{email?.split("@")[0] ?? "Account"}</div>
-              {email && <div className="text-[11px] text-muted-foreground truncate mt-0.5">{email}</div>}
-            </div>
+          <>
             <button
-              onClick={handleSignOut}
-              aria-label="Sign out"
-              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex-shrink-0"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="w-full flex items-center gap-2.5 text-left hover:opacity-80 transition-opacity"
             >
-              <LogOut className="size-3.5" />
+              <div
+                className="size-8 rounded-full grid place-items-center text-xs font-semibold flex-shrink-0"
+                style={{ background: "var(--fs-accent-100)", color: "var(--fs-accent-700)" }}
+              >
+                {initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-medium truncate leading-none">{email?.split("@")[0] ?? "Account"}</div>
+                {email && <div className="text-[11px] text-muted-foreground truncate mt-0.5">{email}</div>}
+              </div>
             </button>
-          </div>
+
+            {/* Dropdown menu */}
+            {isMenuOpen && (
+              <div className="absolute bottom-full left-3 right-3 mb-2 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
+                {[
+                  { href: "/glossary", label: "Glossary", Icon: BookOpen },
+                  { href: "/design-system", label: "Design System", Icon: Palette },
+                  { href: "/import", label: "Import CSV", Icon: Upload },
+                  { href: "/settings", label: "Settings", Icon: Settings },
+                ].map(({ href, label, Icon }) => {
+                  const isActive = activeHref === href;
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        setIsMenuOpen(false);
+                        navigate(href);
+                      }}
+                      className={cn(
+                        "flex items-center gap-2.5 px-3 py-2 text-[13px] transition-all border-b border-border last:border-b-0",
+                        isActive
+                          ? "bg-fs-accent-subtle text-fs-accent-strong font-semibold"
+                          : "font-medium text-muted-foreground hover:text-foreground hover:bg-fs-accent-subtle/50"
+                      )}
+                    >
+                      <Icon className={cn("size-4 flex-shrink-0", isActive ? "opacity-100" : "opacity-70")} />
+                      <span>{label}</span>
+                    </Link>
+                  );
+                })}
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-fs-accent-subtle/50 transition-all border-t border-border"
+                >
+                  <LogOut className="size-4 flex-shrink-0 opacity-70" />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </aside>

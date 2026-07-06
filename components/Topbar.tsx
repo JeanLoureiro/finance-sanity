@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { cn } from "@/lib/utils";
 
@@ -63,25 +63,9 @@ export function Topbar({ onToggleSidebar, className }: TopbarProps) {
         </nav>
       </div>
 
-      {/* Right: search + theme + bell */}
+      {/* Right: theme */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
-        {/* Search hint — visual only */}
-        <div className="hidden sm:flex items-center gap-2 h-8 px-3 rounded-lg bg-secondary border-0 text-sm text-muted-foreground w-52">
-          <svg className="size-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
-          </svg>
-          <span className="flex-1 text-xs">Search…</span>
-          <kbd className="text-[10px] font-mono border border-border bg-card rounded px-1 py-0.5 leading-none">⌘K</kbd>
-        </div>
-
         <ThemeToggle />
-
-        <button
-          aria-label="Notifications"
-          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-        >
-          <Bell className="size-4" />
-        </button>
       </div>
     </header>
   );
