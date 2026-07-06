@@ -208,7 +208,10 @@ export default async function LandingPage() {
               ))}
             </ul>
           </div>
-          <div className="flex h-64 items-center justify-center overflow-hidden rounded-2xl border border-[var(--fs-line-2)] bg-[var(--fs-surface-1)] p-2">
+          <div
+            className="flex h-64 items-center justify-center overflow-hidden rounded-2xl border border-white/10 p-3"
+            style={{ background: "oklch(0.22 0.010 60)" }}
+          >
             <FireProjectionChart />
           </div>
         </div>

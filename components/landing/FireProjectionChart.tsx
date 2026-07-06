@@ -2,18 +2,19 @@
  * Static demo FIRE projection chart for the landing page.
  * Pure SVG — no client JS needed.
  *
+ * Designed for a dark container background (fs-surface-inv family).
  * Data: hypothetical portfolio growing from $380k (2025) to $1.68M (2038)
  * at 8% p.a. + $30k annual contributions. FIRE target: $1.1M.
  */
 
-// Chart geometry
-const LEFT = 54;
-const RIGHT = 532;
-const TOP = 20;
-const BOTTOM = 206;
-const CHART_W = RIGHT - LEFT; // 478
-const CHART_H = BOTTOM - TOP; // 186
-const MAX_VALUE = 1750; // $1.75M ceiling
+// Chart geometry — generous margins so content never touches the SVG edges
+const LEFT = 58;
+const RIGHT = 510; // 50px from right edge of 560 viewBox
+const TOP = 30;    // 30px from top — room for legend
+const BOTTOM = 215;
+const CHART_W = RIGHT - LEFT; // 452
+const CHART_H = BOTTOM - TOP; // 185
+const MAX_VALUE = 1900; // ceiling above highest data point ($1.68M)
 const FIRE_TARGET = 1100; // $1.1M
 
 // Portfolio values in $k, 2025–2038 (14 points)
@@ -57,7 +58,7 @@ const X_LABELS = [
 export default function FireProjectionChart() {
   return (
     <svg
-      viewBox="0 0 560 240"
+      viewBox="0 0 560 250"
       width="100%"
       height="100%"
       aria-label="FIRE projection chart showing portfolio growth from $380k in 2025 to $1.68M in 2038, crossing the $1.1M FIRE target in 2034"
@@ -65,7 +66,7 @@ export default function FireProjectionChart() {
     >
       <defs>
         <linearGradient id="fire-area" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="oklch(0.78 0.090 185)" stopOpacity="0.40" />
+          <stop offset="0%" stopColor="oklch(0.78 0.090 185)" stopOpacity="0.35" />
           <stop offset="100%" stopColor="oklch(0.78 0.090 185)" stopOpacity="0.03" />
         </linearGradient>
       </defs>
@@ -108,7 +109,7 @@ export default function FireProjectionChart() {
         stroke="oklch(0.82 0.120 75)"
         strokeWidth="1"
         strokeDasharray="4 3"
-        opacity="0.45"
+        opacity="0.40"
       />
 
       {/* Area fill */}
@@ -161,8 +162,8 @@ export default function FireProjectionChart() {
         width={86}
         height={14}
         rx="3"
-        fill="oklch(0.22 0.010 60)"
-        opacity="0.85"
+        fill="oklch(0.16 0.008 60)"
+        opacity="0.90"
       />
       <text
         x={RIGHT - 47}
@@ -176,17 +177,17 @@ export default function FireProjectionChart() {
       </text>
 
       {/* FIRE crossing dot */}
-      <circle cx={fireX.toFixed(1)} cy={yFireLine.toFixed(1)} r="4.5" fill="oklch(0.22 0.010 60)" />
+      <circle cx={fireX.toFixed(1)} cy={yFireLine.toFixed(1)} r="4.5" fill="oklch(0.16 0.008 60)" />
       <circle cx={fireX.toFixed(1)} cy={yFireLine.toFixed(1)} r="3" fill="oklch(0.82 0.120 75)" />
 
       {/* End-of-projection dot */}
       <circle cx={points[N].x.toFixed(1)} cy={points[N].y.toFixed(1)} r="4" fill="oklch(0.78 0.090 185)" />
 
       {/* Legend */}
-      <circle cx={LEFT + 2} cy={TOP - 4} r="3" fill="oklch(0.78 0.090 185)" />
+      <circle cx={LEFT + 5} cy={TOP - 8} r="3" fill="oklch(0.78 0.090 185)" />
       <text
-        x={LEFT + 8}
-        y={TOP}
+        x={LEFT + 12}
+        y={TOP - 4}
         fontSize="8.5"
         fill="rgba(255,255,255,0.45)"
         fontFamily="ui-sans-serif,system-ui,sans-serif"
