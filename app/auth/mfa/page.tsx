@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useRef, useState, Suspense } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { mfaVerifySchema, mfaEnrollVerifySchema, type MfaVerifyInput, type MfaEnrollVerifyInput } from "@/lib/schemas";
 import BrandLogoMark from "@/components/landing/BrandLogoMark";
@@ -21,6 +19,104 @@ type EnrollState =
   | { step: "idle" }
   | { step: "scanning"; factorId: string; qrCode: string; secret: string };
 
+function OtpInput({
+  value,
+  onChange,
+  autoFocus,
+  disabled,
+  onComplete,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  autoFocus?: boolean;
+  disabled?: boolean;
+  onComplete?: () => void;
+}) {
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const slots = Array.from({ length: 6 }, (_, index) => value[index] ?? "");
+
+  function handleChange(slotIndex: number, event: React.ChangeEvent<HTMLInputElement>) {
+    const raw = event.target.value.replace(/\D/g, "");
+    if (!raw) return;
+
+    const newSlots = [...slots];
+
+    if (raw.length > 1) {
+      // Handle paste: distribute digits from this slot onward
+      for (let i = 0; i < raw.length && slotIndex + i < 6; i++) {
+        newSlots[slotIndex + i] = raw[i];
+      }
+      const newCode = newSlots.join("");
+      onChange(newCode);
+      const nextFocus = Math.min(slotIndex + raw.length, 5);
+      inputRefs.current[nextFocus]?.focus();
+      if (newCode.length === 6) {
+        onComplete?.();
+      }
+      return;
+    }
+
+    newSlots[slotIndex] = raw[0];
+    const newCode = newSlots.join("");
+    onChange(newCode);
+
+    if (slotIndex < 5) {
+      inputRefs.current[slotIndex + 1]?.focus();
+    }
+
+    if (newCode.length === 6) {
+      onComplete?.();
+    }
+  }
+
+  function handleKeyDown(slotIndex: number, event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Backspace") {
+      if (slots[slotIndex]) {
+        const newSlots = [...slots];
+        newSlots[slotIndex] = "";
+        onChange(newSlots.join(""));
+      } else if (slotIndex > 0) {
+        const newSlots = [...slots];
+        newSlots[slotIndex - 1] = "";
+        onChange(newSlots.join(""));
+        inputRefs.current[slotIndex - 1]?.focus();
+      }
+      event.preventDefault();
+    } else if (event.key === "ArrowLeft" && slotIndex > 0) {
+      inputRefs.current[slotIndex - 1]?.focus();
+    } else if (event.key === "ArrowRight" && slotIndex < 5) {
+      inputRefs.current[slotIndex + 1]?.focus();
+    }
+  }
+
+  function handleFocus(event: React.FocusEvent<HTMLInputElement>) {
+    event.target.select();
+  }
+
+  return (
+    <div role="group" aria-label="One-time code" className="flex gap-2 justify-center">
+      {slots.map((digit, index) => (
+        <input
+          key={index}
+          ref={(element) => { inputRefs.current[index] = element; }}
+          type="text"
+          inputMode="numeric"
+          maxLength={6}
+          value={digit}
+          aria-label={`Digit ${index + 1} of 6`}
+          autoFocus={autoFocus && index === 0}
+          autoComplete={index === 0 ? "one-time-code" : "off"}
+          disabled={disabled}
+          onChange={(event) => handleChange(index, event)}
+          onKeyDown={(event) => handleKeyDown(index, event)}
+          onFocus={handleFocus}
+          className="w-11 h-14 text-center text-xl font-semibold rounded-md border border-input bg-background text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50 caret-transparent"
+        />
+      ))}
+    </div>
+  );
+}
+
 function MfaContent() {
   const router = useRouter();
   const [factorStatus, setFactorStatus] = useState<FactorStatus>({ status: "loading" });
@@ -29,10 +125,12 @@ function MfaContent() {
 
   const verifyForm = useForm<MfaVerifyInput>({
     resolver: zodResolver(mfaVerifySchema),
+    defaultValues: { code: "" },
   });
 
   const enrollVerifyForm = useForm<MfaEnrollVerifyInput>({
     resolver: zodResolver(mfaEnrollVerifySchema),
+    defaultValues: { code: "" },
   });
 
   useEffect(() => {
@@ -110,28 +208,29 @@ function MfaContent() {
 
   if (factorStatus.status === "enrolled") {
     return (
-      <form onSubmit={verifyForm.handleSubmit(handleVerify)} className="space-y-4">
+      <form onSubmit={verifyForm.handleSubmit(handleVerify)} className="space-y-6">
         <input type="hidden" {...verifyForm.register("factorId")} value={factorStatus.factorId} />
-        <div className="space-y-2">
-          <Label htmlFor="totp-code">6-digit code</Label>
-          <Input
-            id="totp-code"
-            type="text"
-            inputMode="numeric"
-            pattern="\d{6}"
-            maxLength={6}
-            placeholder="000000"
-            autoFocus
-            autoComplete="one-time-code"
-            {...verifyForm.register("code")}
+        <div className="space-y-3">
+          <Controller
+            name="code"
+            control={verifyForm.control}
+            render={({ field }) => (
+              <OtpInput
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                autoFocus
+                disabled={verifyForm.formState.isSubmitting}
+                onComplete={() => verifyForm.handleSubmit(handleVerify)()}
+              />
+            )}
           />
           {verifyForm.formState.errors.code && (
-            <p className="text-xs text-destructive">
+            <p className="text-xs text-destructive text-center">
               {verifyForm.formState.errors.code.message}
             </p>
           )}
         </div>
-        {serverError && <p className="text-sm text-destructive">{serverError}</p>}
+        {serverError && <p className="text-sm text-destructive text-center">{serverError}</p>}
         <Button type="submit" className="w-full" disabled={verifyForm.formState.isSubmitting}>
           {verifyForm.formState.isSubmitting ? "Verifying…" : "Verify"}
         </Button>
@@ -159,7 +258,7 @@ function MfaContent() {
   return (
     <form
       onSubmit={enrollVerifyForm.handleSubmit(handleEnrollVerify)}
-      className="space-y-4"
+      className="space-y-6"
     >
       <input type="hidden" {...enrollVerifyForm.register("factorId")} />
       <p className="text-sm text-muted-foreground">
@@ -180,26 +279,27 @@ function MfaContent() {
           {enrollState.secret}
         </code>
       </details>
-      <div className="space-y-2">
-        <Label htmlFor="enroll-code">6-digit code</Label>
-        <Input
-          id="enroll-code"
-          type="text"
-          inputMode="numeric"
-          pattern="\d{6}"
-          maxLength={6}
-          placeholder="000000"
-          autoFocus
-          autoComplete="one-time-code"
-          {...enrollVerifyForm.register("code")}
+      <div className="space-y-3">
+        <Controller
+          name="code"
+          control={enrollVerifyForm.control}
+          render={({ field }) => (
+            <OtpInput
+              value={field.value ?? ""}
+              onChange={field.onChange}
+              autoFocus
+              disabled={enrollVerifyForm.formState.isSubmitting}
+              onComplete={() => enrollVerifyForm.handleSubmit(handleEnrollVerify)()}
+            />
+          )}
         />
         {enrollVerifyForm.formState.errors.code && (
-          <p className="text-xs text-destructive">
+          <p className="text-xs text-destructive text-center">
             {enrollVerifyForm.formState.errors.code.message}
           </p>
         )}
       </div>
-      {serverError && <p className="text-sm text-destructive">{serverError}</p>}
+      {serverError && <p className="text-sm text-destructive text-center">{serverError}</p>}
       <Button
         type="submit"
         className="w-full"
