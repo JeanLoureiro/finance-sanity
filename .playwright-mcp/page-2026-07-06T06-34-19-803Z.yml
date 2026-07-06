@@ -1,0 +1,11 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e3]:
+    - generic [ref=f2e4]:
+      - generic [ref=f2e5]:
+        - img [ref=f2e7]
+        - generic [ref=f2e10]: Financial Sanity
+      - generic [ref=f2e11]: Two-factor authentication
+    - paragraph [ref=f2e13]: Loading…
+  - button "Open Next.js Dev Tools" [ref=f2e19] [cursor=pointer]:
+    - img [ref=f2e20]
+  - alert [ref=f2e23]

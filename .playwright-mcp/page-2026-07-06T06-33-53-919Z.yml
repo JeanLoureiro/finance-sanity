@@ -1,0 +1,14 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e3]:
+    - generic [ref=f1e4]:
+      - generic [ref=f1e5]:
+        - img [ref=f1e7]
+        - generic [ref=f1e10]: Financial Sanity
+      - generic [ref=f1e11]: Choose a new password
+    - generic [ref=f1e13]:
+      - paragraph [ref=f1e14]: This reset link is invalid or has expired.
+      - link "Request a new link" [ref=f1e15] [cursor=pointer]:
+        - /url: /auth/forgot-password
+  - button "Open Next.js Dev Tools" [ref=f1e21] [cursor=pointer]:
+    - img [ref=f1e22]
+  - alert [ref=f1e25]
