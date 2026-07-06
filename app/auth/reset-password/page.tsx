@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +30,7 @@ function ResetPasswordContent() {
   const [exchangeState, setExchangeState] = useState<ExchangeState>(
     linkError || !isRecoveryFlow ? "error" : "exchanging"
   );
+  const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm<ResetPasswordFormInput>({
@@ -94,14 +96,25 @@ function ResetPasswordContent() {
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="new-password">New password</Label>
-        <Input
-          id="new-password"
-          type="password"
-          placeholder="At least 8 characters"
-          autoComplete="new-password"
-          autoFocus
-          {...form.register("password")}
-        />
+        <div className="relative">
+          <Input
+            id="new-password"
+            type={showPassword ? "text" : "password"}
+            placeholder="At least 8 characters"
+            autoComplete="new-password"
+            autoFocus
+            className="pr-10"
+            {...form.register("password")}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((previous) => !previous)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
         {form.formState.errors.password && (
           <p className="text-xs text-destructive">
             {form.formState.errors.password.message}
@@ -110,12 +123,23 @@ function ResetPasswordContent() {
       </div>
       <div className="space-y-2">
         <Label htmlFor="confirm-password">Confirm new password</Label>
-        <Input
-          id="confirm-password"
-          type="password"
-          autoComplete="new-password"
-          {...form.register("confirmPassword")}
-        />
+        <div className="relative">
+          <Input
+            id="confirm-password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            className="pr-10"
+            {...form.register("confirmPassword")}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((previous) => !previous)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
         {form.formState.errors.confirmPassword && (
           <p className="text-xs text-destructive">
             {form.formState.errors.confirmPassword.message}
