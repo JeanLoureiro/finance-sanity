@@ -1,34 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { CurrencyAmount } from "@/components/ui/currency-amount";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Delta } from "@/components/ui/delta";
-import { Sparkline } from "@/components/ui/sparkline";
-import { AllocationBar, type AllocationSegment } from "@/components/ui/allocation-bar";
-import dynamic from "next/dynamic";
-import { Download, Plus } from "lucide-react";
-
-const AllocationChart = dynamic(
-  () => import("./Charts").then((module) => ({ default: module.AllocationChart })),
-  { 
-    ssr: false, 
-    loading: () => <Skeleton className="h-64 w-full" />,
-  }
-);
-
-const HistoryCharts = dynamic(
-  () => import("./Charts").then((module) => ({ default: module.HistoryCharts })),
-  { 
-    ssr: false, 
-    loading: () => <Skeleton className="h-72 w-full" />,
-  }
-);
+import { Download, Plus, LayoutGrid } from "lucide-react";
+import { DashboardGrid } from "./DashboardGrid";
+import { reconcileLayout, compactLayout, WIDGET_REGISTRY, type DashboardWidgetPref } from "@/lib/dashboardWidgets";
 
 type NWData = {
   cashTotal: number;
@@ -46,14 +25,19 @@ type NWData = {
   superAccounts: { id: string; name: string; balance: number }[];
 };
 
-
 export default function NetWorthClient() {
   const qc = useQueryClient();
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const { data, isLoading } = useQuery<NWData>({
     queryKey: queryKeys.dashboard(),
     queryFn: () => fetch("/api/dashboard").then((r) => r.json()),
     staleTime: 30 * 1000,
+  });
+
+  const { data: settings } = useQuery({
+    queryKey: queryKeys.settings(),
+    queryFn: () => fetch("/api/settings").then((r) => r.json()),
   });
 
   const etfTickers = data?.etfHoldings.map((h) => h.ticker) ?? [];
@@ -114,7 +98,7 @@ export default function NetWorthClient() {
     { name: "Cash",    value: data?.cashTotal ?? 0, target: data?.allocationSettings.cash ?? 0 },
   ].filter((item) => item.value > 0), [etfLiveValue, stockValue, cryptoValue, data?.cashTotal, data?.allocationSettings]);
 
-  const allocationSegments: AllocationSegment[] = useMemo(() => [
+  const allocationSegments = useMemo(() => [
     { name: "ETFs",     value: etfLiveValue,               color: "var(--fs-cat-etf)" },
     { name: "Property", value: data?.propertyTotal ?? 0,   color: "var(--fs-cat-property)" },
     { name: "Super",    value: data?.superTotal ?? 0,       color: "var(--fs-cat-super)" },
@@ -132,6 +116,48 @@ export default function NetWorthClient() {
     { label: "Property",           value: data?.propertyTotal ?? 0,    color: "var(--fs-cat-property)", histKey: "propertyValue" },
     { label: "Liabilities",        value: -(data?.liabilitiesTotal ?? 0), color: "var(--fs-loss)",      histKey: "liabilitiesTotal" },
   ], [etfLiveValue, stockValue, cryptoValue, data?.cashTotal, data?.superTotal, data?.propertyTotal, data?.liabilitiesTotal]);
+
+  // Widget layout from settings or default
+  const layout = useMemo(() => {
+    const savedLayout = settings?.dashboardWidgets as DashboardWidgetPref[] | null | undefined;
+    const featureFlags = {
+      useCapitalGains: settings?.useCapitalGains,
+      useFIRE: settings?.useFIRE,
+      useSuper: settings?.useSuper,
+      useDividends: settings?.useDividends,
+      useSideIncome: settings?.useSideIncome,
+      useProperty: settings?.useProperty,
+      useLiabilities: settings?.useLiabilities,
+      useManagedFunds: settings?.useManagedFunds,
+      useOtherAssets: settings?.useOtherAssets,
+      useCrypto: settings?.useCrypto,
+    };
+    return reconcileLayout(savedLayout, featureFlags);
+  }, [settings]);
+
+  const canEdit = settings?.role === "OWNER" || settings?.role === "WRITE";
+
+  const toggleEditMode = () => {
+    // Leaving edit mode: compact the layout so inserts don't leave empty rows.
+    if (isEditMode) {
+      handleLayoutChange(compactLayout(layout));
+    }
+    setIsEditMode(!isEditMode);
+  };
+
+  const handleLayoutChange = (newLayout: DashboardWidgetPref[]) => {
+    // Update the cache immediately so the grid re-renders without waiting for the server.
+    qc.setQueryData(queryKeys.settings(), (previous: Record<string, unknown>) => ({
+      ...previous,
+      dashboardWidgets: newLayout,
+    }));
+    // Persist in the background — no invalidation needed since cache is already correct.
+    fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dashboardWidgets: newLayout }),
+    });
+  };
 
   if (isLoading) {
     return (
@@ -162,6 +188,16 @@ export default function NetWorthClient() {
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Dashboard</h1>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {canEdit && (
+            <Button
+              variant={isEditMode ? "default" : "outline"}
+              size="sm"
+              onClick={toggleEditMode}
+            >
+              <LayoutGrid className="size-3.5" />
+              {isEditMode ? "Done editing" : "Edit dashboard"}
+            </Button>
+          )}
           <Button variant="outline" size="sm">
             <Download className="size-3.5" />
             Export
@@ -177,254 +213,58 @@ export default function NetWorthClient() {
         </div>
       </div>
 
-      {/* ── Hero KPI strip ───────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-6 items-stretch">
-        {/* Hero card — teal gradient */}
-        <div
-          className="rounded-xl p-5 flex flex-col justify-between min-h-[140px] text-white"
-          style={{ background: "linear-gradient(135deg, var(--fs-surface-hero-from), var(--fs-surface-hero-to))", contentVisibility: "auto" }}
-        >
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
-              Total Net Worth
-            </span>
-            <span 
-              className="text-[28px] font-semibold tracking-tight tabular-nums leading-none"
-              style={{ fontFamily: "var(--font-inter), system-ui, -apple-system, sans-serif" }}
-            >
-              <CurrencyAmount value={netWorth} />
-            </span>
-            <div className="flex items-center gap-2 text-sm" style={{ color: "rgba(255,255,255,0.75)" }}>
-              {monthDelta !== 0 && (
-                <Delta value={monthDelta} percent={monthDeltaPercent} showIcon />
-              )}
-              {monthDelta !== 0 && <span>this month</span>}
-            </div>
-          </div>
-          {historyNetWorth.length >= 2 && (
-            <div className="mt-3">
-              <Sparkline
-                data={historyNetWorth}
-                width={280}
-                height={32}
-                color="rgba(255,255,255,0.6)"
-                strokeWidth={1.25}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Investable */}
-        <Card className="flex flex-col justify-between">
-          <CardContent className="pt-5 pb-5 flex flex-col gap-1.5">
-            <span className="text-sm text-muted-foreground">Investable assets</span>
-            <span className="text-[22px] font-semibold tracking-tight tabular-nums leading-none">
-              <CurrencyAmount value={totalInvestable} />
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {totalAssets > 0 ? `${((totalInvestable / totalAssets) * 100).toFixed(0)}% of total assets` : "—"}
-            </span>
-            {historyInvestable.length >= 2 && (
-              <div className="mt-2">
-                <Sparkline
-                  data={historyInvestable}
-                  width={200}
-                  height={28}
-                  color="var(--fs-cat-etf)"
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Property equity */}
-        <Card className="flex flex-col justify-between">
-          <CardContent className="pt-5 pb-5 flex flex-col gap-1.5">
-            <span className="text-sm text-muted-foreground">Property equity</span>
-            <span className="text-[22px] font-semibold tracking-tight tabular-nums leading-none">
-              <CurrencyAmount value={propertyEquity} />
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {data.properties.length} {data.properties.length === 1 ? "property" : "properties"}
-            </span>
-          </CardContent>
-        </Card>
-
-        {/* Liabilities */}
-        <Card className="flex flex-col justify-between">
-          <CardContent className="pt-5 pb-5 flex flex-col gap-1.5">
-            <span className="text-sm text-muted-foreground">Liabilities</span>
-            <span className="text-[22px] font-semibold tracking-tight tabular-nums leading-none text-loss">
-              <CurrencyAmount value={data.liabilitiesTotal} />
-            </span>
-            {historyLiabilities.length >= 2 && (
-              <>
-                <Delta
-                  value={-(historyLiabilities.at(-1)! - historyLiabilities.at(-2)!)}
-                  percent={
-                    historyLiabilities.at(-2)! > 0
-                      ? (-(historyLiabilities.at(-1)! - historyLiabilities.at(-2)!) / historyLiabilities.at(-2)!) * 100
-                      : 0
-                  }
-                  showIcon
-                />
-                <div className="mt-2">
-                  <Sparkline
-                    data={historyLiabilities}
-                    width={200}
-                    height={28}
-                    color="var(--fs-loss)"
-                  />
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ── History chart + Allocation ────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6">
-        {data.history.length > 1 && (
-          <HistoryCharts history={data.history} />
-        )}
-
-        <div className="flex flex-col gap-6">
-          {/* Allocation bar */}
-          {allocationSegments.length > 0 && (
-            <Card>
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold">Allocation</span>
-                  <Badge variant="outline" className="text-xs tabular-nums">
-                    <CurrencyAmount value={totalAssets} compact />
-                  </Badge>
-                </div>
-                <AllocationBar segments={allocationSegments} height={10} />
-                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-                  {allocationSegments.map((segment) => (
-                    <div key={segment.name} className="flex items-center gap-1.5 text-xs">
-                      <span className="size-2 rounded-full flex-shrink-0" style={{ background: segment.color }} />
-                      <span className="text-muted-foreground">{segment.name}</span>
-                      <span className="tabular-nums text-muted-foreground">
-                        {totalAssets > 0 ? `${((segment.value / totalAssets) * 100).toFixed(1)}%` : "—"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {allocationData.length > 0 && (
-            <AllocationChart allocationData={allocationData} totalInvestable={totalInvestable} />
-          )}
-        </div>
-      </div>
-
-      {/* ── Asset breakdown table ─────────────────────────────────── */}
-      <Card>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <span className="text-[15px] font-semibold">Asset breakdown</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Category</th>
-                <th className="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Value</th>
-                <th className="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">% of total</th>
-                <th className="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide hidden sm:table-cell">12m trend</th>
-              </tr>
-            </thead>
-            <tbody>
-              {assetRows.filter((row) => row.value !== 0).map((row) => {
-                const sparkData = data.history.slice(-9).map(
-                  (item) => Math.abs(item[row.histKey as keyof typeof item] as number)
-                );
-                return (
-                  <tr key={row.label} className="border-b border-border last:border-0 hover:bg-fs-accent-subtle transition-colors">
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className="size-2 rounded-full flex-shrink-0" style={{ background: row.color }} />
-                        <span>{row.label}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-right font-medium tabular-nums">
-                      <CurrencyAmount value={row.value} showSign={row.value < 0} />
-                    </td>
-                    <td className="px-5 py-3 text-right text-muted-foreground tabular-nums">
-                      {totalAssets > 0 ? `${((Math.abs(row.value) / totalAssets) * 100).toFixed(1)}%` : "—"}
-                    </td>
-                    <td className="px-5 py-3 text-right hidden sm:table-cell">
-                      {sparkData.length >= 2 && (
-                        <Sparkline
-                          data={sparkData}
-                          width={80}
-                          height={20}
-                          color={row.color}
-                        />
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* ── Properties table ─────────────────────────────────────── */}
-      {data.properties.length > 0 && (
-        <Card>
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-            <span className="text-[15px] font-semibold">Properties</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Property</th>
-                  <th className="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Value</th>
-                  <th className="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Mortgage</th>
-                  <th className="text-right px-5 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">Equity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.properties.map((property) => {
-                  const lvr = property.currentValue > 0
-                    ? (property.currentMortgageBalance / property.currentValue) * 100
-                    : 0;
-                  return (
-                    <tr key={property.id} className="border-b border-border last:border-0 hover:bg-fs-accent-subtle transition-colors">
-                      <td className="px-5 py-3">
-                        <div className="font-medium">{property.name}</div>
-                      </td>
-                      <td className="px-5 py-3 text-right tabular-nums">
-                        <CurrencyAmount value={property.currentValue} />
-                      </td>
-                      <td className="px-5 py-3 text-right tabular-nums text-loss">
-                        <CurrencyAmount value={property.currentMortgageBalance} />
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <span className="font-medium tabular-nums">
-                            <CurrencyAmount value={property.equity} />
-                          </span>
-                          {lvr > 0 && (
-                            <Badge variant={lvr > 70 ? "warn" : "outline"} className="text-xs tabular-nums">
-                              {lvr.toFixed(0)}% LVR
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+      {/* ── Edit mode: Widget catalogue ─────────────────────────────── */}
+      {isEditMode && canEdit && (
+        <div className="rounded-lg border border-border bg-muted/50 p-4">
+          <p className="text-sm font-medium mb-3">Add widgets</p>
+          <div className="flex flex-wrap gap-2">
+            {WIDGET_REGISTRY.filter((w) => !layout.find((l) => l.key === w.key)?.visible).map((widget) => (
+              <Button
+                key={widget.key}
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // Toggle visibility
+                  const newLayout = layout.map((item) =>
+                    item.key === widget.key ? { ...item, visible: true } : item
                   );
-                })}
-              </tbody>
-            </table>
+                  // Save to settings
+                  fetch("/api/settings", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ dashboardWidgets: newLayout }),
+                  }).then(() => qc.invalidateQueries({ queryKey: queryKeys.settings() }));
+                }}
+              >
+                {widget.label}
+              </Button>
+            ))}
           </div>
-        </Card>
+        </div>
       )}
+
+      {/* ── Dashboard Grid ─────────────────────────────────────────── */}
+      <DashboardGrid
+        layout={layout}
+        isEditMode={isEditMode}
+        onLayoutChange={handleLayoutChange}
+        netWorth={netWorth}
+        monthDelta={monthDelta}
+        monthDeltaPercent={monthDeltaPercent}
+        historyNetWorth={historyNetWorth}
+        historyInvestable={historyInvestable}
+        historyLiabilities={historyLiabilities}
+        totalInvestable={totalInvestable}
+        totalAssets={totalAssets}
+        propertyEquity={propertyEquity}
+        propertyCount={data.properties.length}
+        liabilitiesTotal={data.liabilitiesTotal}
+        history={data.history}
+        allocationSegments={allocationSegments}
+        allocationData={allocationData}
+        assetRows={assetRows}
+        properties={data.properties}
+      />
     </div>
   );
 }

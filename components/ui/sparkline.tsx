@@ -9,6 +9,8 @@ interface SparklineProps {
   strokeWidth?: number;
   /** Show a filled dot at the last data point. */
   showEndDot?: boolean;
+  /** Stretch to fill the container width (width becomes the viewBox coordinate space). */
+  fullWidth?: boolean;
 }
 
 /**
@@ -22,6 +24,7 @@ export const Sparkline = memo(function Sparkline({
   color,
   strokeWidth = 1.5,
   showEndDot = false,
+  fullWidth = false,
 }: SparklineProps) {
   if (!data || data.length < 2) return null;
 
@@ -45,7 +48,14 @@ export const Sparkline = memo(function Sparkline({
   const strokeColor = color ?? (trendUp ? "var(--fs-gain)" : "var(--fs-loss)");
 
   return (
-    <svg width={width} height={height} style={{ overflow: "visible" }} aria-hidden="true">
+    <svg
+      width={fullWidth ? "100%" : width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio={fullWidth ? "none" : undefined}
+      style={{ overflow: "visible", display: "block" }}
+      aria-hidden="true"
+    >
       <path
         d={pathD}
         fill="none"
@@ -53,6 +63,8 @@ export const Sparkline = memo(function Sparkline({
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
+        // Keep the stroke crisp when the viewBox is stretched to fill the width.
+        vectorEffect={fullWidth ? "non-scaling-stroke" : undefined}
       />
       {showEndDot && (
         <circle cx={lastPoint.x} cy={lastPoint.y} r="2.5" fill={strokeColor} />

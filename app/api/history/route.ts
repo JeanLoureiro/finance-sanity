@@ -14,6 +14,7 @@ export const GET = withAuth(async () => {
     return Response.json(
       snapshots.map((s) => ({
         ...s,
+        date: s.snapshotDate.toISOString(),
         cashTotal: Number(s.cashTotal),
         etfTotal: Number(s.etfTotal),
         stockTotal: Number(s.stockTotal),

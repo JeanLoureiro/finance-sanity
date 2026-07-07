@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CurrencyAmount } from "@/components/ui/currency-amount";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trash2, PlusCircle, X } from "lucide-react";
+import { Trash2, PlusCircle, X, Save, Check } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import dynamic from "next/dynamic";
@@ -58,6 +58,11 @@ export default function SuperPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.super() }),
   });
 
+  const saveMonth = useMutation({
+    mutationFn: () => fetch("/api/history/record", { method: "POST" }).then((r) => r.json()),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.history.list() }),
+  });
+
   const totalSuper = accounts.reduce((s, a) => s + Number(a.balance), 0);
 
   if (isLoading) {
@@ -79,9 +84,23 @@ export default function SuperPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Superannuation</h1>
-        <Button size="sm" onClick={() => setAddOpen(true)} disabled={addOpen}>
-          <PlusCircle className="h-4 w-4 mr-1" /> Add Account
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => saveMonth.mutate()}
+            disabled={saveMonth.isPending || accounts.length === 0}
+          >
+            {saveMonth.isSuccess ? (
+              <><Check className="h-4 w-4 mr-1 text-green-600" /> Saved</>
+            ) : (
+              <><Save className="h-4 w-4 mr-1" /> Save Month</>
+            )}
+          </Button>
+          <Button size="sm" onClick={() => setAddOpen(true)} disabled={addOpen}>
+            <PlusCircle className="h-4 w-4 mr-1" /> Add Account
+          </Button>
+        </div>
       </div>
 
       <Card>
