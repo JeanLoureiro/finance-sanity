@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,15 @@ type NWData = {
 export default function NetWorthClient() {
   const qc = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const { data, isLoading } = useQuery<NWData>({
     queryKey: queryKeys.dashboard(),
@@ -146,16 +155,20 @@ export default function NetWorthClient() {
   };
 
   const handleLayoutChange = (newLayout: DashboardWidgetPref[]) => {
-    // Update the cache immediately so the grid re-renders without waiting for the server.
+    const previousData = qc.getQueryData(queryKeys.settings());
     qc.setQueryData(queryKeys.settings(), (previous: Record<string, unknown>) => ({
       ...previous,
       dashboardWidgets: newLayout,
     }));
-    // Persist in the background — no invalidation needed since cache is already correct.
+
+    abortControllerRef.current = new AbortController();
     fetch("/api/settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ dashboardWidgets: newLayout }),
+      signal: abortControllerRef.current.signal,
+    }).catch(() => {
+      qc.setQueryData(queryKeys.settings(), previousData);
     });
   };
 
@@ -218,25 +231,33 @@ export default function NetWorthClient() {
         <div className="rounded-lg border border-border bg-muted/50 p-4">
           <p className="text-sm font-medium mb-3">Add widgets</p>
           <div className="flex flex-wrap gap-2">
-            {WIDGET_REGISTRY.filter((w) => !layout.find((l) => l.key === w.key)?.visible).map((widget) => (
+            {layout.filter((l) => !l.visible).map((hidden) => (
               <Button
-                key={widget.key}
+                key={hidden.key}
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  // Toggle visibility
                   const newLayout = layout.map((item) =>
-                    item.key === widget.key ? { ...item, visible: true } : item
+                    item.key === hidden.key ? { ...item, visible: true } : item
                   );
-                  // Save to settings
+                  const previousData = qc.getQueryData(queryKeys.settings());
+                  qc.setQueryData(queryKeys.settings(), (previous: Record<string, unknown>) => ({
+                    ...previous,
+                    dashboardWidgets: newLayout,
+                  }));
+
+                  abortControllerRef.current = new AbortController();
                   fetch("/api/settings", {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ dashboardWidgets: newLayout }),
-                  }).then(() => qc.invalidateQueries({ queryKey: queryKeys.settings() }));
+                    signal: abortControllerRef.current.signal,
+                  }).catch(() => {
+                    qc.setQueryData(queryKeys.settings(), previousData);
+                  });
                 }}
               >
-                {widget.label}
+                {WIDGET_REGISTRY.find((w) => w.key === hidden.key)?.label}
               </Button>
             ))}
           </div>
