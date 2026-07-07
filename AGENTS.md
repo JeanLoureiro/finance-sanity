@@ -15,6 +15,7 @@
 | Styling | Tailwind CSS 4 + Shadcn UI (base-nova) |
 | Charts | Recharts 3 |
 | Finance math | `decimal.js` (monetary precision), `yahoo-finance2` (live prices) |
+| Drag-and-drop | `@dnd-kit` (customizable widget grid) |
 | Email | Resend via `@react-email/components` |
 | Testing | Vitest 4 (Node env, no jsdom) + Playwright (E2E) |
 
@@ -25,6 +26,7 @@ webapp/                        # All commands run from here
 ├── app/
 │   ├── (dashboard)/           # Route group — authenticated pages, shared layout.tsx
 │   │   ├── dashboard/         # Net worth summary + historical chart
+│   │   │   └── widgets/       # Reusable dashboard widget components
 │   │   ├── cash/ stocks/ etfs/ crypto/ managed-funds/
 │   │   ├── property/ super/ loans/ budget/
 │   │   ├── dividends/ side-income/ other-assets/
@@ -50,6 +52,7 @@ webapp/                        # All commands run from here
 │   ├── auth.ts                # withAuth wrapper, getAuthorisedSettings, assertOwnership
 │   ├── queryKeys.ts           # Centralised React Query key factory (single source of truth)
 │   ├── schemas.ts             # All Zod schemas (shared between client and API routes)
+│   ├── dashboardWidgets.ts    # Dashboard widget registry, layout management, grid geometry
 │   ├── finance.ts             # Pure finance functions: PMT, PV, FV, NPER, cumipmt, …
 │   ├── capitalGains.ts        # FIFO CGT engine (Australian tax law)
 │   ├── australianFY.ts        # AU fiscal year helpers

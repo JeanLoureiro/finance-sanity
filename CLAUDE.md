@@ -54,6 +54,7 @@ npx prisma generate      # Regenerate client only (no migration)
 | Styling | Tailwind CSS 4 + Shadcn UI (base-nova) |
 | Charts | Recharts 3 |
 | Finance math | `decimal.js` (monetary precision), `yahoo-finance2` (prices) |
+| Drag-and-drop | `@dnd-kit` (customizable widget grid) |
 | Testing | Vitest 4 (Node env, no jsdom) |
 
 ### Folder structure
@@ -62,6 +63,7 @@ npx prisma generate      # Regenerate client only (no migration)
 app/
   (dashboard)/         # Route group — all authenticated pages share layout.tsx
     dashboard/         # Main dashboard (aggregated net worth + chart)
+      widgets/         # Reusable dashboard widget components
     cash/ stocks/ etfs/ crypto/ managed-funds/
     dividends/ budget/ loans/ property/ super/
     side-income/ other-assets/ capital-gains/ fire/ import/ settings/
@@ -82,6 +84,7 @@ lib/
   supabase/            # browser (client.ts) and server (server.ts) clients
   queryKeys.ts         # Centralised TanStack Query key factory
   schemas.ts           # All Zod schemas (single source of truth for validation)
+  dashboardWidgets.ts  # Dashboard widget registry, layout management, grid geometry
   finance.ts           # Financial functions: PMT, PV, FV, NPER, cumipmt, etc.
   capitalGains.ts      # FIFO CGT engine (Australian tax law)
   australianFY.ts      # Australian fiscal year helpers
@@ -109,6 +112,7 @@ prisma/
 - **Do NOT create `middleware.ts`** — this project uses `proxy.ts` as the edge middleware entry point. Adding `middleware.ts` is wrong; all middleware logic lives in `proxy.ts`. To make a path public (accessible without auth), add it to `PUBLIC_PREFIXES` in `proxy.ts`.
 - `lib/queryKeys.ts` is the single place to define React Query keys — always use it, never inline string keys.
 - `lib/schemas.ts` is the single place for Zod schemas — share between client validation and API route parsing.
+- `lib/dashboardWidgets.ts` defines the widget registry, grid geometry, and layout logic — all widget metadata, sizing, and reconciliation must come from here.
 - All monetary values use `decimal.js` for arithmetic; never use plain JS floats for finance.
 - `yahoo-finance2` is declared as `serverExternalPackages` in `next.config.ts` — it must only be called from Server Components or API routes.
 - The Prisma client is generated to `app/generated/prisma/` (gitignored) — always run `prisma generate` after pulling schema changes.
