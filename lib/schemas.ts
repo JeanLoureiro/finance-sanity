@@ -1,6 +1,24 @@
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
+// Dashboard widget layout — list of { key, visible, x, y }.
+// Widgets are placed on a fixed 4-column grid at coordinates (x, y); their
+// width/height come from the client-side registry (not persisted, so sizes
+// stay in sync with code). x/y are optional for backward compatibility and
+// are (re)assigned by packing when missing.
+// Keys are validated loosely here; the client-side registry reconciles the
+// saved layout against known widgets (dropping unknown keys, appending new).
+// ---------------------------------------------------------------------------
+export const dashboardWidgetPrefSchema = z.object({
+  key: z.string().min(1),
+  visible: z.boolean(),
+  x: z.number().int().min(0).optional(),
+  y: z.number().int().min(0).optional(),
+});
+export const dashboardLayoutSchema = z.array(dashboardWidgetPrefSchema);
+export type DashboardWidgetPref = z.infer<typeof dashboardWidgetPrefSchema>;
+
+// ---------------------------------------------------------------------------
 // Settings
 // ---------------------------------------------------------------------------
 export const settingsBaseSchema = z.object({
@@ -71,6 +89,7 @@ export const settingsBaseSchema = z.object({
     snapshotEmailBudget: z.boolean().default(true),
     snapshotEmailSideIncome: z.boolean().default(false),
     snapshotEmailDividends: z.boolean().default(false),
+    dashboardWidgets: dashboardLayoutSchema.optional().nullable(),
   });
 
 export const settingsSchema = settingsBaseSchema.refine(
