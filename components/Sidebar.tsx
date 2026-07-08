@@ -235,7 +235,7 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
           <>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="w-full flex items-center gap-2.5 text-left hover:opacity-80 transition-opacity"
+              className="w-full flex items-center gap-2.5 text-left hover:opacity-80 transition-opacity cursor-pointer"
             >
               <div
                 className="size-8 rounded-full grid place-items-center text-xs font-semibold flex-shrink-0"
