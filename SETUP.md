@@ -134,3 +134,87 @@ These are React components that you can customize with your branding.
 - [Resend Documentation](https://resend.com/docs)
 - [React Email Documentation](https://react.email/docs)
 - [React Email Components](https://react.email/docs/components)
+
+---
+
+# Demo Data Seeding
+
+## Overview
+
+The `/api/admin/seed-demo-user` endpoint creates a complete demo user account with realistic financial data for testing and development purposes.
+
+## Environment Variables
+
+To enable the seed endpoint, add to `.env.local`:
+
+```bash
+# Required: Secret key for authorizing seed requests
+SEED_SECRET_KEY=your-secret-key-here
+```
+
+**Security note:** This key should be a strong random string. Generate one with:
+```bash
+openssl rand -base64 32
+```
+
+## Usage
+
+### Development (Non-Production)
+
+Send a POST request to the seed endpoint:
+
+```bash
+curl -X POST http://localhost:3000/api/admin/seed-demo-user \
+  -H "x-seed-key: your-secret-key-here"
+```
+
+The endpoint will:
+1. Create a Supabase user with email `jean_loureiro+demo@hotmail.com` and password `johndoedemo`
+2. Create comprehensive demo data including:
+   - 3 bank accounts ($92k total)
+   - 3 ETF holdings (VDHG, VAS, VGS)
+   - 3 stock holdings (CBA, WBC, ANZ)
+   - 2 crypto holdings (BTC, ETH)
+   - 2 properties (primary residence + investment property)
+   - Super account ($295k)
+   - 5 dividend records
+   - 8 budget items (Needs/Wants/Savings categories)
+   - 2 side income entries
+   - 2 other assets (car, watch collection)
+   - 3 monthly snapshots (Mar-May 2024)
+
+Demo account credentials:
+- **Email:** `jean_loureiro+demo@hotmail.com`
+- **Password:** `johndoedemo`
+
+### Production
+
+The endpoint is **disabled by default** in production to prevent accidental data loss. To enable in production:
+
+1. Set `SEED_SECRET_KEY` environment variable
+2. Send POST request with two headers:
+   ```bash
+   curl -X POST https://your-app.com/api/admin/seed-demo-user \
+     -H "x-seed-key: your-secret-key-here" \
+     -H "x-seed-confirm: destructive"
+   ```
+
+The `x-seed-confirm: destructive` header is required as a confirmation to prevent accidental seed in production.
+
+## Resetting Demo Data
+
+If the demo user already exists, the seed endpoint will:
+1. Reuse the existing Supabase user (no duplicate accounts)
+2. Create all demo data fresh (existing data is not deleted — new records are added)
+
+To reset completely, manually delete the demo user from Supabase dashboard first.
+
+## Scripted Seeding
+
+A TypeScript seed script is also available at `scripts/seed-demo-user.ts`. Run locally with:
+
+```bash
+npx ts-node scripts/seed-demo-user.ts
+```
+
+This script requires the same environment variables and connects directly to your database.
