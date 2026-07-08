@@ -71,13 +71,13 @@ export default function NetWorthClient() {
     return sum + (price != null ? price * holding.unitsHeld : holding.costBasis);
   }, 0), [data?.etfHoldings, etfPrices]);
 
-  const stockValue = useMemo(() => (data?.stockHoldings ?? []).reduce((sum, holding) => sum + Number(holding.costBasis), 0), [data?.stockHoldings]);
-  const cryptoValue = useMemo(() => (data?.cryptoHoldings ?? []).reduce((sum, holding) => sum + Number(holding.costBasis), 0), [data?.cryptoHoldings]);
+  const stockValue = useMemo(() => (data?.stockHoldings ?? []).reduce((sum, holding) => sum + holding.costBasis, 0), [data?.stockHoldings]);
+  const cryptoValue = useMemo(() => (data?.cryptoHoldings ?? []).reduce((sum, holding) => sum + holding.costBasis, 0), [data?.cryptoHoldings]);
 
   const totalInvestable = useMemo(() => etfLiveValue + stockValue + cryptoValue + (data?.cashTotal ?? 0), [etfLiveValue, stockValue, cryptoValue, data?.cashTotal]);
   const totalAssets = useMemo(() => totalInvestable + (data?.superTotal ?? 0) + (data?.propertyTotal ?? 0), [totalInvestable, data?.superTotal, data?.propertyTotal]);
   const netWorth = useMemo(() => totalAssets - (data?.liabilitiesTotal ?? 0), [totalAssets, data?.liabilitiesTotal]);
-  const propertyEquity = useMemo(() => (data?.properties ?? []).reduce((sum, property) => sum + Number(property.equity), 0), [data?.properties]);
+  const propertyEquity = useMemo(() => (data?.properties ?? []).reduce((sum, property) => sum + property.equity, 0), [data?.properties]);
 
   // Month-over-month delta from history snapshots
   const { monthDelta, monthDeltaPercent } = useMemo(() => {

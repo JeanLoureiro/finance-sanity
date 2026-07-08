@@ -33,7 +33,7 @@ export function SideIncome() {
 
   const currentFY = getFiscalYear(new Date());
   const fyEntries = data.filter((d) => getFiscalYear(new Date(d.date)) === currentFY);
-  const total = fyEntries.reduce((sum, d) => sum + Number(d.sideIncome) + Number(d.rentalIncome), 0);
+  const total = fyEntries.reduce((sum, d) => sum + d.sideIncome + d.rentalIncome, 0);
 
   return (
     <Card>

@@ -35,11 +35,11 @@ export function Dividends() {
 
   const currentFY = getFiscalYear(new Date());
   const fyDividends = data.filter((d) => getFiscalYear(new Date(d.paymentDate)) === currentFY);
-  const total = fyDividends.reduce((sum, d) => sum + Number(d.netAmount), 0);
+  const total = fyDividends.reduce((sum, d) => sum + d.netAmount, 0);
 
   const prevFY = currentFY - 1;
   const prevFYDividends = data.filter((d) => getFiscalYear(new Date(d.paymentDate)) === prevFY);
-  const prevTotal = prevFYDividends.reduce((sum, d) => sum + Number(d.netAmount), 0);
+  const prevTotal = prevFYDividends.reduce((sum, d) => sum + d.netAmount, 0);
   const delta = prevTotal > 0 ? ((total - prevTotal) / prevTotal) * 100 : 0;
 
   return (
