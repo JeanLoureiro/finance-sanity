@@ -17,6 +17,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 5 * 60 * 1000, // 5 min default
+            gcTime: 10 * 60 * 1000,   // 10 min — keep cache warm across back-navigation
             retry: 1,
           },
         },

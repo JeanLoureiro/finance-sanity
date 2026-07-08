@@ -41,7 +41,13 @@ export default function NetWorthClient() {
   const { data, isLoading } = useQuery<NWData>({
     queryKey: queryKeys.dashboard(),
     queryFn: () => fetch("/api/dashboard").then((r) => r.json()),
-    staleTime: 30 * 1000,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: fullHistory = [] } = useQuery<NWData["history"]>({
+    queryKey: queryKeys.history.list(),
+    queryFn: () => fetch("/api/history").then((response) => response.ok ? response.json() : Promise.resolve([])),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: settings } = useQuery({
@@ -280,7 +286,7 @@ export default function NetWorthClient() {
         propertyEquity={propertyEquity}
         propertyCount={data.properties.length}
         liabilitiesTotal={data.liabilitiesTotal}
-        history={data.history}
+        history={fullHistory}
         allocationSegments={allocationSegments}
         allocationData={allocationData}
         assetRows={assetRows}

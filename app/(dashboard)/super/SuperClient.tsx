@@ -33,7 +33,7 @@ export default function SuperPage() {
 
   const { data: history = [] } = useQuery<HistorySnapshot[]>({
     queryKey: queryKeys.history.list(),
-    queryFn: () => fetch("/api/history").then((r) => r.json()),
+    queryFn: () => fetch("/api/history").then((response) => response.ok ? response.json() : Promise.resolve([])),
     staleTime: 60 * 60 * 1000,
   });
 

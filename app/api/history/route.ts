@@ -1,13 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { withAuth } from "@/lib/auth";
+import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
 export const GET = withAuth(async () => {
   try {
-    const settings = await prisma.userSettings.findFirst();
-    if (!settings) return Response.json([]);
+    const { settingsId } = await getAuthorisedSettings();
 
     const snapshots = await prisma.monthlySnapshot.findMany({
-      where: { settingsId: settings.id },
+      where: { settingsId },
       orderBy: { snapshotDate: "asc" },
     });
 

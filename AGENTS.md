@@ -54,6 +54,7 @@ webapp/                        # All commands run from here
 │   ├── schemas.ts             # All Zod schemas (shared between client and API routes)
 │   ├── dashboardWidgets.ts    # Dashboard widget registry, layout management, grid geometry
 │   ├── finance.ts             # Pure finance functions: PMT, PV, FV, NPER, cumipmt, …
+│   ├── netWorth.ts            # computeNetWorth() — aggregates all asset classes into a single NetWorthData snapshot
 │   ├── capitalGains.ts        # FIFO CGT engine (Australian tax law)
 │   ├── australianFY.ts        # AU fiscal year helpers
 │   └── currency.ts            # AUD formatting helpers

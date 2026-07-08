@@ -86,6 +86,7 @@ lib/
   schemas.ts           # All Zod schemas (single source of truth for validation)
   dashboardWidgets.ts  # Dashboard widget registry, layout management, grid geometry
   finance.ts           # Financial functions: PMT, PV, FV, NPER, cumipmt, etc.
+  netWorth.ts          # computeNetWorth() — aggregates all asset classes into a single NetWorthData snapshot
   capitalGains.ts      # FIFO CGT engine (Australian tax law)
   australianFY.ts      # Australian fiscal year helpers
   currency.ts          # AUD formatting helpers

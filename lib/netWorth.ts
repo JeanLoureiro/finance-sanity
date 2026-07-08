@@ -131,7 +131,7 @@ export async function computeNetWorth(settingsId: string): Promise<NetWorthData>
       properties: true,
       loans: true,
       superAccounts: true,
-      monthlySnapshots: { orderBy: { snapshotDate: "asc" } },
+      monthlySnapshots: { orderBy: { snapshotDate: "desc" }, take: 24 },
     },
   });
 
@@ -353,7 +353,7 @@ export async function computeNetWorth(settingsId: string): Promise<NetWorthData>
     propertyValue: Number(snapshot.propertyValue),
     liabilitiesTotal: Number(snapshot.liabilitiesTotal),
     savingsRate: snapshot.savingsRate ? Number(snapshot.savingsRate) : null,
-  }));
+  })).reverse();
 
   const superAccounts = settings.superAccounts.map((account) => ({
     id: account.id,
