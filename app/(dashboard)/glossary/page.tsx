@@ -1,4 +1,8 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 type GlossaryTerm = {
   term: string;
@@ -89,7 +93,38 @@ const glossaryTerms: GlossaryTerm[] = [
   },
 ];
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function highlightMatch(text: string, query: string) {
+  const normalisedQuery = query.trim();
+  if (!normalisedQuery) return text;
+  const parts = text.split(new RegExp(`(${escapeRegExp(normalisedQuery)})`, "gi"));
+  return parts.map((part, index) =>
+    part.toLowerCase() === normalisedQuery.toLowerCase() ? (
+      <mark key={index} className="bg-primary/20 text-inherit rounded-sm">
+        {part}
+      </mark>
+    ) : (
+      part
+    )
+  );
+}
+
 export default function GlossaryPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredGlossaryTerms = useMemo(() => {
+    const normalisedQuery = searchQuery.trim().toLowerCase();
+    if (!normalisedQuery) return glossaryTerms;
+    return glossaryTerms.filter(
+      (item) =>
+        item.term.toLowerCase().includes(normalisedQuery) ||
+        item.definition.toLowerCase().includes(normalisedQuery)
+    );
+  }, [searchQuery]);
+
   return (
     <div className="pb-14">
       <div className="mb-8">
@@ -100,24 +135,38 @@ export default function GlossaryPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {glossaryTerms.map((item) => (
-          <Card key={item.term}>
-            <CardHeader>
-              <CardTitle className="text-base">{item.term}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">{item.definition}</p>
-              {item.example && (
-                <div className="pt-2 border-t border-border">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Example:</p>
-                  <p className="text-xs text-muted-foreground italic">{item.example}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+      <div className="mb-6 max-w-sm">
+        <Input
+          type="search"
+          placeholder="Search terms..."
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          aria-label="Search glossary terms"
+        />
       </div>
+
+      {filteredGlossaryTerms.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No terms match your search.</p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredGlossaryTerms.map((item) => (
+            <Card key={item.term}>
+              <CardHeader>
+                <CardTitle className="text-base">{highlightMatch(item.term, searchQuery)}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground">{highlightMatch(item.definition, searchQuery)}</p>
+                {item.example && (
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Example:</p>
+                    <p className="text-xs text-muted-foreground italic">{item.example}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
