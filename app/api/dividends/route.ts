@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { dividendSchema } from "@/lib/schemas";
 import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
-
 export const GET = withAuth(async () => {
   try {
     const { settingsId } = await getAuthorisedSettings();

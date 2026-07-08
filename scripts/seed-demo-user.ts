@@ -503,7 +503,7 @@ async function seedDemoUser() {
 
   // 11. Budget Categories & Types
   console.log("\n📋 Creating budget categories & types...");
-  const budgetTypes = await Promise.all([
+  void await Promise.all([
     prisma.budgetType.create({
       data: { settingsId: settings.id, name: "Needs", sortOrder: 0 },
     }),
@@ -515,7 +515,7 @@ async function seedDemoUser() {
     }),
   ]);
 
-  const budgetCategories = await Promise.all([
+  void await Promise.all([
     prisma.budgetCategory.create({
       data: { settingsId: settings.id, name: "Groceries", sortOrder: 0 },
     }),
