@@ -41,7 +41,7 @@ export default function NetWorthClient() {
   const { data, isLoading } = useQuery<NWData>({
     queryKey: queryKeys.dashboard(),
     queryFn: () => fetch("/api/dashboard").then((r) => r.json()),
-    staleTime: 30 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: settings } = useQuery({
