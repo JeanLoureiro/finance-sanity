@@ -24,7 +24,7 @@ export function BudgetSummary() {
 
   if (!data || data.length === 0) return null;
 
-  const totalMonthly = data.reduce((sum, item) => sum + item.monthlyAmount, 0);
+  const totalMonthly = data.reduce((sum, item) => sum + Number(item.monthlyAmount), 0);
   const savingsRate = 0.38; // Placeholder: would need income data from snapshots
 
   return (

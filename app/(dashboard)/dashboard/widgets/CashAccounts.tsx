@@ -29,7 +29,7 @@ export function CashAccounts() {
 
   if (!data || data.length === 0) return null;
 
-  const total = data.reduce((sum, a) => sum + a.balance, 0);
+  const total = data.reduce((sum, a) => sum + Number(a.balance), 0);
 
   return (
     <Card>

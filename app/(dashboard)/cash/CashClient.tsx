@@ -124,7 +124,7 @@ export default function CashPage() {
     });
   }
 
-  const totalBalance = accounts.reduce((s, a) => s + a.balance, 0);
+  const totalBalance = accounts.reduce((s, a) => s + Number(a.balance), 0);
   const totalMonthlyExpenses = budgetItems.reduce((s, i) => s + Number(i.monthlyAmount), 0);
   const target = Number(settings?.cashSavingsTarget ?? 40000);
   const pctOfTarget = target > 0 ? Math.min(totalBalance / target, 1) : 0;
