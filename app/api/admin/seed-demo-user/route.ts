@@ -7,15 +7,31 @@ const DEMO_EMAIL = "jean_loureiro+demo@hotmail.com";
 const DEMO_PASSWORD = "johndoedemo";
 
 export async function POST(req: NextRequest) {
-  // Security: only allow from localhost or with a secret key
-  const authHeader = req.headers.get("x-seed-key");
-  const expectedKey = process.env.SEED_SECRET_KEY || "dev-seed-key";
+  if (process.env.NODE_ENV === "production" && !process.env.SEED_SECRET_KEY) {
+    return Response.json(
+      { error: "Seed endpoint disabled in production without SEED_SECRET_KEY" },
+      { status: 403 }
+    );
+  }
 
-  if (authHeader !== expectedKey) {
+  const authHeader = req.headers.get("x-seed-key");
+  const expectedKey = process.env.SEED_SECRET_KEY;
+
+  if (!expectedKey || authHeader !== expectedKey) {
     return Response.json(
       { error: "Unauthorized" },
       { status: 401 }
     );
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    const confirmHeader = req.headers.get("x-seed-confirm");
+    if (confirmHeader !== "destructive") {
+      return Response.json(
+        { error: "Production seed requires x-seed-confirm: destructive header to prevent accidental data loss" },
+        { status: 400 }
+      );
+    }
   }
 
   try {
@@ -475,7 +491,6 @@ export async function POST(req: NextRequest) {
       success: true,
       message: "Demo user created successfully",
       email: DEMO_EMAIL,
-      password: DEMO_PASSWORD,
       userId,
     });
   } catch (error) {

@@ -27,7 +27,7 @@ export const PATCH = withAuth(async (
         ...(exDividendDate !== undefined ? { exDividendDate: exDividendDate ? new Date(exDividendDate) : null } : {}),
       },
     });
-    return Response.json(dividend);
+    return Response.json({ ...dividend, netAmount: Number(dividend.netAmount), priceAtDividend: dividend.priceAtDividend ? Number(dividend.priceAtDividend) : null });
   } catch {
     return Response.json({ error: "Failed to update dividend" }, { status: 500 });
   }

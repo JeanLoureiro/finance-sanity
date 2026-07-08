@@ -26,7 +26,7 @@ export const PATCH = withAuth(async (
         ...(date ? { date: new Date(date) } : {}),
       },
     });
-    return Response.json(entry);
+    return Response.json({ ...entry, sideIncome: Number(entry.sideIncome), rentalIncome: Number(entry.rentalIncome) });
   } catch {
     return Response.json({ error: "Failed to update entry" }, { status: 500 });
   }
