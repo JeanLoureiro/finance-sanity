@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { sideIncomeSchema } from "@/lib/schemas";
 import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
-
 export const GET = withAuth(async () => {
   try {
     const { settingsId } = await getAuthorisedSettings();
@@ -11,7 +10,9 @@ export const GET = withAuth(async () => {
       where: { settingsId },
       orderBy: { date: "desc" },
     });
-    return Response.json(entries);
+    return Response.json(
+      entries.map((e) => ({ ...e, sideIncome: Number(e.sideIncome), rentalIncome: Number(e.rentalIncome) }))
+    );
   } catch {
     return Response.json({ error: "Failed to load side income" }, { status: 500 });
   }
@@ -34,7 +35,7 @@ export const POST = withAuth(async (req: NextRequest) => {
         notes: parsed.data.notes ?? null,
       },
     });
-    return Response.json(entry, { status: 201 });
+    return Response.json({ ...entry, sideIncome: Number(entry.sideIncome), rentalIncome: Number(entry.rentalIncome) }, { status: 201 });
   } catch {
     return Response.json({ error: "Failed to create entry" }, { status: 500 });
   }

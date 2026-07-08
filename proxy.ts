@@ -25,7 +25,7 @@ const PROTECTED_PREFIXES = [
 ];
 
 // Paths that are always public (even under /api/)
-const PUBLIC_PREFIXES = ["/login", "/auth/", "/accept-invite", "/api/auth/", "/api/cron/"];
+const PUBLIC_PREFIXES = ["/login", "/auth/", "/accept-invite", "/api/auth/", "/api/cron/", "/api/admin/seed-demo-user"];
 
 function isPublicApiPath(pathname: string): boolean {
   // GET /api/invitations/[token] is public (invite metadata for accept page)

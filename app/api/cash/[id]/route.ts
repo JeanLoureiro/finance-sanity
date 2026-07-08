@@ -22,7 +22,7 @@ export const PATCH = withAuth(async (
       Object.entries(parsed.data).filter(([k]) => k in body)
     );
     const account = await prisma.bankAccount.update({ where: { id }, data });
-    return Response.json(account);
+    return Response.json({ ...account, balance: Number(account.balance) });
   } catch {
     return Response.json({ error: "Failed to update account" }, { status: 500 });
   }

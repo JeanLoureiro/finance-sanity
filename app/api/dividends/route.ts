@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { dividendSchema } from "@/lib/schemas";
 import { getAuthorisedSettings, withAuth } from "@/lib/auth";
 
-
 export const GET = withAuth(async () => {
   try {
     const { settingsId } = await getAuthorisedSettings();
@@ -11,7 +10,9 @@ export const GET = withAuth(async () => {
       where: { settingsId },
       orderBy: { paymentDate: "desc" },
     });
-    return Response.json(dividends);
+    return Response.json(
+      dividends.map((d) => ({ ...d, netAmount: Number(d.netAmount), priceAtDividend: d.priceAtDividend ? Number(d.priceAtDividend) : null }))
+    );
   } catch {
     return Response.json({ error: "Failed to load dividends" }, { status: 500 });
   }
@@ -37,7 +38,7 @@ export const POST = withAuth(async (req: NextRequest) => {
         priceAtDividend: parsed.data.priceAtDividend ?? null,
       },
     });
-    return Response.json(dividend, { status: 201 });
+    return Response.json({ ...dividend, netAmount: Number(dividend.netAmount), priceAtDividend: dividend.priceAtDividend ? Number(dividend.priceAtDividend) : null }, { status: 201 });
   } catch {
     return Response.json({ error: "Failed to create dividend" }, { status: 500 });
   }

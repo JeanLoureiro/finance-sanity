@@ -173,7 +173,7 @@ export const GET = withAuth(async () => {
       where: { settingsId },
       orderBy: { createdAt: "asc" },
     });
-    return Response.json(items);
+    return Response.json(items.map((item) => ({ ...item, monetaryField: Number(item.monetaryField) })));
   } catch {
     return Response.json({ error: "Failed to load resources" }, { status: 500 });
   }
@@ -190,7 +190,7 @@ export const POST = withAuth(async (req: NextRequest) => {
     const item = await prisma.resourceModel.create({
       data: { ...parsed.data, settingsId },
     });
-    return Response.json(item, { status: 201 });
+    return Response.json({ ...item, monetaryField: Number(item.monetaryField) }, { status: 201 });
   } catch {
     return Response.json({ error: "Failed to create resource" }, { status: 500 });
   }
@@ -220,7 +220,7 @@ export const PATCH = withAuth(async (
       return Response.json({ error: parsed.error.flatten() }, { status: 400 });
     }
     const item = await prisma.resourceModel.update({ where: { id }, data: parsed.data });
-    return Response.json(item);
+    return Response.json({ ...item, monetaryField: Number(item.monetaryField) });
   } catch {
     return Response.json({ error: "Failed to update resource" }, { status: 500 });
   }
@@ -250,6 +250,7 @@ export const DELETE = withAuth(async (
 - Always call `assertOwnership` in `[id]` routes before any mutation
 - `params` is a `Promise` in Next.js 16 — always `await params`
 - `getAuthorisedSettings()` defaults to `"READ"` — pass `"WRITE"` for mutations
+- **Prisma Decimal serialization:** All Decimal fields (monetary values) must be wrapped with `Number()` before returning via `Response.json()` to ensure they serialize as JSON numbers, not strings. Map over arrays: `.map((item) => ({ ...item, monetaryField: Number(item.monetaryField) }))`
 
 ---
 
@@ -311,7 +312,7 @@ export default function ResourceClient() {
 - Add new query key factory functions to `lib/queryKeys.ts` before using them here
 - Never write `queryKey: ["some-string"]` inline — always `queryKeys.something()`
 - Do not perform monetary arithmetic in client components — push that to API routes or `lib/`
-- Monetary API responses arrive as `number` (JSON) — format for display only, never compute with them
+- Monetary API responses arrive as `number` (JSON) — this is ensured by wrapping Prisma Decimal fields with `Number()` in all API routes. Format for display only, never compute with them
 
 ---
 
