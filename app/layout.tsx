@@ -26,8 +26,22 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://financialsanity.app"),
   title: "Financial Sanity",
   description: "Personal wealth tracker",
+  openGraph: {
+    title: "Financial Sanity",
+    description: "Personal wealth tracker",
+    url: "https://financialsanity.app",
+    siteName: "Financial Sanity",
+    images: ["/icon-512.png"],
+  },
+  twitter: {
+    card: "summary",
+    title: "Financial Sanity",
+    description: "Personal wealth tracker",
+    images: ["/icon-512.png"],
+  },
   other: {
     'fetchpriority': 'high',
   },
