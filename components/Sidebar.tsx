@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { queryKeys } from "@/lib/queryKeys";
 import { ContextSwitcher } from "./ContextSwitcher";
+import BrandLogoMark from "@/components/landing/BrandLogoMark";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -137,11 +138,13 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
       {/* Brand */}
       <div className={cn(
         "flex items-center gap-3 border-b border-border flex-shrink-0",
-        collapsed ? "px-4 py-4 justify-center" : "px-4"
+        collapsed ? "h-14 px-4 justify-center" : "px-4"
       )}
       style={!collapsed ? { paddingTop: "calc(var(--spacing) * 2.8)", paddingBottom: "calc(var(--spacing) * 2.8)" } : undefined}
       >
-        {!collapsed && (
+        {collapsed ? (
+          <BrandLogoMark size="sm" />
+        ) : (
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold tracking-tight leading-none">Financial Sanity</div>
             <div className="text-[11px] text-muted-foreground mt-0.5">Personal · AUD</div>
