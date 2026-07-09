@@ -76,7 +76,7 @@ components/
   Providers.tsx        # Client boundary for React Query + next-themes
   ui/                  # Shadcn UI primitives
   landing/             # Public landing page components
-    BrandLogoMark.tsx  # SVG logo mark used across public + auth pages (xs/sm/md sizes)
+    BrandLogoMark.tsx  # SVG logo mark used across public/auth pages and the collapsed Sidebar (xs/sm/md sizes)
     FeatureCard.tsx    # Feature grid card with teal accent icon
     LandingNav.tsx     # Fixed nav with scroll-aware teal/surface styling
 lib/
