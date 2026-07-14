@@ -43,15 +43,25 @@ function ResetPasswordContent() {
     const supabase = createClient();
     supabase.auth
       .getSession()
-      .then(({ data: { session } }) => {
-        if (session) {
-          setExchangeState("ready");
-        } else {
+      .then(async ({ data: { session } }) => {
+        if (!session) {
           setExchangeState("error");
+          return;
         }
+
+        // Supabase rejects password updates from an AAL1 session when the
+        // account has MFA enrolled — verify MFA first, then return here.
+        const { data: assuranceLevel } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assuranceLevel?.nextLevel === "aal2" && assuranceLevel.currentLevel !== "aal2") {
+          const returnTo = encodeURIComponent("/auth/reset-password?type=recovery");
+          router.push(`/auth/mfa?next=${returnTo}`);
+          return;
+        }
+
+        setExchangeState("ready");
       })
       .catch(() => setExchangeState("error"));
-  }, [linkError, isRecoveryFlow]);
+  }, [linkError, isRecoveryFlow, router]);
 
   async function handleSubmit(values: ResetPasswordFormInput) {
     setServerError(null);
