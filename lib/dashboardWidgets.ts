@@ -48,14 +48,14 @@ export const WIDGET_REGISTRY: WidgetDef[] = [
 export const DEFAULT_LAYOUT: DashboardWidgetPref[] = [
   { key: "networth-hero", visible: true },
   { key: "investable", visible: true },
-  { key: "property-equity", visible: true },
   { key: "liabilities", visible: true },
   { key: "history-chart", visible: true },
-  { key: "allocation", visible: true },
-  { key: "allocation-chart", visible: true },
   { key: "asset-breakdown", visible: true },
-  { key: "properties", visible: true },
-  // New widgets start hidden
+  // Remaining widgets start hidden — users can enable them in edit mode
+  { key: "property-equity", visible: false },
+  { key: "allocation", visible: false },
+  { key: "allocation-chart", visible: false },
+  { key: "properties", visible: false },
   { key: "fire-progress", visible: false },
   { key: "budget-summary", visible: false },
   { key: "dividends", visible: false },
@@ -74,13 +74,16 @@ export function reconcileLayout(
   saved: DashboardWidgetPref[] | null | undefined,
   featureFlags?: Partial<Record<"useCapitalGains" | "useFIRE" | "useSuper" | "useDividends" | "useSideIncome" | "useProperty" | "useLiabilities" | "useManagedFunds" | "useOtherAssets" | "useCrypto", boolean>>
 ): DashboardWidgetPref[] {
+  // No saved layout yet (new user) — start from the curated default rather than all-hidden.
+  const effectiveSaved = saved ?? DEFAULT_LAYOUT;
+
   const registryKeys = new Set(WIDGET_REGISTRY.map((w) => w.key));
-  const savedMap = new Map((saved ?? []).map((item) => [item.key, item]));
+  const savedMap = new Map(effectiveSaved.map((item) => [item.key, item]));
 
   const result: DashboardWidgetPref[] = [];
 
   // First, preserve saved items that still exist in registry
-  for (const item of saved ?? []) {
+  for (const item of effectiveSaved) {
     if (registryKeys.has(item.key)) {
       result.push(item);
     }
