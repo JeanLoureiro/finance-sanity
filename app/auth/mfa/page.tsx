@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { mfaVerifySchema, mfaEnrollVerifySchema, type MfaVerifyInput, type MfaEnrollVerifyInput } from "@/lib/schemas";
@@ -119,6 +119,8 @@ function OtpInput({
 
 function MfaContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
   const [factorStatus, setFactorStatus] = useState<FactorStatus>({ status: "loading" });
   const [enrollState, setEnrollState] = useState<EnrollState>({ step: "idle" });
   const [serverError, setServerError] = useState<string | null>(null);
@@ -163,7 +165,7 @@ function MfaContent() {
       return;
     }
 
-    router.push(data.redirectTo ?? "/dashboard");
+    router.push(next ?? data.redirectTo ?? "/dashboard");
   }
 
   async function handleStartEnroll() {
@@ -195,7 +197,7 @@ function MfaContent() {
       return;
     }
 
-    router.push(data.redirectTo ?? "/dashboard");
+    router.push(next ?? data.redirectTo ?? "/dashboard");
   }
 
   if (factorStatus.status === "loading") {
