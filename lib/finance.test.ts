@@ -194,6 +194,14 @@ describe("amortizationSchedule", () => {
     expect(withLumpSum.length).toBeLessThan(schedule.length);
   });
 
+  it("tracks the one-off portion of principal separately for the lump-sum period only", () => {
+    const withLumpSum = amortizationSchedule(450000, 0.065, 30 * 12, 12, 0, [{ period: 12, amount: 20000 }]);
+    expect(withLumpSum[11].oneOffPrincipal).toBeCloseTo(20000, 0);
+    // Every other period has no one-off contribution.
+    const otherPeriods = withLumpSum.filter((_, index) => index !== 11);
+    expect(otherPeriods.every((row) => row.oneOffPrincipal === 0)).toBe(true);
+  });
+
   it("does not overpay when a one-off payment exceeds the remaining balance", () => {
     const withHugeLumpSum = amortizationSchedule(450000, 0.065, 30 * 12, 12, 0, [{ period: 12, amount: 500000 }]);
     const lumpSumRow = withHugeLumpSum[11];
@@ -201,6 +209,8 @@ describe("amortizationSchedule", () => {
     expect(withHugeLumpSum.length).toBe(12);
     const totalPrincipal = withHugeLumpSum.reduce((sum, row) => sum + row.principal, 0);
     expect(totalPrincipal).toBeCloseTo(450000, 0);
+    // The one-off portion actually applied should be capped by what was needed to clear the balance.
+    expect(lumpSumRow.oneOffPrincipal).toBeCloseTo(lumpSumRow.principal - (schedule[11]?.principal ?? 0), 0);
   });
 
   it("sums multiple one-off payments landing on the same period", () => {

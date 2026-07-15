@@ -142,7 +142,11 @@ export default function RepaymentCalculator({ properties }: RepaymentCalculatorP
       const principal = periodsInYear.reduce((sum, row) => sum + row.principal, 0);
       const interest = periodsInYear.reduce((sum, row) => sum + row.interest, 0);
       const closingBalance = periodsInYear[periodsInYear.length - 1].balance;
-      const isCrossover = !crossoverFound && principal > interest;
+      // Exclude one-off lump sums from the crossover check — a single top-up shouldn't
+      // flag "principal overtakes interest" for a year that only crossed over because
+      // of a one-time payment; keep checking until the recurring schedule itself crosses.
+      const recurringPrincipal = periodsInYear.reduce((sum, row) => sum + (row.principal - row.oneOffPrincipal), 0);
+      const isCrossover = !crossoverFound && recurringPrincipal > interest;
       if (isCrossover) crossoverFound = true;
       rows.push({ year, openingBalance, principal, interest, closingBalance, isCrossover });
     }
