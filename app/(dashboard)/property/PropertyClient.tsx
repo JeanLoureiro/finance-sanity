@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Trash2, PlusCircle, Pencil, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
+import RepaymentCalculator from "./RepaymentCalculator";
 
 type Property = {
   id: string; name: string; purchaseDate: string; isPrimaryResidence: boolean;
@@ -68,13 +69,13 @@ const EXPENSE_DEFAULT_FREQUENCY: Record<string, string> = {
   other: "monthly",
 };
 
-const PAYMENT_FREQUENCIES = [
+export const PAYMENT_FREQUENCIES = [
   { value: "weekly",      label: "Weekly",      ppy: 52 },
   { value: "fortnightly", label: "Fortnightly",  ppy: 26 },
   { value: "monthly",     label: "Monthly",      ppy: 12 },
 ] as const;
 
-function freqToPPY(freq: string): number {
+export function freqToPPY(freq: string): number {
   return PAYMENT_FREQUENCIES.find((f) => f.value === freq)?.ppy ?? 12;
 }
 
@@ -612,6 +613,8 @@ export default function PropertyPage() {
         <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Total Property Value</p><p className="text-2xl font-bold"><CurrencyAmount value={totalPropertyValue} /></p></CardContent></Card>
         <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Total Equity</p><p className="text-2xl font-bold"><CurrencyAmount value={totalEquity} /></p></CardContent></Card>
       </div>
+
+      <RepaymentCalculator properties={properties} />
 
       <div className="space-y-5">
           {properties.map((p) => {
