@@ -148,7 +148,7 @@ All design tokens are defined in `app/globals.css` and include:
 
 ## Design System Page
 
-View all components and tokens in action:
+View all components and tokens in action (super admins only — the route 404s for other users):
 ```
 /design-system
 ```
