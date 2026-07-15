@@ -30,6 +30,8 @@ import {
   X,
   BookOpen,
   Palette,
+  Copy,
+  Check,
 } from "lucide-react";
 
 type NavItem = {
@@ -102,8 +104,9 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
   const [isPending, startTransition] = useTransition();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isIdCopied, setIsIdCopied] = useState(false);
 
-  const { data: settings } = useQuery<Record<string, boolean>>({
+  const { data: settings } = useQuery<Record<string, boolean> & { id?: string }>({
     queryKey: queryKeys.settings(),
     queryFn: () => fetch("/api/settings").then((response) => response.json()),
     staleTime: 5 * 60 * 1000,
@@ -124,6 +127,13 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
   async function handleSignOut() {
     await fetch("/api/auth/signout", { method: "POST" });
     window.location.href = "/login";
+  }
+
+  async function handleCopyId() {
+    if (!settings?.id) return;
+    await navigator.clipboard.writeText(settings.id);
+    setIsIdCopied(true);
+    setTimeout(() => setIsIdCopied(false), 1500);
   }
 
   const initials = getInitials(email);
@@ -255,9 +265,25 @@ export function Sidebar({ collapsed, onClose, email }: SidebarProps) {
             {/* Dropdown menu */}
             {isMenuOpen && (
               <div className="absolute bottom-full left-3 right-3 mb-2 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
+                {settings?.id && (
+                  <button
+                    onClick={handleCopyId}
+                    title={settings.id}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-fs-accent-subtle/50 transition-all border-b border-border"
+                  >
+                    {isIdCopied ? (
+                      <Check className="size-4 flex-shrink-0 opacity-70" />
+                    ) : (
+                      <Copy className="size-4 flex-shrink-0 opacity-70" />
+                    )}
+                    <span className="truncate">{isIdCopied ? "Copied!" : settings.id}</span>
+                  </button>
+                )}
                 {[
                   { href: "/glossary", label: "Glossary", Icon: BookOpen },
-                  { href: "/design-system", label: "Design System", Icon: Palette },
+                  ...(settings?.isSuperAdmin
+                    ? [{ href: "/design-system", label: "Design System", Icon: Palette }]
+                    : []),
                   { href: "/import", label: "Import CSV", Icon: Upload },
                   { href: "/settings", label: "Settings", Icon: Settings },
                 ].map(({ href, label, Icon }) => {

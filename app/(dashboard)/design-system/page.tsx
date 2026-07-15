@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { Kpi } from "@/components/ui/kpi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -5,8 +6,21 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getAuthUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
-export default function DesignSystemPage() {
+export default async function DesignSystemPage() {
+  const {
+    data: { user },
+  } = await getAuthUser();
+  if (!user) notFound();
+
+  const settings = await prisma.userSettings.findUnique({
+    where: { userId: user.id },
+    select: { isSuperAdmin: true },
+  });
+  if (!settings?.isSuperAdmin) notFound();
+
   return (
     <div className="p-6 max-w-4xl space-y-12">
       <div>

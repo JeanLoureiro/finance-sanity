@@ -151,6 +151,35 @@ export const getAuthorisedSettings = cache(async (
 });
 
 /**
+ * Resolves the UserSettings id of the currently authenticated user and
+ * verifies they hold the super-admin flag.
+ *
+ * Throws AuthError(401) if not authenticated.
+ * Throws AuthError(403) if authenticated but not a super admin.
+ */
+export const getAuthorisedSuperAdmin = cache(async (): Promise<{ settingsId: string }> => {
+  const {
+    data: { user },
+    error,
+  } = await getAuthUser();
+
+  if (error || !user) {
+    throw new AuthError(401, "Not authenticated");
+  }
+
+  const settings = await prisma.userSettings.findUnique({
+    where: { userId: user.id },
+    select: { id: true, isSuperAdmin: true },
+  });
+
+  if (!settings?.isSuperAdmin) {
+    throw new AuthError(403, "Super admin access required");
+  }
+
+  return { settingsId: settings.id };
+});
+
+/**
  * Verifies that a resource's settingsId matches the authorised settings row.
  * Use in [id]-scoped mutation routes to prevent cross-user manipulation.
  */
