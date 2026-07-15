@@ -79,4 +79,8 @@ export const queryKeys = {
   mfa: {
     factors: () => ["mfa", "factors"] as const,
   },
+
+  superAdmins: {
+    all: () => ["super-admins"] as const,
+  },
 };

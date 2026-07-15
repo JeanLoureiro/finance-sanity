@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import SharingSection from "@/components/SharingSection";
+import SuperAdminSection from "@/components/SuperAdminSection";
 
 function SectionHeader({ title, description }: { title: string; description?: string }) {
   return (
@@ -233,7 +234,9 @@ export default function SettingsPage() {
   const [testEmailStatus, setTestEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [testEmailMessage, setTestEmailMessage] = useState("");
 
-  const { data, isLoading } = useQuery<SettingsInput & { error?: string; role?: string }>({
+  const { data, isLoading } = useQuery<
+    SettingsInput & { error?: string; role?: string; id?: string; isSuperAdmin?: boolean }
+  >({
     queryKey: queryKeys.settings(),
     queryFn: () => fetch("/api/settings").then((response) => response.json()),
   });
@@ -357,6 +360,7 @@ export default function SettingsPage() {
     { id: "snapshot-email",  label: "Email" },
     { id: "security",        label: "Security" },
     ...(data?.role === "OWNER" ? [{ id: "sharing", label: "Sharing" }] : []),
+    ...(data?.isSuperAdmin ? [{ id: "super-admin", label: "Super Admin" }] : []),
   ];
 
   return (
@@ -615,10 +619,32 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="text-base">Security</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <SecuritySection />
+          {data?.id && (
+            <div className="space-y-1 pt-4 border-t border-border">
+              <p className="text-sm font-medium">Account ID</p>
+              <p className="text-xs text-muted-foreground">
+                Share this with a super admin so they can grant you super admin access.
+              </p>
+              <code className="block mt-1 p-2 rounded bg-muted text-xs text-muted-foreground select-all">
+                {data.id}
+              </code>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {data?.isSuperAdmin && (
+        <Card id="super-admin" className="mt-10 scroll-mt-14">
+          <CardHeader>
+            <CardTitle className="text-base">Super Admin</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SuperAdminSection />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Sticky save bar */}
       <div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 border-t border-border bg-background/90 px-6 py-3 backdrop-blur-md -mx-6">

@@ -27,6 +27,7 @@ model UserSettings {
   userId     String?     @unique // Supabase auth.users UID — nullable for safe migration
   ownerEmail String?             // stored at first invite creation for display purposes
   role       AccessRole  @default(OWNER) // Role of the user who owns this settings row
+  isSuperAdmin Boolean   @default(false) // Grants access to internal-only pages (e.g. Design System)
 
   // General
   currency        String  @default("AUD")
