@@ -151,6 +151,8 @@ export interface AmortizationRow {
   principal: number;
   interest: number;
   balance: number;
+  /** Portion of `principal` this period contributed by a one-off lump-sum payment. */
+  oneOffPrincipal: number;
 }
 
 export interface OneOffPayment {
@@ -188,8 +190,10 @@ export function amortizationSchedule(
     const uncappedPrincipal = scheduledPayment - interest + extraPaymentPerPeriod + oneOff;
     const isFinalPeriod = period === totalPeriods || uncappedPrincipal >= balance;
     const principal = isFinalPeriod ? balance : uncappedPrincipal;
+    // If the cap trimmed the total payment, the trim comes off the one-off portion first.
+    const oneOffPrincipal = Math.max(0, oneOff - Math.max(0, uncappedPrincipal - principal));
     balance = isFinalPeriod ? 0 : balance - principal;
-    rows.push({ period, payment: interest + principal, principal, interest, balance });
+    rows.push({ period, payment: interest + principal, principal, interest, balance, oneOffPrincipal });
   }
   return rows;
 }
