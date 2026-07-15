@@ -144,3 +144,52 @@ export function eomonth(date: Date, monthOffset = 0): Date {
   const d = new Date(date.getFullYear(), date.getMonth() + monthOffset + 1, 0);
   return d;
 }
+
+export interface AmortizationRow {
+  period: number;
+  payment: number;
+  principal: number;
+  interest: number;
+  balance: number;
+}
+
+export interface OneOffPayment {
+  period: number;
+  amount: number;
+}
+
+/**
+ * Full period-by-period amortization schedule for a fixed-rate, fixed-term loan.
+ * An optional recurring extra payment per period, and/or one-off lump-sum
+ * payments at specific periods, are applied on top of the scheduled principal —
+ * either can pay the loan off before `totalPeriods`.
+ */
+export function amortizationSchedule(
+  loanAmount: number,
+  annualRate: number,
+  totalPeriods: number,
+  paymentsPerYear: number,
+  extraPaymentPerPeriod = 0,
+  oneOffPayments: OneOffPayment[] = []
+): AmortizationRow[] {
+  const periodRate = annualRate / paymentsPerYear;
+  const scheduledPayment = -pmt(periodRate, totalPeriods, loanAmount);
+
+  const oneOffByPeriod = new Map<number, number>();
+  for (const { period, amount } of oneOffPayments) {
+    oneOffByPeriod.set(period, (oneOffByPeriod.get(period) ?? 0) + amount);
+  }
+
+  const rows: AmortizationRow[] = [];
+  let balance = loanAmount;
+  for (let period = 1; period <= totalPeriods && balance > 0; period++) {
+    const interest = balance * periodRate;
+    const oneOff = oneOffByPeriod.get(period) ?? 0;
+    const uncappedPrincipal = scheduledPayment - interest + extraPaymentPerPeriod + oneOff;
+    const isFinalPeriod = period === totalPeriods || uncappedPrincipal >= balance;
+    const principal = isFinalPeriod ? balance : uncappedPrincipal;
+    balance = isFinalPeriod ? 0 : balance - principal;
+    rows.push({ period, payment: interest + principal, principal, interest, balance });
+  }
+  return rows;
+}

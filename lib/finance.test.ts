@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pmt, pv, fv, nper, cumipmt, mortgageBalance } from "./finance";
+import { pmt, pv, fv, nper, cumipmt, mortgageBalance, amortizationSchedule } from "./finance";
 
 // All calculations cross-checked against Excel equivalents.
 
@@ -128,5 +128,87 @@ describe("mortgageBalance", () => {
     const start = new Date("2025-01-01");
     const before = new Date("2024-06-01");
     expect(mortgageBalance(450000, 0.065, 2844.75, start, before)).toBe(450000);
+  });
+});
+
+describe("amortizationSchedule", () => {
+  // 30-year $450k mortgage at 6.5% monthly — same worked example as pmt/cumipmt above.
+  const schedule = amortizationSchedule(450000, 0.065, 30 * 12, 12);
+
+  it("returns one row per period", () => {
+    expect(schedule.length).toBe(30 * 12);
+  });
+
+  it("uses the PMT-derived payment for every row", () => {
+    expect(schedule[0].payment).toBeCloseTo(2844.75, 0);
+    expect(schedule[schedule.length - 1].payment).toBeCloseTo(2844.75, 0);
+  });
+
+  it("pays off the full loan amount in principal", () => {
+    const totalPrincipal = schedule.reduce((sum, row) => sum + row.principal, 0);
+    expect(totalPrincipal).toBeCloseTo(450000, 0);
+  });
+
+  it("reaches a zero closing balance in the final period", () => {
+    expect(schedule[schedule.length - 1].balance).toBe(0);
+  });
+
+  it("matches cumipmt for first-year interest", () => {
+    const firstYearInterest = schedule.slice(0, 12).reduce((sum, row) => sum + row.interest, 0);
+    const expected = cumipmt(0.065 / 12, 30 * 12, 450000, 1, 12);
+    expect(firstYearInterest).toBeCloseTo(expected, 0);
+  });
+
+  it("pays the loan off early with a recurring extra payment", () => {
+    const withExtra = amortizationSchedule(450000, 0.065, 30 * 12, 12, 500);
+    expect(withExtra.length).toBeLessThan(schedule.length);
+
+    const totalPrincipal = withExtra.reduce((sum, row) => sum + row.principal, 0);
+    expect(totalPrincipal).toBeCloseTo(450000, 0);
+    expect(withExtra[withExtra.length - 1].balance).toBe(0);
+
+    const totalInterestWithExtra = withExtra.reduce((sum, row) => sum + row.interest, 0);
+    const totalInterestBaseline = schedule.reduce((sum, row) => sum + row.interest, 0);
+    expect(totalInterestWithExtra).toBeLessThan(totalInterestBaseline);
+  });
+
+  it("does not overpay the final period when the extra payment exceeds the remaining balance", () => {
+    const withHugeExtra = amortizationSchedule(450000, 0.065, 30 * 12, 12, 50000);
+    const lastRow = withHugeExtra[withHugeExtra.length - 1];
+    expect(lastRow.balance).toBe(0);
+    expect(lastRow.principal).toBeGreaterThan(0);
+    const totalPrincipal = withHugeExtra.reduce((sum, row) => sum + row.principal, 0);
+    expect(totalPrincipal).toBeCloseTo(450000, 0);
+  });
+
+  it("applies a one-off lump-sum payment at the given period", () => {
+    const withLumpSum = amortizationSchedule(450000, 0.065, 30 * 12, 12, 0, [{ period: 12, amount: 20000 }]);
+    // The lump sum period should show extra principal beyond the scheduled amount.
+    const lumpSumRow = withLumpSum[11];
+    const baselineRow = schedule[11];
+    expect(lumpSumRow.principal).toBeCloseTo(baselineRow.principal + 20000, 0);
+
+    const totalPrincipal = withLumpSum.reduce((sum, row) => sum + row.principal, 0);
+    expect(totalPrincipal).toBeCloseTo(450000, 0);
+    expect(withLumpSum[withLumpSum.length - 1].balance).toBe(0);
+    expect(withLumpSum.length).toBeLessThan(schedule.length);
+  });
+
+  it("does not overpay when a one-off payment exceeds the remaining balance", () => {
+    const withHugeLumpSum = amortizationSchedule(450000, 0.065, 30 * 12, 12, 0, [{ period: 12, amount: 500000 }]);
+    const lumpSumRow = withHugeLumpSum[11];
+    expect(lumpSumRow.balance).toBe(0);
+    expect(withHugeLumpSum.length).toBe(12);
+    const totalPrincipal = withHugeLumpSum.reduce((sum, row) => sum + row.principal, 0);
+    expect(totalPrincipal).toBeCloseTo(450000, 0);
+  });
+
+  it("sums multiple one-off payments landing on the same period", () => {
+    const combined = amortizationSchedule(450000, 0.065, 30 * 12, 12, 0, [
+      { period: 12, amount: 10000 },
+      { period: 12, amount: 5000 },
+    ]);
+    const single = amortizationSchedule(450000, 0.065, 30 * 12, 12, 0, [{ period: 12, amount: 15000 }]);
+    expect(combined[11].balance).toBeCloseTo(single[11].balance, 6);
   });
 });
