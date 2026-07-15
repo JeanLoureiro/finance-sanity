@@ -433,3 +433,12 @@ export const updateInviteStatusSchema = z.object({
 });
 
 export type UpdateInviteStatusInput = z.infer<typeof updateInviteStatusSchema>;
+
+// ---------------------------------------------------------------------------
+// Super Admin — grant by account ID
+// ---------------------------------------------------------------------------
+export const grantSuperAdminSchema = z.object({
+  userId: z.string().min(1, "Account ID is required"),
+});
+
+export type GrantSuperAdminInput = z.infer<typeof grantSuperAdminSchema>;
