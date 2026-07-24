@@ -37,12 +37,17 @@ export type SubscriptionState = {
   subscriptionTier: SubscriptionTier;
   subscriptionStatus: SubscriptionStatus;
   trialEndsAt: Date | null;
+  // Super-admin only: forces Free-tier entitlements for testing without
+  // touching the real Stripe-synced subscriptionTier/subscriptionStatus.
+  superAdminFreeTierOverride?: boolean;
 };
 
 export function computeEntitlements(state: SubscriptionState, now: Date = new Date()): Entitlements {
   const isTrialing = state.subscriptionStatus === "TRIALING" && state.trialEndsAt !== null && state.trialEndsAt > now;
   const isActive =
-    state.subscriptionTier === "PRO" && (state.subscriptionStatus === "ACTIVE" || isTrialing);
+    !state.superAdminFreeTierOverride &&
+    state.subscriptionTier === "PRO" &&
+    (state.subscriptionStatus === "ACTIVE" || isTrialing);
 
   const trialDaysRemaining =
     state.trialEndsAt !== null
@@ -50,7 +55,7 @@ export function computeEntitlements(state: SubscriptionState, now: Date = new Da
       : null;
 
   return {
-    tier: state.subscriptionTier,
+    tier: state.superAdminFreeTierOverride ? "FREE" : state.subscriptionTier,
     isActive,
     isTrialing,
     trialDaysRemaining,
@@ -61,7 +66,12 @@ export function computeEntitlements(state: SubscriptionState, now: Date = new Da
 export async function getAccountEntitlements(settingsId: string): Promise<Entitlements> {
   const settings = await prisma.userSettings.findUniqueOrThrow({
     where: { id: settingsId },
-    select: { subscriptionTier: true, subscriptionStatus: true, trialEndsAt: true },
+    select: {
+      subscriptionTier: true,
+      subscriptionStatus: true,
+      trialEndsAt: true,
+      superAdminFreeTierOverride: true,
+    },
   });
   return computeEntitlements(settings);
 }

@@ -98,3 +98,24 @@ describe("computeEntitlements — limits", () => {
     expect(result.limits.snapshotEmailsEnabled).toBe(true);
   });
 });
+
+describe("computeEntitlements — superAdminFreeTierOverride", () => {
+  it("forces Free-tier limits and tier for an otherwise-active Pro account", () => {
+    const result = computeEntitlements(
+      state({ subscriptionTier: "PRO", subscriptionStatus: "ACTIVE", superAdminFreeTierOverride: true }),
+      NOW
+    );
+    expect(result.tier).toBe("FREE");
+    expect(result.isActive).toBe(false);
+    expect(result.limits.maxAccountsPerAssetClass).toBe(3);
+  });
+
+  it("does not affect a Free account when disabled", () => {
+    const result = computeEntitlements(
+      state({ subscriptionTier: "FREE", subscriptionStatus: "TRIALING", superAdminFreeTierOverride: false }),
+      NOW
+    );
+    expect(result.tier).toBe("FREE");
+    expect(result.isActive).toBe(false);
+  });
+});

@@ -139,6 +139,10 @@ model UserSettings {
   currentPeriodEnd      DateTime?
   cancelAtPeriodEnd     Boolean            @default(false)
 
+  // Super-admin only: force this account's entitlements to Free tier for testing,
+  // without touching the real Stripe-synced subscriptionTier/subscriptionStatus.
+  superAdminFreeTierOverride Boolean       @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
