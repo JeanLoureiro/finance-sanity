@@ -20,6 +20,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import SharingSection from "@/components/SharingSection";
 import SuperAdminSection from "@/components/SuperAdminSection";
+import BillingSection from "@/components/BillingSection";
 
 function SectionHeader({ title, description }: { title: string; description?: string }) {
   return (
@@ -360,6 +361,7 @@ export default function SettingsPage() {
     { id: "snapshot-email",  label: "Email" },
     { id: "security",        label: "Security" },
     ...(data?.role === "OWNER" ? [{ id: "sharing", label: "Sharing" }] : []),
+    ...(data?.role === "OWNER" ? [{ id: "billing", label: "Billing" }] : []),
     ...(data?.isSuperAdmin ? [{ id: "super-admin", label: "Super Admin" }] : []),
   ];
 
@@ -611,6 +613,17 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent>
             <SharingSection />
+          </CardContent>
+        </Card>
+      )}
+
+      {data?.role === "OWNER" && (
+        <Card id="billing" className="mt-10 scroll-mt-14">
+          <CardHeader>
+            <CardTitle className="text-base">Billing</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BillingSection />
           </CardContent>
         </Card>
       )}

@@ -40,6 +40,7 @@ type CGTData = {
   summaries: CGTSummary[];
   availableFYs: number[];
   rates: { shortRate: number; longRate: number };
+  upgradeRequired?: boolean;
 };
 
 const fmt = (v: number) =>
@@ -106,6 +107,20 @@ export default function CapitalGainsPage() {
 
   return (
     <div className="space-y-6">
+      {data.upgradeRequired && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="pt-4 flex items-center justify-between flex-wrap gap-2">
+            <p className="text-sm">
+              The Capital Gains engine is a Premium feature. Your historical data is shown below read-only —
+              upgrade to keep it up to date.
+            </p>
+            <a href="/settings#billing" className="text-sm font-medium text-primary underline">
+              Upgrade to Premium
+            </a>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Capital Gains</h1>
         <p className="text-sm text-muted-foreground">

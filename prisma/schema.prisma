@@ -19,6 +19,19 @@ enum InviteStatus {
   REVOKED
 }
 
+enum SubscriptionTier {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
 // ---------------------------------------------------------------------------
 // USER SETTINGS  (maps to SheetOptions sheet)
 // ---------------------------------------------------------------------------
@@ -115,6 +128,16 @@ model UserSettings {
 
   // Dashboard widget layout — ordered [{ key, visible }]. Null = default layout.
   dashboardWidgets Json?
+
+  // Billing / Stripe subscription
+  stripeCustomerId     String?             @unique
+  stripeSubscriptionId String?             @unique
+  stripePriceId        String?
+  subscriptionTier      SubscriptionTier   @default(FREE)
+  subscriptionStatus    SubscriptionStatus @default(TRIALING)
+  trialEndsAt           DateTime?
+  currentPeriodEnd      DateTime?
+  cancelAtPeriodEnd     Boolean            @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

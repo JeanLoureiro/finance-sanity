@@ -442,3 +442,12 @@ export const grantSuperAdminSchema = z.object({
 });
 
 export type GrantSuperAdminInput = z.infer<typeof grantSuperAdminSchema>;
+
+// ---------------------------------------------------------------------------
+// Billing — Stripe checkout
+// ---------------------------------------------------------------------------
+export const checkoutSchema = z.object({
+  priceId: z.enum(["monthly", "annual"]),
+});
+
+export type CheckoutInput = z.infer<typeof checkoutSchema>;

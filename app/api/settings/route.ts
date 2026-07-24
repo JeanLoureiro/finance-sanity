@@ -3,6 +3,7 @@ import { settingsBaseSchema } from "@/lib/schemas";
 import { getAuthUser, getAuthorisedSettings, withAuth } from "@/lib/auth";
 import { getOrCreateSettingsForUser } from "@/lib/userSettings";
 import { prisma } from "@/lib/prisma";
+import { computeEntitlements } from "@/lib/entitlements";
 
 export const GET = withAuth(async () => {
   const {
@@ -23,7 +24,11 @@ export const GET = withAuth(async () => {
   if (!settings) {
     return Response.json({ error: "Settings not found" }, { status: 404 });
   }
-  return Response.json(settings);
+  // Limits (e.g. Infinity for unlimited on Pro) aren't JSON-serialisable and
+  // aren't needed for display — gating routes call getAccountEntitlements
+  // directly. Only expose the plan/status fields the Billing UI displays.
+  const { tier, isActive, isTrialing, trialDaysRemaining } = computeEntitlements(settings);
+  return Response.json({ ...settings, entitlements: { tier, isActive, isTrialing, trialDaysRemaining } });
 });
 
 export const PATCH = withAuth(async (req: NextRequest) => {

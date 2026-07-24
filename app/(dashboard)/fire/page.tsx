@@ -98,6 +98,20 @@ export default function FirePage() {
 
   return (
     <div className="space-y-6">
+      {data.upgradeRequired && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="pt-4 flex items-center justify-between flex-wrap gap-2">
+            <p className="text-sm">
+              The FIRE planner is a Premium feature. Your projection is shown below read-only —
+              upgrade to keep it up to date.
+            </p>
+            <a href="/settings#billing" className="text-sm font-medium text-primary underline">
+              Upgrade to Premium
+            </a>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Hero */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div

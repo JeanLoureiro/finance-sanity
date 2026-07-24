@@ -4,6 +4,7 @@ import { isPayday } from "@/lib/paydayUtils";
 import { recordSnapshotForSettings } from "@/lib/snapshotService";
 import { fetchSnapshotEmailSections } from "@/lib/snapshotEmailSections";
 import { sendSnapshotEmail } from "@/lib/email";
+import { computeEntitlements } from "@/lib/entitlements";
 
 export const GET = async (request: NextRequest) => {
   const cronSecret = process.env.CRON_SECRET;
@@ -35,6 +36,9 @@ export const GET = async (request: NextRequest) => {
       snapshotEmailBudget: true,
       snapshotEmailSideIncome: true,
       snapshotEmailDividends: true,
+      subscriptionTier: true,
+      subscriptionStatus: true,
+      trialEndsAt: true,
       sharedAccessGrants: {
         where: { status: "ACCEPTED" },
         select: { granteeEmail: true },
@@ -85,7 +89,8 @@ export const GET = async (request: NextRequest) => {
         ? [settings.ownerEmail, ...granteeEmails]
         : granteeEmails;
 
-      if (recipients.length > 0) {
+      const entitlements = computeEntitlements(settings);
+      if (recipients.length > 0 && entitlements.limits.snapshotEmailsEnabled) {
         await sendSnapshotEmail(recipients, {
           snapshotDate: snapshot.snapshotDate,
           netWorth: Number(snapshot.netWorth),

@@ -253,6 +253,97 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section id="pricing" className="bg-fs-surface-2 px-6 py-24">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-16 text-center">
+            <span className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-fs-accent-subtle px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-fs-accent-strong">
+              <DollarSign className="size-3" />
+              Pricing
+            </span>
+            <h2
+              className="text-[22px] font-semibold text-[var(--fs-ink-1)]"
+              style={{ letterSpacing: "-0.02em" }}
+            >
+              Simple, honest pricing
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-center text-[15px] leading-relaxed text-[var(--fs-ink-3)]">
+              Start free. Upgrade when you need the full toolkit.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Free */}
+            <div className="flex flex-col rounded-2xl border border-[var(--fs-line-2)] bg-[var(--fs-surface-1)] p-8">
+              <h3 className="text-lg font-semibold text-[var(--fs-ink-1)]">Free</h3>
+              <p className="mt-1 text-sm text-[var(--fs-ink-3)]">Get a full view of your finances, no cost.</p>
+              <p className="mt-6 flex items-baseline gap-1">
+                <span className="text-[32px] font-semibold text-[var(--fs-ink-1)]" style={{ letterSpacing: "-0.02em" }}>
+                  $0
+                </span>
+                <span className="text-sm text-[var(--fs-ink-3)]">/ month</span>
+              </p>
+              <ul className="mt-8 space-y-3 text-sm text-[var(--fs-ink-3)]">
+                {[
+                  "Net worth dashboard across all asset classes",
+                  "Up to 3 accounts per asset class",
+                  "Budget, loans, dividends & side income tracking",
+                  "Monthly snapshots",
+                ].map((point) => (
+                  <li key={point} className="flex items-center gap-2">
+                    <CheckCircle className="size-4 shrink-0 text-fs-accent-hover" />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/login"
+                className="mt-10 inline-flex h-10 items-center justify-center rounded-lg border border-[var(--fs-line-2)] px-6 text-sm font-semibold text-[var(--fs-ink-1)] transition-all hover:bg-[var(--fs-surface-2)]"
+              >
+                Get started
+              </Link>
+            </div>
+
+            {/* Premium */}
+            <div
+              className="relative flex flex-col overflow-hidden rounded-2xl p-8 text-white"
+              style={{ background: "linear-gradient(160deg, oklch(0.42 0.090 185) 0%, oklch(0.30 0.080 185) 100%)" }}
+            >
+              <span className="absolute right-6 top-6 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/90">
+                Most popular
+              </span>
+              <h3 className="text-lg font-semibold">Premium</h3>
+              <p className="mt-1 text-sm text-white/65">Unlock every tool for serious wealth building.</p>
+              <p className="mt-6 flex items-baseline gap-1">
+                <span className="text-[32px] font-semibold" style={{ letterSpacing: "-0.02em" }}>
+                  AUD $8.00
+                </span>
+                <span className="text-sm text-white/65">/ month</span>
+              </p>
+              <ul className="mt-8 space-y-3 text-sm text-white/80">
+                {[
+                  "Everything in Free, with no account limits",
+                  "Capital Gains Tax (FIFO) engine",
+                  "FIRE planning & projections",
+                  "Automated snapshot emails",
+                ].map((point) => (
+                  <li key={point} className="flex items-center gap-2">
+                    <CheckCircle className="size-4 shrink-0 text-white" />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/login"
+                className="mt-10 inline-flex h-10 items-center justify-center rounded-lg bg-white px-6 text-sm font-semibold text-[oklch(0.40_0.085_185)] transition-all hover:bg-white/90"
+              >
+                Start free trial
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Banner */}
       <section
         className="relative overflow-hidden px-6 py-24 text-center"
