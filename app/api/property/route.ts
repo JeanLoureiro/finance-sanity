@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { propertySchema } from "@/lib/schemas";
 import { getAuthorisedSettings, withAuth } from "@/lib/auth";
+import { getAccountEntitlements } from "@/lib/entitlements";
 
 
 export const GET = withAuth(async () => {
@@ -25,6 +26,16 @@ export const POST = withAuth(async (req: NextRequest) => {
       return Response.json({ error: parsed.error.flatten() }, { status: 400 });
     }
     const { settingsId } = await getAuthorisedSettings("WRITE");
+    const entitlements = await getAccountEntitlements(settingsId);
+    if (!entitlements.isActive) {
+      const existingCount = await prisma.property.count({ where: { settingsId } });
+      if (existingCount >= entitlements.limits.maxProperties) {
+        return Response.json(
+          { error: "Upgrade to Pro to add more properties" },
+          { status: 402 }
+        );
+      }
+    }
     const property = await prisma.property.create({
       data: {
         settingsId,

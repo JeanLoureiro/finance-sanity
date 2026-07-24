@@ -3,6 +3,7 @@ import type { SubscriptionStatus, SubscriptionTier } from "@/app/generated/prism
 
 export type EntitlementLimits = {
   maxAccountsPerAssetClass: number;
+  maxProperties: number;
   cgtEngineEnabled: boolean;
   firePlannerEnabled: boolean;
   snapshotEmailsEnabled: boolean;
@@ -18,6 +19,7 @@ export type Entitlements = {
 
 const FREE_LIMITS: EntitlementLimits = {
   maxAccountsPerAssetClass: 3,
+  maxProperties: 1,
   cgtEngineEnabled: false,
   firePlannerEnabled: false,
   snapshotEmailsEnabled: false,
@@ -25,6 +27,7 @@ const FREE_LIMITS: EntitlementLimits = {
 
 const PRO_LIMITS: EntitlementLimits = {
   maxAccountsPerAssetClass: Infinity,
+  maxProperties: Infinity,
   cgtEngineEnabled: true,
   firePlannerEnabled: true,
   snapshotEmailsEnabled: true,
