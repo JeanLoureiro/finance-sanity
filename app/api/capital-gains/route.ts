@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { computeFIFO, summariseCGTByFY, type Trade } from "@/lib/capitalGains";
 import { getFiscalYear } from "@/lib/australianFY";
 import { getAuthorisedSettings, withAuth } from "@/lib/auth";
+import { getAccountEntitlements } from "@/lib/entitlements";
 
 export const GET = withAuth(async (request: Request) => {
   try {
@@ -59,6 +60,10 @@ export const GET = withAuth(async (request: Request) => {
 
     const filteredRows = fy ? allRows.filter((r) => getFiscalYear(r.date) === fy) : allRows;
 
+    // Soft gate: existing computed data is always returned (never hidden),
+    // upgradeRequired only signals the UI to show an upsell banner.
+    const entitlements = await getAccountEntitlements(settingsId);
+
     return Response.json({
       rows: filteredRows.map((r) => ({
         ...r,
@@ -68,6 +73,7 @@ export const GET = withAuth(async (request: Request) => {
       summaries,
       availableFYs,
       rates: { shortRate, longRate },
+      upgradeRequired: !entitlements.limits.cgtEngineEnabled,
     });
   } catch (err) {
     console.error(err);

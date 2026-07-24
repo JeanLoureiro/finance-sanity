@@ -36,16 +36,27 @@ export default function LandingNav() {
           Financial Sanity
         </span>
       </div>
-      <Link
-        href="/login"
-        className={cn(
-          scrolled
-            ? buttonVariants({ size: "sm" })
-            : "inline-flex h-[34px] items-center justify-center rounded-lg bg-white px-5 text-sm font-semibold text-[oklch(0.40_0.085_185)] transition-all hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-        )}
-      >
-        Get started
-      </Link>
+      <div className="flex items-center gap-6">
+        <a
+          href="#pricing"
+          className={cn(
+            "hidden text-sm font-medium transition-colors duration-200 sm:inline-block",
+            scrolled ? "text-fs-ink-3 hover:text-fs-ink-1" : "text-white/75 hover:text-white"
+          )}
+        >
+          Pricing
+        </a>
+        <Link
+          href="/login"
+          className={cn(
+            scrolled
+              ? buttonVariants({ size: "sm" })
+              : "inline-flex h-[34px] items-center justify-center rounded-lg bg-white px-5 text-sm font-semibold text-[oklch(0.40_0.085_185)] transition-all hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+          )}
+        >
+          Get started
+        </Link>
+      </div>
     </nav>
   )
 }

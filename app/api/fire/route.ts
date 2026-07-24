@@ -2,6 +2,7 @@ import Decimal from "decimal.js";
 import { prisma } from "@/lib/prisma";
 import { fv, pv, nper } from "@/lib/finance";
 import { getAuthorisedSettings, withAuth } from "@/lib/auth";
+import { getAccountEntitlements } from "@/lib/entitlements";
 
 export type FIRERow = {
   year: number;
@@ -45,6 +46,8 @@ export type FIREResult = {
 
   // Projection
   rows: FIRERow[];
+
+  upgradeRequired?: boolean;
 };
 
 export const GET = withAuth(async () => {
@@ -214,6 +217,10 @@ export const GET = withAuth(async () => {
       }
     }
 
+    // Soft gate: the projection is still returned in full (never hidden),
+    // upgradeRequired only signals the UI to show an upsell banner.
+    const entitlements = await getAccountEntitlements(settingsId);
+
     const result: FIREResult = {
       currentNW, currentSuper, yearlySpend, annualSavings, superContrib,
       marketReturn, inflationRate, withdrawalRate, netRate,
@@ -223,6 +230,7 @@ export const GET = withAuth(async () => {
       preSuperFIREYear, superFIREYear,
       alreadyFIRE,
       rows,
+      upgradeRequired: !entitlements.limits.firePlannerEnabled,
     };
 
     return Response.json(result);
