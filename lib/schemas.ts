@@ -443,6 +443,12 @@ export const grantSuperAdminSchema = z.object({
 
 export type GrantSuperAdminInput = z.infer<typeof grantSuperAdminSchema>;
 
+export const freeTierOverrideSchema = z.object({
+  enabled: z.boolean(),
+});
+
+export type FreeTierOverrideInput = z.infer<typeof freeTierOverrideSchema>;
+
 // ---------------------------------------------------------------------------
 // Billing — Stripe checkout
 // ---------------------------------------------------------------------------

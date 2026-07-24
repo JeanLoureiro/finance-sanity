@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -31,6 +32,26 @@ export default function SuperAdminSection() {
       const response = await fetch("/api/admin/super-admins");
       if (!response.ok) throw new Error("Failed to load super admins");
       return response.json();
+    },
+  });
+
+  const { data: settings } = useQuery<{ superAdminFreeTierOverride?: boolean }>({
+    queryKey: queryKeys.settings(),
+    queryFn: () => fetch("/api/settings").then((response) => response.json()),
+  });
+
+  const freeTierOverrideMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const response = await fetch("/api/admin/free-tier-override", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      if (!response.ok) throw new Error("Failed to update free tier override");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings() });
     },
   });
 
@@ -66,6 +87,20 @@ export default function SuperAdminSection() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+        <div>
+          <h3 className="text-sm font-medium">Test Free Tier Mode</h3>
+          <p className="text-sm text-muted-foreground">
+            View your own account as if it were on the Free plan, without affecting your real subscription.
+          </p>
+        </div>
+        <Switch
+          checked={settings?.superAdminFreeTierOverride ?? false}
+          disabled={freeTierOverrideMutation.isPending}
+          onCheckedChange={(checked) => freeTierOverrideMutation.mutate(checked)}
+        />
+      </div>
+
       <div>
         <h3 className="text-lg font-medium">Super Admins</h3>
         <p className="text-sm text-muted-foreground">

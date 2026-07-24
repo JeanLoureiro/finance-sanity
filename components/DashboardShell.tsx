@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { PendingInviteModal } from "./PendingInviteModal";
+import { FreeTierTestBanner } from "./FreeTierTestBanner";
 
 export function DashboardShell({ children, email }: { children: React.ReactNode; email: string | null }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -47,6 +48,7 @@ export function DashboardShell({ children, email }: { children: React.ReactNode;
       {/* Main column */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Topbar onToggleSidebar={toggleSidebar} />
+        <FreeTierTestBanner />
         <main className="flex-1 overflow-y-auto">
           <div className="px-6 py-7 pb-14 max-w-[1480px] mx-auto w-full md:px-8">
             {children}
